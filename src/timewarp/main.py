@@ -1409,7 +1409,7 @@ Logo is perfect for graphics and turtle programming!
 
 TURTLE COMMANDS:
 • FORWARD (FD) - Move forward
-• BACK (BK) - Move backward  
+• BACK (BK) - Move backward
 • LEFT (LT) - Turn left
 • RIGHT (RT) - Turn right
 • PENUP (PU) - Stop drawing
@@ -1456,7 +1456,7 @@ PROCEDURES (Functions):
    TO SQUARE :SIZE
      REPEAT 4 [FORWARD :SIZE RIGHT 90]
    END
-   
+
    # Then use it:
    SQUARE 50
    SQUARE 100
@@ -2300,7 +2300,7 @@ Forth will teach you to think about programming at the lowest level while mainta
                     elif language == "Python":
                         response += "• print() - Display text\n• input() - Get input\n• for/while - Loops\n• if/elif/else - Conditions"
 
-                response += f"\n\n💡 Try running this code in Time_Warp IDE!"
+                response += "\n\n💡 Try running this code in Time_Warp IDE!"
 
                 response_text.delete("1.0", tk.END)
                 response_text.insert(tk.END, response)
@@ -2779,7 +2779,7 @@ This Week: "Retro Game Recreation"
 
 🎖️ COMPLETION REWARDS:
 • 5 challenges: "Challenge Accepted" badge
-• 10 challenges: "Problem Solver" badge  
+• 10 challenges: "Problem Solver" badge
 • 15 challenges: "Challenge Master" badge
 • All challenges: "Time_Warp Champion" title"""
 
@@ -3532,14 +3532,14 @@ begin
   readln(operation);
   write('Enter second number: ');
   readln(b);
-  
+
   case operation of
     '+': result := a + b;
     '-': result := a - b;
     '*': result := a * b;
     '/': if b <> 0 then result := a / b else result := 0;
   end;
-  
+
   writeln('Result: ', result:0:2);
 end.""",
                     "Math": """🔢 TW PASCAL MATH TEMPLATES
@@ -3647,10 +3647,10 @@ last_element([_|T], X) :- last_element(T, X).
                     "Loops": """🔄 TW PROLOG LOOP TEMPLATES
 
 1. Recursive Counting:
-count_to(N) :- 
-  N > 0, 
-  write(N), nl, 
-  N1 is N - 1, 
+count_to(N) :-
+  N > 0,
+  write(N), nl,
+  N1 is N - 1,
   count_to(N1).
 count_to(0) :- write('Done!'), nl.
 
@@ -3658,18 +3658,18 @@ count_to(0) :- write('Done!'), nl.
 
 2. List Processing:
 print_list([]).
-print_list([H|T]) :- 
-  write(H), nl, 
+print_list([H|T]) :-
+  write(H), nl,
   print_list(T).
 
 % Query: ?- print_list([apple, banana, cherry]).
 
 3. Factorial with Recursion:
 factorial(0, 1).
-factorial(N, F) :- 
-  N > 0, 
-  N1 is N - 1, 
-  factorial(N1, F1), 
+factorial(N, F) :-
+  N > 0,
+  N1 is N - 1,
+  factorial(N1, F1),
   F is N * F1.
 
 % Query: ?- factorial(5, Result).
@@ -3677,12 +3677,12 @@ factorial(N, F) :-
 4. Fibonacci Sequence:
 fib(0, 0).
 fib(1, 1).
-fib(N, F) :- 
-  N > 1, 
-  N1 is N - 1, 
-  N2 is N - 2, 
-  fib(N1, F1), 
-  fib(N2, F2), 
+fib(N, F) :-
+  N > 1,
+  N1 is N - 1,
+  N2 is N - 2,
+  fib(N1, F1),
+  fib(N2, F2),
   F is F1 + F2.
 
 % Query: ?- fib(8, Result).""",
@@ -3690,29 +3690,29 @@ fib(N, F) :-
 
 1. Simple Turtle Graphics:
 % Draw a square
-draw_square :- 
-  forward(100), 
-  right(90), 
+draw_square :-
+  forward(100),
+  right(90),
   draw_square.
 draw_square :- !.  % Cut to prevent infinite recursion
 
 % Better version with counter
-draw_square(N) :- 
-  N > 0, 
-  forward(100), 
-  right(90), 
-  N1 is N - 1, 
+draw_square(N) :-
+  N > 0,
+  forward(100),
+  right(90),
+  N1 is N - 1,
   draw_square(N1).
 draw_square(0).
 
 % Query: ?- draw_square(4).
 
 2. Spiral Pattern:
-draw_spiral(Size) :- 
-  Size < 200, 
-  forward(Size), 
-  right(91), 
-  NewSize is Size + 5, 
+draw_spiral(Size) :-
+  Size < 200,
+  forward(Size),
+  right(91),
+  NewSize is Size + 5,
   draw_spiral(NewSize).
 draw_spiral(200).
 
@@ -3720,38 +3720,38 @@ draw_spiral(200).
 
 3. Tree Fractal:
 draw_tree(0) :- !.
-draw_tree(Depth) :- 
-  forward(50), 
-  right(30), 
-  Depth1 is Depth - 1, 
-  draw_tree(Depth1), 
-  back(50), 
-  left(60), 
-  draw_tree(Depth1), 
-  back(50), 
+draw_tree(Depth) :-
+  forward(50),
+  right(30),
+  Depth1 is Depth - 1,
+  draw_tree(Depth1),
+  back(50),
+  left(60),
+  draw_tree(Depth1),
+  back(50),
   right(30).
 
 % Query: ?- draw_tree(5).""",
                     "Games": """🎮 TW PROLOG GAME TEMPLATES
 
 1. Number Guessing Game:
-guess_number :- 
-  random(1, 101, Number), 
-  write('Guess my number (1-100): '), nl, 
+guess_number :-
+  random(1, 101, Number),
+  write('Guess my number (1-100): '), nl,
   play_game(Number, 0).
 
-play_game(Number, Tries) :- 
-  read(Guess), 
-  (Guess = Number -> 
-    NewTries is Tries + 1, 
+play_game(Number, Tries) :-
+  read(Guess),
+  (Guess = Number ->
+    NewTries is Tries + 1,
     write('Correct in '), write(NewTries), write(' tries!'), nl
-  ; Guess < Number -> 
-    write('Too low! Try again: '), nl, 
-    NewTries is Tries + 1, 
+  ; Guess < Number ->
+    write('Too low! Try again: '), nl,
+    NewTries is Tries + 1,
     play_game(Number, NewTries)
-  ; Guess > Number -> 
-    write('Too high! Try again: '), nl, 
-    NewTries is Tries + 1, 
+  ; Guess > Number ->
+    write('Too high! Try again: '), nl,
+    NewTries is Tries + 1,
     play_game(Number, NewTries)
   ).
 
@@ -3760,14 +3760,14 @@ beat(rock, scissors).
 beat(scissors, paper).
 beat(paper, rock).
 
-play_rps :- 
-  write('Rock, paper, or scissors? '), 
-  read(Player), 
-  random_member([rock, paper, scissors], Computer), 
-  write('Computer chose: '), write(Computer), nl, 
-  (beat(Player, Computer) -> 
+play_rps :-
+  write('Rock, paper, or scissors? '),
+  read(Player),
+  random_member([rock, paper, scissors], Computer),
+  write('Computer chose: '), write(Computer), nl,
+  (beat(Player, Computer) ->
     write('You win!')
-  ; beat(Computer, Player) -> 
+  ; beat(Computer, Player) ->
     write('Computer wins!')
   ; write('Tie!')
   ), nl.""",
@@ -3775,42 +3775,42 @@ play_rps :-
 
 1. Prime Number Checker:
 is_prime(2).
-is_prime(N) :- 
-  N > 2, 
-  N mod 2 \\= 0, 
+is_prime(N) :-
+  N > 2,
+  N mod 2 \\= 0,
   \\+ has_factor(N, 3).
 
-has_factor(N, F) :- 
-  F * F =< N, 
-  (N mod F =:= 0 ; 
-   F2 is F + 2, 
+has_factor(N, F) :-
+  F * F =< N,
+  (N mod F =:= 0 ;
+   F2 is F + 2,
    has_factor(N, F2)).
 
 % Query: ?- is_prime(17).
 
 2. Greatest Common Divisor:
 gcd(X, 0, X) :- X > 0.
-gcd(X, Y, G) :- 
-  Y > 0, 
-  R is X mod Y, 
+gcd(X, Y, G) :-
+  Y > 0,
+  R is X mod Y,
   gcd(Y, R, G).
 
 % Query: ?- gcd(48, 18, Result).
 
 3. List Sum:
 sum_list([], 0).
-sum_list([H|T], Sum) :- 
-  sum_list(T, Rest), 
+sum_list([H|T], Sum) :-
+  sum_list(T, Rest),
   Sum is H + Rest.
 
 % Query: ?- sum_list([1,2,3,4,5], Sum).
 
 4. Power Function:
 power(_, 0, 1).
-power(Base, Exp, Result) :- 
-  Exp > 0, 
-  Exp1 is Exp - 1, 
-  power(Base, Exp1, Partial), 
+power(Base, Exp, Result) :-
+  Exp > 0,
+  Exp1 is Exp - 1,
+  power(Base, Exp1, Partial),
   Result is Base * Partial.
 
 % Query: ?- power(2, 8, Result).""",
@@ -3847,14 +3847,14 @@ SWAP .S CR     \\ Swaps top two: 1 3 2""",
 1. DO LOOP:
 : COUNT-TO   ( n -- )
   1+ 1 DO I . LOOP CR ;
-  
+
 10 COUNT-TO    \\ Prints 1 2 3 4 5 6 7 8 9 10
 
 2. BEGIN UNTIL Loop:
 variable N
 : COUNT-DOWN   ( n -- )
   BEGIN DUP . 1- DUP 0< UNTIL DROP CR ;
-  
+
 5 COUNT-DOWN   \\ Prints 5 4 3 2 1 0
 
 3. BEGIN WHILE REPEAT:
@@ -3862,7 +3862,7 @@ variable N
   DUP 1 > IF
     DUP 1- RECURSE *
   THEN ;
-  
+
 5 FACTORIAL . CR   \\ Prints 120
 
 4. Nested Loops:
@@ -3872,7 +3872,7 @@ variable N
       I J * 3 .R SPACE
     LOOP CR
   LOOP ;
-  
+
 3 MULT-TABLE""",
                     "Graphics": """🎨 TW FORTH GRAPHICS TEMPLATES
 
@@ -4297,7 +4297,7 @@ Welcome to your personal learning journey with Time_Warp IDE!
    🔲 Conditional jumps (Y:, N:)
    🔲 Variable manipulation (C:)
    🔲 Advanced matching (M:)
-   
+
    Next Goal: Learn conditional programming with Y: and N:
 
 🔢 BASIC - Classic Programming
@@ -4309,7 +4309,7 @@ Welcome to your personal learning journey with Time_Warp IDE!
    🔲 IF...THEN conditions
    🔲 Variable operations
    🔲 Graphics commands
-   
+
    Next Goal: Master loop structures
 
 🐢 Logo - Turtle Graphics
@@ -4323,7 +4323,7 @@ Welcome to your personal learning journey with Time_Warp IDE!
    🔲 Procedures (TO...END)
    🔲 Advanced patterns
    🔲 Color manipulation
-   
+
    Next Goal: Create custom procedures
 
 🐍 Python - Modern Programming
@@ -4336,7 +4336,7 @@ Welcome to your personal learning journey with Time_Warp IDE!
    🔲 Functions (def)
    🔲 File operations
    🔲 Object-oriented programming
-   
+
    Next Goal: Learn about lists and for loops
 
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
@@ -4365,7 +4365,7 @@ Welcome to your personal learning journey with Time_Warp IDE!
 
 ⏱️ Time Spent Learning:
    • Today: 45 minutes
-   • This Week: 3 hours 20 minutes  
+   • This Week: 3 hours 20 minutes
    • Total: 12 hours 15 minutes
 
 📝 Programs Created:
@@ -4391,7 +4391,7 @@ Welcome to your personal learning journey with Time_Warp IDE!
 🎯 RECOMMENDED NEXT STEPS:
 
 1. 📚 Complete the PILOT conditional programming tutorial
-2. 🔄 Practice BASIC loops with the template examples  
+2. 🔄 Practice BASIC loops with the template examples
 3. 🎨 Create a complex Logo pattern using procedures
 4. 🐍 Learn Python list operations and for loops
 5. 🎮 Try building a simple text-based game
@@ -5865,14 +5865,11 @@ Happy coding through time! ⏰✨"""
             # Apply TTK styles
             self.theme_manager.apply_theme(self.root, self.current_theme)
 
-            # Apply theme consistently to all frames and panels
-            frame_bg = colors.get("bg_secondary", colors["bg_primary"])
-
             # Apply theme to main container and panels
             if hasattr(self, "main_container"):
                 try:
                     self.main_container.configure(style="Themed.TPanedWindow")
-                except:
+                except Exception:
                     pass
 
             # Ensure editor panel uses consistent colors
@@ -5907,7 +5904,7 @@ Happy coding through time! ⏰✨"""
                         fg=colors.get("text_primary", "#000000"),
                         insertbackground=colors.get("text_primary", "#000000"),
                     )
-                except:
+                except Exception:
                     pass
 
             # Apply theme to status bar
@@ -6042,7 +6039,7 @@ Happy coding through time! ⏰✨"""
             scrollbar = ttk.Scrollbar(dlg, orient=tk.VERTICAL, command=canvas.yview)
             scroll_frame = ttk.Frame(canvas)
 
-            scroll_frame_id = canvas.create_window(
+            canvas.create_window(
                 (0, 0), window=scroll_frame, anchor="nw"
             )
             canvas.configure(yscrollcommand=scrollbar.set)
@@ -6178,7 +6175,7 @@ def main():
 
             tk.Button(root, text="Close", command=root.quit).pack(pady=20)
             root.mainloop()
-        except:
+        except Exception:
             pass
 
 
