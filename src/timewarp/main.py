@@ -12,7 +12,6 @@ import sys
 import os
 import tkinter as tk
 from tkinter import ttk, scrolledtext, messagebox, filedialog, simpledialog
-import turtle
 import json
 from datetime import datetime
 import threading
@@ -41,9 +40,6 @@ except ImportError as e:
 
 # Import plugins (from root level)
 try:
-    import sys
-    import os
-
     # Add root directory to path for plugins
     root_dir = os.path.dirname(os.path.dirname(os.path.dirname(__file__)))
     if root_dir not in sys.path:
@@ -2226,22 +2222,22 @@ Forth will teach you to think about programming at the lowest level while mainta
                         "flower": "REPEAT 36 [\n  REPEAT 4 [FORWARD 50 RIGHT 90]\n  RIGHT 10\n]\n\nDraws a flower pattern with 36 squares.",
                     },
                     "Pascal": {
-                        "hello": 'program HelloWorld;\nbegin\n  writeln(\'Hello, World!\');\nend.\n\nThis is a complete Pascal program.',
-                        "input": 'program GetName;\nvar\n  name: string;\nbegin\n  write(\'Enter your name: \');\n  readln(name);\n  writeln(\'Hello, \', name);\nend.',
-                        "loop": 'program CountToTen;\nvar\n  i: integer;\nbegin\n  for i := 1 to 10 do\n    writeln(i);\nend.',
-                        "function": 'program Factorial;\nfunction fact(n: integer): integer;\nbegin\n  if n <= 1 then\n    fact := 1\n  else\n    fact := n * fact(n-1);\nend;\nbegin\n  writeln(fact(5));\nend.',
+                        "hello": "program HelloWorld;\nbegin\n  writeln('Hello, World!');\nend.\n\nThis is a complete Pascal program.",
+                        "input": "program GetName;\nvar\n  name: string;\nbegin\n  write('Enter your name: ');\n  readln(name);\n  writeln('Hello, ', name);\nend.",
+                        "loop": "program CountToTen;\nvar\n  i: integer;\nbegin\n  for i := 1 to 10 do\n    writeln(i);\nend.",
+                        "function": "program Factorial;\nfunction fact(n: integer): integer;\nbegin\n  if n <= 1 then\n    fact := 1\n  else\n    fact := n * fact(n-1);\nend;\nbegin\n  writeln(fact(5));\nend.",
                     },
                     "Prolog": {
-                        "hello": 'hello :- write(\'Hello, World!\'), nl.\n\nQuery: ?- hello.\n\nThis defines a predicate that writes "Hello, World!".',
-                        "facts": 'parent(john, mary).\nparent(mary, ann).\n\nQuery: ?- parent(john, mary).\n\nThis defines family relationships.',
-                        "rules": 'ancestor(X, Y) :- parent(X, Y).\nancestor(X, Y) :- parent(X, Z), ancestor(Z, Y).\n\nThis defines recursive ancestor relationships.',
-                        "query": '?- ancestor(john, ann).\n\nThis queries if john is an ancestor of ann.',
+                        "hello": "hello :- write('Hello, World!'), nl.\n\nQuery: ?- hello.\n\nThis defines a predicate that writes \"Hello, World!\".",
+                        "facts": "parent(john, mary).\nparent(mary, ann).\n\nQuery: ?- parent(john, mary).\n\nThis defines family relationships.",
+                        "rules": "ancestor(X, Y) :- parent(X, Y).\nancestor(X, Y) :- parent(X, Z), ancestor(Z, Y).\n\nThis defines recursive ancestor relationships.",
+                        "query": "?- ancestor(john, ann).\n\nThis queries if john is an ancestor of ann.",
                     },
                     "Forth": {
                         "hello": ': HELLO ." Hello, World!" CR ;\nHELLO\n\nThis defines and calls a word that prints "Hello, World!".',
-                        "stack": '5 3 + .     \\ Result: 8\n10 4 - .    \\ Result: 6\n3 4 * .     \\ Result: 12',
-                        "word": ': SQUARE DUP * ;\n5 SQUARE .   \\ Result: 25\n\nThis defines a word that squares a number.',
-                        "loop": '10 0 DO I . LOOP    \\ Prints 0 1 2 ... 9\n\nThis counts from 0 to 9.',
+                        "stack": "5 3 + .     \\ Result: 8\n10 4 - .    \\ Result: 6\n3 4 * .     \\ Result: 12",
+                        "word": ": SQUARE DUP * ;\n5 SQUARE .   \\ Result: 25\n\nThis defines a word that squares a number.",
+                        "loop": "10 0 DO I . LOOP    \\ Prints 0 1 2 ... 9\n\nThis counts from 0 to 9.",
                     },
                     "Python": {
                         "hello": 'print("Hello, World!")\n\nSimple text output in Python.',
@@ -3347,8 +3343,8 @@ def factorial(n):
 num = int(input("Enter a number: "))
 print(f"{num}! = {factorial(num)}")""",
                 },
-            "TW Pascal": {
-                "Basic": """📝 TW PASCAL BASIC TEMPLATES
+                "TW Pascal": {
+                    "Basic": """📝 TW PASCAL BASIC TEMPLATES
 
 1. Hello World Program:
 program HelloWorld;
@@ -3392,7 +3388,7 @@ begin
   else
     writeln('Zero');
 end.""",
-                "Loops": """🔄 TW PASCAL LOOP TEMPLATES
+                    "Loops": """🔄 TW PASCAL LOOP TEMPLATES
 
 1. For Loop:
 program ForLoopDemo;
@@ -3440,7 +3436,7 @@ begin
     writeln;
   end;
 end.""",
-                "Graphics": """🎨 TW PASCAL GRAPHICS TEMPLATES
+                    "Graphics": """🎨 TW PASCAL GRAPHICS TEMPLATES
 
 1. Simple Drawing:
 program SimpleDrawing;
@@ -3491,7 +3487,7 @@ begin
     right(144);
   end;
 end.""",
-                "Games": """🎮 TW PASCAL GAME TEMPLATES
+                    "Games": """🎮 TW PASCAL GAME TEMPLATES
 
 1. Number Guessing Game:
 program GuessingGame;
@@ -3537,7 +3533,7 @@ begin
   
   writeln('Result: ', result:0:2);
 end.""",
-                "Math": """🔢 TW PASCAL MATH TEMPLATES
+                    "Math": """🔢 TW PASCAL MATH TEMPLATES
 
 1. Factorial Calculator:
 program FactorialCalc;
@@ -3600,9 +3596,9 @@ begin
     write(fibonacci(i), ' ');
   writeln;
 end.""",
-            },
-            "TW Prolog": {
-                "Basic": """📝 TW PROLOG BASIC TEMPLATES
+                },
+                "TW Prolog": {
+                    "Basic": """📝 TW PROLOG BASIC TEMPLATES
 
 1. Hello World Program:
 hello_world :- write('Hello, World!'), nl.
@@ -3639,7 +3635,7 @@ last_element([X], X).
 last_element([_|T], X) :- last_element(T, X).
 
 % Query: ?- first_element([1,2,3], X).""",
-                "Loops": """🔄 TW PROLOG LOOP TEMPLATES
+                    "Loops": """🔄 TW PROLOG LOOP TEMPLATES
 
 1. Recursive Counting:
 count_to(N) :- 
@@ -3681,7 +3677,7 @@ fib(N, F) :-
   F is F1 + F2.
 
 % Query: ?- fib(8, Result).""",
-                "Graphics": """🎨 TW PROLOG GRAPHICS TEMPLATES
+                    "Graphics": """🎨 TW PROLOG GRAPHICS TEMPLATES
 
 1. Simple Turtle Graphics:
 % Draw a square
@@ -3727,7 +3723,7 @@ draw_tree(Depth) :-
   right(30).
 
 % Query: ?- draw_tree(5).""",
-                "Games": """🎮 TW PROLOG GAME TEMPLATES
+                    "Games": """🎮 TW PROLOG GAME TEMPLATES
 
 1. Number Guessing Game:
 guess_number :- 
@@ -3766,7 +3762,7 @@ play_rps :-
     write('Computer wins!')
   ; write('Tie!')
   ), nl.""",
-                "Math": """🔢 TW PROLOG MATH TEMPLATES
+                    "Math": """🔢 TW PROLOG MATH TEMPLATES
 
 1. Prime Number Checker:
 is_prime(2).
@@ -3809,9 +3805,9 @@ power(Base, Exp, Result) :-
   Result is Base * Partial.
 
 % Query: ?- power(2, 8, Result).""",
-            },
-            "TW Forth": {
-                "Basic": """📝 TW FORTH BASIC TEMPLATES
+                },
+                "TW Forth": {
+                    "Basic": """📝 TW FORTH BASIC TEMPLATES
 
 1. Hello World Program:
 : HELLO   ." Hello, World!" CR ;
@@ -3837,7 +3833,7 @@ PI 100 / . CR     \\ Prints 3 (integer division)
 DUP .S CR      \\ Duplicates top: 1 2 3 3
 DROP .S CR     \\ Removes top: 1 2 3
 SWAP .S CR     \\ Swaps top two: 1 3 2""",
-                "Loops": """🔄 TW FORTH LOOP TEMPLATES
+                    "Loops": """🔄 TW FORTH LOOP TEMPLATES
 
 1. DO LOOP:
 : COUNT-TO   ( n -- )
@@ -3869,7 +3865,7 @@ variable N
   LOOP ;
   
 3 MULT-TABLE""",
-                "Graphics": """🎨 TW FORTH GRAPHICS TEMPLATES
+                    "Graphics": """🎨 TW FORTH GRAPHICS TEMPLATES
 
 1. Simple Square:
 : SQUARE   ( size -- )
@@ -3904,7 +3900,7 @@ variable N
   LOOP DROP ;
 
 50 COLOR-CIRCLE""",
-                "Games": """🎮 TW FORTH GAME TEMPLATES
+                    "Games": """🎮 TW FORTH GAME TEMPLATES
 
 1. Number Guessing Game:
 variable SECRET
@@ -3942,7 +3938,7 @@ variable TRIES
       [CHAR] / OF / ENDOF
     ENDCASE .
   REPEAT DROP ;""",
-                "Math": """🔢 TW FORTH MATH TEMPLATES
+                    "Math": """🔢 TW FORTH MATH TEMPLATES
 
 1. Factorial Calculator:
 : FACTORIAL   ( n -- n! )
@@ -3981,8 +3977,7 @@ variable TRIES
 
 : FIB-TEST
   10 0 DO I FIB . LOOP CR ;""",
-            }
-
+                },
             }
 
             def update_templates():
@@ -4504,44 +4499,66 @@ Remember: Every expert was once a beginner. Your coding journey is unique and va
                 """Enable selected plugin"""
                 selection = plugin_tree.selection()
                 if not selection:
-                    messagebox.showwarning("No Selection", "Please select a plugin to enable.")
+                    messagebox.showwarning(
+                        "No Selection", "Please select a plugin to enable."
+                    )
                     return
 
                 plugin_name = plugin_tree.item(selection[0])["values"][0]
                 if self.enable_plugin(plugin_name):
-                    messagebox.showinfo("Success", f"Plugin '{plugin_name}' enabled successfully!")
+                    messagebox.showinfo(
+                        "Success", f"Plugin '{plugin_name}' enabled successfully!"
+                    )
                     refresh_plugins()
                 else:
-                    messagebox.showerror("Error", f"Failed to enable plugin '{plugin_name}'.")
+                    messagebox.showerror(
+                        "Error", f"Failed to enable plugin '{plugin_name}'."
+                    )
 
             def disable_plugin():
                 """Disable selected plugin"""
                 selection = plugin_tree.selection()
                 if not selection:
-                    messagebox.showwarning("No Selection", "Please select a plugin to disable.")
+                    messagebox.showwarning(
+                        "No Selection", "Please select a plugin to disable."
+                    )
                     return
 
                 plugin_name = plugin_tree.item(selection[0])["values"][0]
                 if self.disable_plugin(plugin_name):
-                    messagebox.showinfo("Success", f"Plugin '{plugin_name}' disabled successfully!")
+                    messagebox.showinfo(
+                        "Success", f"Plugin '{plugin_name}' disabled successfully!"
+                    )
                     refresh_plugins()
                 else:
-                    messagebox.showerror("Error", f"Failed to disable plugin '{plugin_name}'.")
+                    messagebox.showerror(
+                        "Error", f"Failed to disable plugin '{plugin_name}'."
+                    )
 
             def show_plugin_details():
                 """Show detailed information about selected plugin"""
                 selection = plugin_tree.selection()
                 if not selection:
-                    messagebox.showwarning("No Selection", "Please select a plugin to view details.")
+                    messagebox.showwarning(
+                        "No Selection", "Please select a plugin to view details."
+                    )
                     return
 
                 plugin_name = plugin_tree.item(selection[0])["values"][0]
                 self.show_plugin_details(plugin_name)
 
-            ttk.Button(button_frame, text="🔄 Refresh", command=refresh_plugins).pack(side=tk.LEFT, padx=(0, 10))
-            ttk.Button(button_frame, text="✅ Enable", command=enable_plugin).pack(side=tk.LEFT, padx=(0, 10))
-            ttk.Button(button_frame, text="❌ Disable", command=disable_plugin).pack(side=tk.LEFT, padx=(0, 10))
-            ttk.Button(button_frame, text="ℹ️ Details", command=show_plugin_details).pack(side=tk.LEFT, padx=(0, 10))
+            ttk.Button(button_frame, text="🔄 Refresh", command=refresh_plugins).pack(
+                side=tk.LEFT, padx=(0, 10)
+            )
+            ttk.Button(button_frame, text="✅ Enable", command=enable_plugin).pack(
+                side=tk.LEFT, padx=(0, 10)
+            )
+            ttk.Button(button_frame, text="❌ Disable", command=disable_plugin).pack(
+                side=tk.LEFT, padx=(0, 10)
+            )
+            ttk.Button(
+                button_frame, text="ℹ️ Details", command=show_plugin_details
+            ).pack(side=tk.LEFT, padx=(0, 10))
 
             # Plugin Store Tab (placeholder for future)
             store_frame = ttk.Frame(notebook)
@@ -4551,7 +4568,7 @@ Remember: Every expert was once a beginner. Your coding journey is unique and va
                 store_frame,
                 text="🛒 Plugin Store\n\nComing Soon!\n\nBrowse and download plugins from the Time_Warp Plugin Repository.\n\nFeatures:\n• Official plugin collection\n• User-submitted plugins\n• Automatic updates\n• Plugin ratings and reviews",
                 justify=tk.CENTER,
-                font=("Arial", 12)
+                font=("Arial", 12),
             )
             store_label.pack(expand=True)
 
@@ -4563,7 +4580,7 @@ Remember: Every expert was once a beginner. Your coding journey is unique and va
                 settings_frame,
                 text="🔧 Plugin Settings\n\n• Auto-load enabled plugins on startup\n• Plugin update notifications\n• Security settings for plugin permissions\n• Plugin development mode\n\nThese settings will be available in a future update.",
                 justify=tk.LEFT,
-                font=("Arial", 11)
+                font=("Arial", 11),
             )
             settings_label.pack(anchor=tk.W, padx=20, pady=20)
 
@@ -4593,7 +4610,9 @@ Remember: Every expert was once a beginner. Your coding journey is unique and va
                 self.loaded_plugins = {}
 
             # Scan plugins directory
-            plugins_dir = os.path.join(os.path.dirname(__file__), "..", "..", "plugins", "plugins")
+            plugins_dir = os.path.join(
+                os.path.dirname(__file__), "..", "..", "plugins", "plugins"
+            )
             if not os.path.exists(plugins_dir):
                 plugins_dir = os.path.join(os.path.dirname(__file__), "..", "plugins")
 
@@ -4611,22 +4630,40 @@ Remember: Every expert was once a beginner. Your coding journey is unique and va
                                 plugin_name = manifest.get("name", item)
                                 version = manifest.get("version", "1.0.0")
                                 author = manifest.get("author", "Unknown")
-                                description = manifest.get("description", "No description available")
+                                description = manifest.get(
+                                    "description", "No description available"
+                                )
 
                                 # Check if plugin is loaded
                                 status = "Disabled"
                                 if plugin_name in self.loaded_plugins:
                                     status = "Enabled"
 
-                                treeview.insert("", tk.END, values=(
-                                    plugin_name, version, author, status, description
-                                ))
+                                treeview.insert(
+                                    "",
+                                    tk.END,
+                                    values=(
+                                        plugin_name,
+                                        version,
+                                        author,
+                                        status,
+                                        description,
+                                    ),
+                                )
 
                             except Exception as e:
                                 print(f"Error loading plugin {item}: {e}")
-                                treeview.insert("", tk.END, values=(
-                                    item, "Error", "Unknown", "Error", f"Failed to load: {str(e)}"
-                                ))
+                                treeview.insert(
+                                    "",
+                                    tk.END,
+                                    values=(
+                                        item,
+                                        "Error",
+                                        "Unknown",
+                                        "Error",
+                                        f"Failed to load: {str(e)}",
+                                    ),
+                                )
 
         except Exception as e:
             print(f"Error scanning plugins: {e}")
@@ -4639,7 +4676,9 @@ Remember: Every expert was once a beginner. Your coding journey is unique and va
             import importlib.util
 
             # Find plugin directory
-            plugins_dir = os.path.join(os.path.dirname(__file__), "..", "..", "plugins", "plugins")
+            plugins_dir = os.path.join(
+                os.path.dirname(__file__), "..", "..", "plugins", "plugins"
+            )
             if not os.path.exists(plugins_dir):
                 plugins_dir = os.path.join(os.path.dirname(__file__), "..", "plugins")
 
@@ -4767,12 +4806,14 @@ Author: {info.get('author', 'Unknown')}
                 text_widget.insert(tk.END, info_text)
                 text_widget.config(state=tk.DISABLED)
             else:
-                ttk.Label(main_frame, text="❌ Plugin information not available.").pack()
+                ttk.Label(
+                    main_frame, text="❌ Plugin information not available."
+                ).pack()
 
             # Close button
-            ttk.Button(
-                main_frame, text="Close", command=details_window.destroy
-            ).pack(pady=10)
+            ttk.Button(main_frame, text="Close", command=details_window.destroy).pack(
+                pady=10
+            )
 
         except Exception as e:
             messagebox.showerror("Error", f"Failed to show plugin details: {str(e)}")
@@ -4783,7 +4824,9 @@ Author: {info.get('author', 'Unknown')}
             import os
             import json
 
-            plugins_dir = os.path.join(os.path.dirname(__file__), "..", "..", "plugins", "plugins")
+            plugins_dir = os.path.join(
+                os.path.dirname(__file__), "..", "..", "plugins", "plugins"
+            )
             if not os.path.exists(plugins_dir):
                 plugins_dir = os.path.join(os.path.dirname(__file__), "..", "plugins")
 
@@ -4801,7 +4844,7 @@ Author: {info.get('author', 'Unknown')}
                                 "author": manifest.get("author"),
                                 "description": manifest.get("description"),
                                 "features": ["Plugin loaded from manifest"],
-                                "permissions": manifest.get("permissions", [])
+                                "permissions": manifest.get("permissions", []),
                             }
             return None
 
@@ -5127,7 +5170,20 @@ Happy coding through time! ⏰✨"""
         font_combo = ttk.Combobox(
             font_frame,
             textvariable=font_var,
-            values=["Consolas", "Monaco", "DejaVu Sans Mono", "Courier New", "Fira Code", "JetBrains Mono", "Source Code Pro", "Roboto Mono", "Cascadia Code", "Hack", "Inconsolata", "Ubuntu Mono"],
+            values=[
+                "Consolas",
+                "Monaco",
+                "DejaVu Sans Mono",
+                "Courier New",
+                "Fira Code",
+                "JetBrains Mono",
+                "Source Code Pro",
+                "Roboto Mono",
+                "Cascadia Code",
+                "Hack",
+                "Inconsolata",
+                "Ubuntu Mono",
+            ],
         )
         font_combo.grid(row=0, column=1, padx=5, pady=2)
 
