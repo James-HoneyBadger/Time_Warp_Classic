@@ -502,16 +502,8 @@ class Time_WarpIDE:
             )
             self.basic_canvas.pack(fill=tk.BOTH, expand=True, padx=5, pady=5)
 
-            # Basic turtle setup
-            import turtle
-
-            screen = turtle.TurtleScreen(self.basic_canvas)
-            screen.bgcolor("white")
-            turtle_obj = turtle.RawTurtle(screen)
-            turtle_obj.speed(5)
-            turtle_obj.shape("turtle")
-
             # Set the ide_turtle_canvas for interpreter compatibility
+            # Turtle will be initialized on-demand when needed
             self.interpreter.ide_turtle_canvas = self.basic_canvas
 
     def setup_keybindings(self):
