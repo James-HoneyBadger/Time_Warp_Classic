@@ -800,13 +800,14 @@ class Time_WarpIDE:
                     )
 
                     if result is None:
-                        # If run_program returns None, it means the language isn't supported yet
+                        # If run_program returns None, language isn't supported
                         self.write_to_console(
-                            f"🔧 {language.upper()} language support coming soon!\n"
+                            f"🔧 {language.upper()} " "language support coming soon!\n"
                         )
-                        self.write_to_console(
-                            f"Currently supported: TW PILOT, TW BASIC, TW Logo, Python, JavaScript, Perl\n"
+                        supported = (
+                            "TW PILOT, TW BASIC, TW Logo, " "Python, JavaScript, Perl"
                         )
+                        self.write_to_console(f"Currently supported: {supported}\n")
                         result = False
 
                 except Exception as e:
@@ -841,10 +842,12 @@ class Time_WarpIDE:
                             ),
                         )
 
-            except Exception as e:
-                self.write_to_console(f"💥 Execution error: {str(e)}\n")
+            except Exception as err:
+                self.write_to_console(f"💥 Execution error: {str(err)}\n")
+                error_str = str(err)
                 self.root.after(
-                    0, lambda: self.update_status(f"Execution error: {str(e)}")
+                    0,
+                    lambda msg=error_str: self.update_status(f"Execution error: {msg}"),
                 )
 
         # Start execution thread

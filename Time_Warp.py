@@ -192,7 +192,8 @@ class TimeWarpApp:
 
     def on_closing(self):
         """Handle window close event."""
-        if messagebox.askokcancel("Quit", "Do you want to quit Time_Warp IDE?"):
+        response = messagebox.askokcancel("Quit", "Do you want to quit Time_Warp IDE?")
+        if response:
             self.root.destroy()
 
 
