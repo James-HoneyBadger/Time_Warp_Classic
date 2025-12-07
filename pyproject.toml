@@ -48,6 +48,11 @@ dev = [
     "mypy>=1.0.0",
 ]
 
+[tool.flake8]
+max-line-length = 99
+extend-ignore = ["E501", "W503", "E701"]
+exclude = [".git", "__pycache__", "build", "dist", ".venv"]
+
 [project.urls]
 Homepage = "https://github.com/James-HoneyBadger/Time_Warp"
 Repository = "https://github.com/James-HoneyBadger/Time_Warp"

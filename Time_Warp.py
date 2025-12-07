@@ -185,15 +185,13 @@ class TimeWarpApp:
             messagebox.showinfo("Program Complete", msg)
 
         except (RuntimeError, ValueError, OSError) as err:
-            error_msg = (
-                f"An error occurred while running " f"the program:\n\n{str(err)}"
-            )
+            error_msg = f"An error occurred: {str(err)}"
             messagebox.showerror("Execution Error", error_msg)
 
     def on_closing(self):
         """Handle window close event."""
-        response = messagebox.askokcancel("Quit", "Do you want to quit Time_Warp IDE?")
-        if response:
+        msg = "Do you want to quit Time_Warp IDE?"
+        if messagebox.askokcancel("Quit", msg):
             self.root.destroy()
 
 

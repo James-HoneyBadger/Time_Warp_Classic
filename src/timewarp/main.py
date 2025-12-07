@@ -12,12 +12,8 @@ import sys
 import os
 import tkinter as tk
 from tkinter import ttk, scrolledtext, messagebox, filedialog, simpledialog
-import json
 from datetime import datetime
 import threading
-import pathlib
-import subprocess
-import platform
 
 # Import theme configuration functions
 from .utils.theme import (
@@ -63,10 +59,12 @@ except ImportError as e:
 
 # Error handling and feature modules
 try:
-    from .core.enhanced_error_handler import EnhancedErrorHandler, ErrorHighlighter
-    from .core.features.tutorial_system import TutorialSystem
-    from .core.features.ai_assistant import AICodeAssistant
-    from .core.features.gamification import GamificationSystem
+    from .core.enhanced_error_handler import EnhancedErrorHandler
+
+    # Additional features imported but not yet used
+    # from .core.features.tutorial_system import TutorialSystem
+    # from .core.features.ai_assistant import AICodeAssistant
+    # from .core.features.gamification import GamificationSystem
 
     FEATURES_AVAILABLE = True
 except ImportError as e:
@@ -77,7 +75,7 @@ except ImportError as e:
 class Time_WarpIDE:
     """
     Time_Warp IDE - Enhanced Educational Programming Environment
-    New features: Multi-tab editor, File explorer, Enhanced graphics, Better errors
+    Features: Multi-tab editor, File explorer, Enhanced graphics
     """
 
     def __init__(self):
@@ -306,21 +304,29 @@ class Time_WarpIDE:
             label="📂 Open File", command=self.open_file, accelerator="Ctrl+O"
         )
         file_menu.add_command(
-            label="📁 Open Folder", command=self.open_folder, accelerator="Ctrl+Shift+O"
+            label="📁 Open Folder",
+            command=self.open_folder,
+            accelerator="Ctrl+Shift+O",
         )
         file_menu.add_separator()
         file_menu.add_command(
             label="💾 Save", command=self.save_file, accelerator="Ctrl+S"
         )
         file_menu.add_command(
-            label="💾 Save As", command=self.save_as_file, accelerator="Ctrl+Shift+S"
+            label="💾 Save As",
+            command=self.save_as_file,
+            accelerator="Ctrl+Shift+S",
         )
         file_menu.add_command(
-            label="💾 Save All", command=self.save_all_files, accelerator="Ctrl+Alt+S"
+            label="💾 Save All",
+            command=self.save_all_files,
+            accelerator="Ctrl+Alt+S",
         )
         file_menu.add_separator()
         file_menu.add_command(
-            label="❌ Close Tab", command=self.close_current_tab, accelerator="Ctrl+W"
+            label="❌ Close Tab",
+            command=self.close_current_tab,
+            accelerator="Ctrl+W",
         )
         file_menu.add_command(
             label="🚪 Exit", command=self.quit_app, accelerator="Ctrl+Q"
@@ -366,11 +372,19 @@ class Time_WarpIDE:
             label="▶️ Run Code", command=self.run_code, accelerator="F5"
         )
         run_menu.add_command(
-            label="⏹️ Stop", command=self.stop_execution, accelerator="Shift+F5"
+            label="⏹️ Stop",
+            command=self.stop_execution,
+            accelerator="Shift+F5",
         )
         run_menu.add_separator()
-        run_menu.add_command(label="🗑️ Clear Output", command=self.clear_output)
-        run_menu.add_command(label="🗑️ Clear Graphics", command=self.clear_graphics)
+        run_menu.add_command(
+            label="🗑️ Clear Output",
+            command=self.clear_output,
+        )
+        run_menu.add_command(
+            label="🗑️ Clear Graphics",
+            command=self.clear_graphics,
+        )
 
         # Tools menu
         tools_menu = tk.Menu(self.menubar, tearoff=0)
