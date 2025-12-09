@@ -1,6 +1,6 @@
-# Contributing to Time_Warp IDE
+# Contributing to Time_Warp
 
-Welcome to the Time_Warp IDE project! We're excited to have you contribute to this educational programming environment.
+Welcome to the Time_Warp project! We're excited to have you contribute to this educational programming environment.
 
 ## 🚀 Quick Start
 
@@ -13,13 +13,13 @@ Welcome to the Time_Warp IDE project! We're excited to have you contribute to th
 
 1. **Clone the repository:**
    ```bash
-   git clone https://github.com/Time_WarpIDE/Time_Warp.git
-   cd Time_Warp
+   git clone https://github.com/your-username/Time_Warp_Classic.git
+   cd Time_Warp_Classic
    ```
 
 2. **Run the automated setup:**
    ```bash
-   ./setup_dev.sh
+   ./scripts/setup_dev.sh
    ```
 
 3. **Manual setup (if needed):**
@@ -27,48 +27,48 @@ Welcome to the Time_Warp IDE project! We're excited to have you contribute to th
    # Create and activate virtual environment
    python3 -m venv .Time_Warp
    source .Time_Warp/bin/activate
-   
+
    # Install dependencies
    pip install -r requirements.txt
-   
-   # Install pre-commit hooks
-   pre-commit install
    ```
 
 ## 🏗️ Project Structure
 
 ```
-Time_Warp/
-├── Time_Warp.py                 # Main application entry point
+Time_Warp_Classic/
+├── Time_Warp.py                 # Unified entry point with dependency checking
 ├── core/                       # Core interpreter and language engines
 │   ├── interpreter.py          # Central execution engine
-│   ├── languages/             # Language-specific executors
-│   ├── editor/                # Enhanced code editor components
-│   └── hardware/              # Hardware integration modules
-├── tools/                     # Utility tools and theme management
-├── plugins/                   # Plugin system and extensions
-├── gui/                       # GUI components and dialogs
-├── games/                     # Game engine and examples
+│   └── languages/             # Language-specific executors
+│       ├── pilot.py           # PILOT language implementation
+│       ├── basic.py           # BASIC language implementation
+│       ├── logo.py            # Logo language implementation
+│       ├── python.py          # Python language implementation
+│       └── [other languages]  # Additional language support
 ├── examples/                  # Sample programs and demos
+├── scripts/                   # Development and build scripts
 ├── tests/                     # Test suites
-└── .github/                   # GitHub workflows and templates
+└── docs/                      # Documentation
 ```
 
 ## 🧪 Development Workflow
 
-### Running Time_Warp IDE
+### Running Time_Warp
 ```bash
 # Activate virtual environment
 source .Time_Warp/bin/activate
 
-# Run the IDE
+# Run Time_Warp (CLI by default)
 python Time_Warp.py
+
+# Or run the CLI version
+python Time_Warp.py --cli
 ```
 
 ### Testing
 ```bash
 # Run all tests
-python run_tests.py
+python scripts/run_tests.py
 
 # Run specific test categories
 python -m pytest tests/ -v
@@ -85,8 +85,61 @@ flake8 .
 # Type checking
 mypy Time_Warp.py core/
 
-# Run pre-commit hooks manually
-pre-commit run --all-files
+# Run tests
+python scripts/run_tests.py
+```
+
+## 📝 Coding Standards
+
+### Code Style
+- Use **Black** for code formatting (line length: 88)
+- Follow **PEP 8** naming conventions
+- Use **type hints** where appropriate
+- Write **docstrings** for all public functions and classes
+
+### File Organization
+- **core/languages/**: Language-specific executor classes
+- **examples/**: Sample programs organized by language
+- **scripts/**: Development and deployment scripts
+- **tests/**: Unit and integration tests
+- **docs/**: Documentation and guides
+
+## 🧪 Development Workflow
+
+### Running Time_Warp
+```bash
+# Activate virtual environment
+source .Time_Warp/bin/activate
+
+# Run Time_Warp (CLI by default)
+python Time_Warp.py
+
+# Or run the CLI version
+python Time_Warp.py --cli
+```
+
+### Testing
+```bash
+# Run all tests
+python scripts/run_tests.py
+
+# Run specific test categories
+python -m pytest tests/ -v
+```
+
+### Code Quality
+```bash
+# Format code
+black .
+
+# Lint code
+flake8 .
+
+# Type checking
+mypy Time_Warp.py core/
+
+# Run tests
+python scripts/run_tests.py
 ```
 
 ## 📝 Coding Standards
@@ -170,7 +223,6 @@ For new features:
 ### Medium Priority
 - **UI/UX**: Interface improvements and accessibility
 - **Performance**: Optimization and profiling
-- **Plugins**: New plugin development
 - **Hardware Integration**: IoT and sensor support
 
 ### Good First Issues
@@ -184,12 +236,6 @@ Look for issues labeled `good-first-issue` or `help-wanted`
 3. Register in `core/interpreter.py`
 4. Add syntax highlighting support
 5. Create test programs and unit tests
-
-### Plugin Development
-- See `plugins/sample_plugin/` for template
-- Follow plugin API conventions
-- Include proper initialization and cleanup
-- Add configuration options if needed
 
 ### Testing Best Practices
 - Write tests for new features
@@ -206,7 +252,7 @@ Look for issues labeled `good-first-issue` or `help-wanted`
 
 ## 📄 License
 
-By contributing to Time_Warp IDE, you agree that your contributions will be licensed under the same license as the project.
+By contributing to Time_Warp, you agree that your contributions will be licensed under the same license as the project.
 
 ## 🙏 Recognition
 
@@ -215,4 +261,4 @@ Contributors are recognized in:
 - Release notes for significant contributions
 - Special mentions in documentation
 
-Thank you for contributing to Time_Warp IDE! 🚀✨
+Thank you for contributing to Time_Warp! 🚀✨

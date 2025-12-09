@@ -1,0 +1,15 @@
+#!/bin/bash
+# Time_Warp CLI Wrapper Script
+# Provides a convenient 'timewarp' command for the CLI
+
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+PYTHON_SCRIPT="$SCRIPT_DIR/scripts/timewarp-cli.py"
+
+# Check if Python script exists
+if [ ! -f "$PYTHON_SCRIPT" ]; then
+    echo "❌ Error: Time_Warp CLI script not found at $PYTHON_SCRIPT"
+    exit 1
+fi
+
+# Run the Python CLI with all arguments
+exec python3 "$PYTHON_SCRIPT" "$@"

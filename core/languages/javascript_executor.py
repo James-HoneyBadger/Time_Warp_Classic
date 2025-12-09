@@ -1,3 +1,4 @@
+# pylint: disable=C0415,W0718
 """
 TW JavaScript Language Executor
 ===============================
@@ -25,8 +26,9 @@ The executor provides a bridge to Node.js, allowing execution of JavaScript
 code with output capture and error handling within the IDE environment.
 """
 
+# pylint: disable=W1510,W0718,R1705
+
 import subprocess
-import sys
 import os
 import tempfile
 
@@ -38,6 +40,7 @@ class JavaScriptExecutor:
         """Initialize with reference to main interpreter"""
         self.interpreter = interpreter
         self.node_executable = self._find_node_executable()
+        self._js_script_buffer = []  # Buffer for multi-line JavaScript scripts
 
     def _find_node_executable(self):
         """Find the Node.js executable on the system"""

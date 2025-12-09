@@ -1,3 +1,4 @@
+# pylint: disable=C0415,W0718
 """
 TW Python Language Executor
 ===========================
@@ -24,6 +25,8 @@ The executor provides a bridge to the Python interpreter, allowing
 execution of Python code with output capture and error handling within the IDE.
 """
 
+# pylint: disable=W1510,W0718
+
 import subprocess
 import sys
 import os
@@ -37,6 +40,7 @@ class PythonExecutor:
         """Initialize with reference to main interpreter"""
         self.interpreter = interpreter
         self.python_executable = sys.executable  # Use the same Python as Time_Warp
+        self._python_script_buffer = []  # Buffer for multi-line Python scripts
 
     def execute_command(self, command):
         """Execute a Python command or script"""

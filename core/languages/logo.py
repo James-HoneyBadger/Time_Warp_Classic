@@ -1,3 +1,4 @@
+# pylint: disable=W0718,R0913,R0914,R0915,C0301,C0302,W0212
 """
 TW Logo Language Executor
 =========================
@@ -26,6 +27,8 @@ import re
 import math
 import time
 
+# pylint: disable=C0302,C0301,C0115,C0116,W0613,R0903,C0413,W0718,R0902,R0915,C0415,W0404,W0621,R0913,R0917,R0914,W0612,W0108,W0123,R0911,R0912,R1705,W0611
+
 
 class TwLogoExecutor:
     """Handles TW Logo language command execution"""
@@ -40,7 +43,13 @@ class TwLogoExecutor:
             prof_start = (
                 time.perf_counter() if self.interpreter.profile_enabled else None
             )
-            parts = command.strip().split()
+            
+            # Filter out comments (lines starting with semicolon)
+            command = command.strip()
+            if command.startswith(';'):
+                return "continue"
+            
+            parts = command.split()
             if not parts:
                 return "continue"
 
@@ -65,6 +74,10 @@ class TwLogoExecutor:
             if cmd == "REPEAT":
                 return self._handle_repeat(command)
 
+            # IF conditional
+            if cmd == "IF":
+                return self._handle_if(command)
+
             # Movement commands
             if cmd in ["FORWARD", "FD"]:
                 return self._handle_forward(parts)
@@ -84,6 +97,8 @@ class TwLogoExecutor:
             # Screen and positioning commands
             elif cmd in ["CLEARSCREEN", "CS"]:
                 return self._handle_clearscreen()
+            elif cmd in ["CLEARTEXT", "CT"]:
+                return self._handle_cleartext()
             elif cmd in ["HOME"]:
                 return self._handle_home()
             elif cmd == "SETXY":
@@ -110,6 +125,8 @@ class TwLogoExecutor:
                 return self._handle_showturtle()
             elif cmd == "HIDETURTLE":
                 return self._handle_hideturtle()
+            elif cmd == "PRINT":
+                return self._handle_print(parts)
             elif cmd == "HEADING":
                 return self._handle_heading()
             elif cmd == "POSITION":
@@ -151,7 +168,118 @@ class TwLogoExecutor:
             elif cmd in ["CUBE", "SPHERE", "CYLINDER", "PYRAMID"]:
                 return self._handle_3d_primitives(cmd, parts)
 
+            # UCBLogo Array Commands
+            elif cmd == "ARRAY":
+                return self._handle_array(parts)
+            elif cmd == "MDARRAY":
+                return self._handle_mdarray(parts)
+            elif cmd == "SETITEM":
+                return self._handle_setitem(parts)
+            elif cmd == "MDSETITEM":
+                return self._handle_mdsetitem(parts)
+            elif cmd == "ITEM":
+                return self._handle_item(parts)
+
+            # UCBLogo Property List Commands
+            elif cmd == "PPROP":
+                return self._handle_pprop(parts)
+            elif cmd == "GPROP":
+                return self._handle_gprop(parts)
+            elif cmd == "PLIST":
+                return self._handle_plist(parts)
+            elif cmd == "REMPROP":
+                return self._handle_remprop(parts)
+
+            # UCBLogo Advanced Control Structures
+            elif cmd == "APPLY":
+                return self._handle_apply(parts)
+            elif cmd == "INVOKE":
+                return self._handle_invoke(parts)
+            elif cmd == "FOREACH":
+                return self._handle_foreach(parts)
+            elif cmd == "CASCADE":
+                return self._handle_cascade(parts)
+            elif cmd == "CASE":
+                return self._handle_case(parts)
+            elif cmd == "COND":
+                return self._handle_cond(parts)
+            elif cmd == "WHILE":
+                return self._handle_while(parts)
+            elif cmd == "UNTIL":
+                return self._handle_until(parts)
+            elif cmd == "DO.WHILE":
+                return self._handle_do_while(parts)
+            elif cmd == "DO.UNTIL":
+                return self._handle_do_until(parts)
+            elif cmd == "FOR":
+                return self._handle_for(parts)
+
+            # UCBLogo Advanced Turtle Commands
+            elif cmd == "SETHEADING":
+                return self._handle_setheading(parts)
+            elif cmd == "TOWARDS":
+                return self._handle_towards(parts)
+            elif cmd == "SCRUNCH":
+                return self._handle_scrunch(parts)
+
+            # UCBLogo Error Handling
+            elif cmd == "ERRACT":
+                return self._handle_erract(parts)
+            elif cmd == "ERROR":
+                return self._handle_error(parts)
+
+            # UCBLogo Advanced Arithmetic
+            elif cmd in ["BITAND", "BITOR", "BITXOR", "BITNOT", "ASHIFT", "LSHIFT"]:
+                return self._handle_bitwise(cmd, parts)
+
+            # UCBLogo Macros
+            elif cmd == ".MACRO":
+                return self._handle_macro_define(parts)
+            elif cmd == ".DEFMACRO":
+                return self._handle_defmacro(parts)
+
+            # Check if it's a user-defined procedure call
+            elif cmd in self.interpreter.logo_procedures:
+                self.interpreter.debug_output(f"Calling procedure: {cmd}")
+                # Get number of parameters
+                params, _ = self.interpreter.logo_procedures[cmd]
+                # Collect arguments: each param gets tokens until we have enough params
+                args = []
+                idx = 1
+                for _ in range(len(params)):
+                    arg_tokens = []
+                    while idx < len(parts) and len(args) < len(params):
+                        # Collect tokens for this argument
+                        arg_tokens.append(parts[idx])
+                        idx += 1
+                        # Check if next token looks like it starts a new argument
+                        if idx < len(parts) and parts[idx].startswith(":") and arg_tokens:
+                            break
+                    if arg_tokens:
+                        args.append(" ".join(arg_tokens))
+                return self._call_logo_procedure(cmd, args)
+
             else:
+                # Check if might be a procedure with different case
+                cmd_upper = cmd.upper()
+                if cmd_upper in self.interpreter.logo_procedures:
+                    self.interpreter.debug_output(f"Calling procedure: {cmd_upper}")
+                    # Get number of parameters
+                    params, _ = self.interpreter.logo_procedures[cmd_upper]
+                    # Collect arguments: each param gets tokens until we have enough params
+                    args = []
+                    idx = 1
+                    for _ in range(len(params)):
+                        arg_tokens = []
+                        while idx < len(parts) and len(args) < len(params):
+                            arg_tokens.append(parts[idx])
+                            idx += 1
+                            # Check if next token looks like it starts a new argument
+                            if idx < len(parts) and parts[idx].startswith(":") and arg_tokens:
+                                break
+                        if arg_tokens:
+                            args.append(" ".join(arg_tokens))
+                    return self._call_logo_procedure(cmd_upper, args)
                 self.interpreter.log_output(f"Unknown Logo command: {cmd}")
 
             # Profiling aggregation (Logo only) done after successful handling
@@ -261,16 +389,113 @@ class TwLogoExecutor:
                 self.execute_command(sub)
         return "continue"
 
+    def _handle_if(self, command):
+        """Handle IF conditional command: IF condition [commands]"""
+        import re
+
+        # Parse: IF condition [commands]
+        match = re.match(r"IF\s+(.+?)\s*\[(.+)\]", command, re.IGNORECASE | re.DOTALL)
+        if not match:
+            self.interpreter.log_output(
+                "Malformed IF syntax. Use: IF condition [commands]"
+            )
+            return "continue"
+
+        condition_str = match.group(1).strip()
+        commands_str = match.group(2).strip()
+
+        # Evaluate condition
+        try:
+            # Replace :VAR with variable values
+            def replace_var(m):
+                var_name = m.group(1).upper()
+                return str(self.interpreter.variables.get(var_name, 0))
+
+            condition_eval = re.sub(r":(\w+)", replace_var, condition_str)
+
+            # Evaluate the condition
+            result = eval(condition_eval, {"__builtins__": {}}, {})
+
+            # If condition is true, execute commands
+            if result:
+                # Execute each command from the block (separated by newlines)
+                for cmd_line in commands_str.strip().split("\n"):
+                    cmd_line = cmd_line.strip()
+                    if cmd_line and not cmd_line.startswith(";"):
+                        self.execute_command(cmd_line)
+
+        except Exception as e:
+            self.interpreter.log_output(f"IF condition error: {e}")
+
+        return "continue"
+
+    def _execute_command_block(self, block_str):
+        """Execute a block of Logo commands from IF/REPEAT blocks"""
+        # Split block into individual commands, respecting multi-word commands
+        block_str = block_str.strip()
+        commands = []
+        current_cmd = []
+
+        for token in block_str.split():
+            # Recognize command keywords to know when a new command starts
+            if token.upper() in ["FORWARD", "FD", "BACK", "BK", "BACKWARD",
+                                 "LEFT", "LT", "RIGHT", "RT", "REPEAT", "IF",
+                                 "PENUP", "PU", "PENDOWN", "PD", "SETPENCOLOR",
+                                 "SETCOLOR", "SETXY", "CIRCLE", "ARC", "SQUARE",
+                                 "CLEARSCREEN", "CS", "HOME", "SHOWTURTLE",
+                                 "HIDETURTLE", "SETHEADING", "SETH"] and current_cmd:
+                # New command starts, save previous one
+                commands.append(" ".join(current_cmd))
+                current_cmd = [token]
+            else:
+                current_cmd.append(token)
+
+        # Don't forget last command
+        if current_cmd:
+            commands.append(" ".join(current_cmd))
+
+        # Execute each command
+        for cmd in commands:
+            if cmd.strip():
+                self.execute_command(cmd.strip())
+
+    def _eval_argument(self, arg):
+        """Evaluate an argument which could be a variable, number, or expression"""
+        import re
+        arg = str(arg).strip()
+
+        # If it starts with :, it's a variable reference
+        if arg.startswith(":"):
+            var_name = arg[1:].upper()
+            return self.interpreter.variables.get(var_name, 0)
+
+        # Otherwise try to evaluate as expression
+        try:
+            # Replace any :VARS in the expression
+            def replace_var(m):
+                var_name = m.group(1).upper()
+                return str(self.interpreter.variables.get(var_name, 0))
+
+            expr_str = re.sub(r":(\w+)", replace_var, arg)
+            result = eval(expr_str, {"__builtins__": {}}, {})
+            return float(result)
+        except Exception:
+            try:
+                return float(arg)
+            except (ValueError, TypeError):
+                return arg
+
     def _handle_forward(self, parts):
         """Handle FORWARD command"""
         try:
-            distance = float(parts[1]) if len(parts) > 1 else 50.0
+            # Get distance, evaluating variables if needed
+            distance_arg = parts[1] if len(parts) > 1 else "50.0"
+            distance = self._eval_argument(distance_arg)
         except Exception:
             distance = 50.0
 
         if not self.interpreter.turtle_graphics:
             self.interpreter.init_turtle_graphics()
-        self.interpreter.turtle_graphics["pen_down"] = True
         self.interpreter.turtle_forward(distance)
         self.interpreter.debug_output(f"Turtle moved forward {distance} units")
         self.interpreter.log_output("Turtle moved")
@@ -292,7 +517,8 @@ class TwLogoExecutor:
     def _handle_backward(self, parts):
         """Handle BACK/BACKWARD command"""
         try:
-            distance = float(parts[1]) if len(parts) > 1 else 50.0
+            distance_arg = parts[1] if len(parts) > 1 else "50.0"
+            distance = self._eval_argument(distance_arg)
         except Exception:
             distance = 50.0
         self.interpreter.turtle_forward(-distance)  # Move backward
@@ -311,9 +537,13 @@ class TwLogoExecutor:
 
     def _handle_left(self, parts):
         """Handle LEFT command"""
-        angle = float(parts[1]) if len(parts) > 1 else 90
+        try:
+            angle_arg = parts[1] if len(parts) > 1 else "90"
+            angle = self._eval_argument(angle_arg)
+        except Exception:
+            angle = 90
         self.interpreter.turtle_turn(angle)
-        self.interpreter.debug_output(
+        self.interpreter.log_output(
             f"Turtle turned left {angle} degrees (heading={self.interpreter.turtle_graphics['heading']})"
         )
         if self.interpreter.turtle_trace:
@@ -330,12 +560,17 @@ class TwLogoExecutor:
 
     def _handle_right(self, parts):
         """Handle RIGHT command"""
-        angle = float(parts[1]) if len(parts) > 1 else 90
+        try:
+            angle_arg = parts[1] if len(parts) > 1 else "90"
+            angle = self._eval_argument(angle_arg)
+        except Exception:
+            angle = 90
+
         if not self.interpreter.turtle_graphics:
             self.interpreter.init_turtle_graphics()
         # Use positive angle for RIGHT to match test expectations
         self.interpreter.turtle_turn(angle)
-        self.interpreter.debug_output(
+        self.interpreter.log_output(
             f"Turtle turned right {angle} degrees (heading={self.interpreter.turtle_graphics['heading']})"
         )
         if self.interpreter.turtle_trace:
@@ -353,9 +588,9 @@ class TwLogoExecutor:
     def _handle_penup(self):
         """Handle PENUP command"""
         self.interpreter.turtle_graphics["pen_down"] = False
-        self.interpreter.debug_output("Pen up - turtle will move without drawing")
+        self.interpreter.log_output("Pen up - turtle will move without drawing")
         if self.interpreter.turtle_trace:
-            self.interpreter.log_output(f"TRACE: PEN=UP")
+            self.interpreter.log_output("TRACE: PEN=UP")
         return "continue"
 
     def _handle_pendown(self):
@@ -372,7 +607,7 @@ class TwLogoExecutor:
                     self.interpreter._turtle_color_index
                 ]
             )
-        self.interpreter.debug_output("Pen down - turtle will draw when moving")
+        self.interpreter.log_output("Pen down - turtle will draw when moving")
         if self.interpreter.turtle_trace:
             self.interpreter.log_output(
                 f"TRACE: PEN=DOWN COLOR={self.interpreter.turtle_graphics['pen_color']}"
@@ -383,6 +618,17 @@ class TwLogoExecutor:
         """Handle CLEARSCREEN command"""
         self.interpreter.clear_turtle_screen()
         self.interpreter.log_output("Screen cleared")
+        return "continue"
+
+    def _handle_cleartext(self):
+        """Handle CLEARTEXT command - clears text output area"""
+        # Clear the output widget
+        if hasattr(self.interpreter, 'output_widget') and self.interpreter.output_widget:
+            try:
+                self.interpreter.output_widget.delete('1.0', 'end')
+            except Exception:
+                pass
+        self.interpreter.log_output("Text output cleared")
         return "continue"
 
     def _handle_home(self):
@@ -403,7 +649,9 @@ class TwLogoExecutor:
             x = float(parts[1])
             y = float(parts[2])
             self.interpreter.turtle_setxy(x, y)
-            self.interpreter.log_output(f"Turtle moved to position ({x}, {y})")
+            self.interpreter.log_output(
+                f"SETXY -> Turtle moved to position ({x}, {y})"
+            )
         else:
             self.interpreter.log_output("SETXY requires X and Y coordinates")
         # Set turtle position variables for testing
@@ -478,6 +726,22 @@ class TwLogoExecutor:
         self.interpreter.turtle_graphics["visible"] = False
         self.interpreter.update_turtle_display()
         self.interpreter.log_output("Turtle is now hidden")
+        return "continue"
+
+    def _handle_print(self, parts):
+        """Handle PRINT command - outputs text to the text output area"""
+        if len(parts) < 2:
+            self.interpreter.log_output("PRINT requires text to output")
+            return "continue"
+        
+        # Join all parts after PRINT, handle [brackets] for word lists
+        text = " ".join(parts[1:])
+        
+        # Remove brackets if present
+        if text.startswith('[') and text.endswith(']'):
+            text = text[1:-1]
+        
+        self.interpreter.log_output(text)
         return "continue"
 
     def _handle_heading(self):
@@ -1378,3 +1642,693 @@ class TwLogoExecutor:
         raw_cmds = self._split_top_level_commands(inner)
         commands = [c.strip() for c in raw_cmds if c.strip()]
         return count, commands
+
+    # UCBLogo Array Operations
+    def _handle_array(self, parts):
+        """Handle ARRAY command - create a 1D array"""
+        try:
+            if len(parts) >= 3:
+                array_name = parts[1]
+                size = int(parts[2])
+                default_value = parts[3] if len(parts) > 3 else 0
+
+                # Create array with default values
+                array = [default_value] * size
+                self.interpreter.logo_arrays[array_name] = array
+                self.interpreter.log_output(
+                    f"Created array '{array_name}' with {size} elements"
+                )
+            else:
+                self.interpreter.log_output("ARRAY requires name and size")
+        except Exception as e:
+            self.interpreter.debug_output(f"ARRAY error: {e}")
+        return "continue"
+
+    def _handle_mdarray(self, parts):
+        """Handle MDARRAY command - create multi-dimensional array"""
+        try:
+            if len(parts) >= 3:
+                array_name = parts[1]
+                # Parse dimensions from remaining parts
+                dimensions = []
+                for part in parts[2:]:
+                    dimensions.append(int(part))
+
+                # Create nested array structure
+                def create_nested_array(dims):
+                    if len(dims) == 1:
+                        return [0] * dims[0]
+                    else:
+                        return [create_nested_array(dims[1:]) for _ in range(dims[0])]
+
+                array = create_nested_array(dimensions)
+                self.interpreter.logo_arrays[array_name] = array
+                self.interpreter.log_output(
+                    f"Created {len(dimensions)}D array '{array_name}' with dimensions {dimensions}"
+                )
+            else:
+                self.interpreter.log_output("MDARRAY requires name and dimensions")
+        except Exception as e:
+            self.interpreter.debug_output(f"MDARRAY error: {e}")
+        return "continue"
+
+    def _handle_setitem(self, parts):
+        """Handle SETITEM command - set array element"""
+        try:
+            if len(parts) >= 4:
+                array_name = parts[1]
+                index = int(parts[2])
+                value = parts[3]
+
+                if array_name in self.interpreter.logo_arrays:
+                    array = self.interpreter.logo_arrays[array_name]
+                    if isinstance(array, list) and 0 <= index < len(array):
+                        array[index] = value
+                        self.interpreter.log_output(
+                            f"Set {array_name}[{index}] = {value}"
+                        )
+                    else:
+                        self.interpreter.log_output("Invalid array or index")
+                else:
+                    self.interpreter.log_output(f"Array '{array_name}' not found")
+            else:
+                self.interpreter.log_output(
+                    "SETITEM requires array name, index, and value"
+                )
+        except Exception as e:
+            self.interpreter.debug_output(f"SETITEM error: {e}")
+        return "continue"
+
+    def _handle_mdsetitem(self, parts):
+        """Handle MDSETITEM command - set multi-dimensional array element"""
+        try:
+            if len(parts) >= 4:
+                array_name = parts[1]
+                indices = [int(idx) for idx in parts[2:-1]]
+                value = parts[-1]
+
+                if array_name in self.interpreter.logo_arrays:
+                    array = self.interpreter.logo_arrays[array_name]
+
+                    # Navigate to the correct nested position
+                    for idx in indices[:-1]:
+                        if isinstance(array, list) and 0 <= idx < len(array):
+                            array = array[idx]
+                        else:
+                            self.interpreter.log_output("Invalid array indices")
+                            return "continue"
+
+                    # Set the final value
+                    final_idx = indices[-1]
+                    if isinstance(array, list) and 0 <= final_idx < len(array):
+                        array[final_idx] = value
+                        self.interpreter.log_output(
+                            f"Set {array_name}[{','.join(map(str, indices))}] = {value}"
+                        )
+                    else:
+                        self.interpreter.log_output("Invalid final index")
+                else:
+                    self.interpreter.log_output(f"Array '{array_name}' not found")
+            else:
+                self.interpreter.log_output(
+                    "MDSETITEM requires array name, indices, and value"
+                )
+        except Exception as e:
+            self.interpreter.debug_output(f"MDSETITEM error: {e}")
+        return "continue"
+
+    def _handle_item(self, parts):
+        """Handle ITEM command - get array/list element"""
+        try:
+            if len(parts) >= 3:
+                index = int(parts[1])
+                source = parts[2]
+
+                # Check if it's an array
+                if source in self.interpreter.logo_arrays:
+                    array = self.interpreter.logo_arrays[source]
+                    if isinstance(array, list) and 0 <= index < len(array):
+                        result = array[index]
+                        self.interpreter.variables["ARRAY_RESULT"] = result
+                        self.interpreter.log_output(
+                            f"ITEM {index} of {source} = {result}"
+                        )
+                    else:
+                        self.interpreter.log_output("Invalid array or index")
+                # Check if it's a list variable
+                elif source in self.interpreter.variables:
+                    lst = self.interpreter.variables[source]
+                    if isinstance(lst, list) and 0 <= index < len(lst):
+                        result = lst[index]
+                        self.interpreter.variables["ARRAY_RESULT"] = result
+                        self.interpreter.log_output(
+                            f"ITEM {index} of {source} = {result}"
+                        )
+                    else:
+                        self.interpreter.log_output("Invalid list or index")
+                else:
+                    self.interpreter.log_output(f"Array/list '{source}' not found")
+            else:
+                self.interpreter.log_output("ITEM requires index and array/list name")
+        except Exception as e:
+            self.interpreter.debug_output(f"ITEM error: {e}")
+        return "continue"
+
+    # UCBLogo Property List Operations
+    def _handle_pprop(self, parts):
+        """Handle PPROP command - put property"""
+        try:
+            if len(parts) >= 4:
+                plist_name = parts[1]
+                prop_name = parts[2]
+                value = " ".join(parts[3:])
+
+                if plist_name not in self.interpreter.property_lists:
+                    self.interpreter.property_lists[plist_name] = {}
+
+                self.interpreter.property_lists[plist_name][prop_name] = value
+                self.interpreter.log_output(
+                    f"Set property '{prop_name}' in '{plist_name}' to '{value}'"
+                )
+            else:
+                self.interpreter.log_output(
+                    "PPROP requires property list name, property name, and value"
+                )
+        except Exception as e:
+            self.interpreter.debug_output(f"PPROP error: {e}")
+        return "continue"
+
+    def _handle_gprop(self, parts):
+        """Handle GPROP command - get property"""
+        try:
+            if len(parts) >= 3:
+                plist_name = parts[1]
+                prop_name = parts[2]
+
+                if plist_name in self.interpreter.property_lists:
+                    plist = self.interpreter.property_lists[plist_name]
+                    if prop_name in plist:
+                        value = plist[prop_name]
+                        self.interpreter.variables["PROP_RESULT"] = value
+                        self.interpreter.log_output(
+                            f"Property '{prop_name}' in '{plist_name}' = '{value}'"
+                        )
+                    else:
+                        self.interpreter.log_output(
+                            f"Property '{prop_name}' not found in '{plist_name}'"
+                        )
+                else:
+                    self.interpreter.log_output(
+                        f"Property list '{plist_name}' not found"
+                    )
+            else:
+                self.interpreter.log_output(
+                    "GPROP requires property list name and property name"
+                )
+        except Exception as e:
+            self.interpreter.debug_output(f"GPROP error: {e}")
+        return "continue"
+
+    def _handle_plist(self, parts):
+        """Handle PLIST command - list all properties"""
+        try:
+            if len(parts) >= 2:
+                plist_name = parts[1]
+
+                if plist_name in self.interpreter.property_lists:
+                    plist = self.interpreter.property_lists[plist_name]
+                    if plist:
+                        props = list(plist.keys())
+                        self.interpreter.variables["PLIST_RESULT"] = props
+                        self.interpreter.log_output(
+                            f"Properties in '{plist_name}': {props}"
+                        )
+                    else:
+                        self.interpreter.log_output(
+                            f"Property list '{plist_name}' is empty"
+                        )
+                else:
+                    self.interpreter.log_output(
+                        f"Property list '{plist_name}' not found"
+                    )
+            else:
+                self.interpreter.log_output("PLIST requires property list name")
+        except Exception as e:
+            self.interpreter.debug_output(f"PLIST error: {e}")
+        return "continue"
+
+    def _handle_remprop(self, parts):
+        """Handle REMPROP command - remove property"""
+        try:
+            if len(parts) >= 3:
+                plist_name = parts[1]
+                prop_name = parts[2]
+
+                if plist_name in self.interpreter.property_lists:
+                    plist = self.interpreter.property_lists[plist_name]
+                    if prop_name in plist:
+                        del plist[prop_name]
+                        self.interpreter.log_output(
+                            f"Removed property '{prop_name}' from '{plist_name}'"
+                        )
+                    else:
+                        self.interpreter.log_output(
+                            f"Property '{prop_name}' not found in '{plist_name}'"
+                        )
+                else:
+                    self.interpreter.log_output(
+                        f"Property list '{plist_name}' not found"
+                    )
+            else:
+                self.interpreter.log_output(
+                    "REMPROP requires property list name and property name"
+                )
+        except Exception as e:
+            self.interpreter.debug_output(f"REMPROP error: {e}")
+        return "continue"
+
+    # UCBLogo Advanced Control Structures
+    def _handle_apply(self, parts):
+        """Handle APPLY command - apply procedure to arguments"""
+        try:
+            if len(parts) >= 3:
+                proc_name = parts[1]
+                args = parts[2:]
+
+                # This is a simplified implementation - in real UCBLogo, APPLY would
+                # dynamically call procedures with argument lists
+                self.interpreter.log_output(
+                    f"APPLY {proc_name} to {args} (simplified implementation)"
+                )
+            else:
+                self.interpreter.log_output(
+                    "APPLY requires procedure name and arguments"
+                )
+        except Exception as e:
+            self.interpreter.debug_output(f"APPLY error: {e}")
+        return "continue"
+
+    def _handle_invoke(self, parts):
+        """Handle INVOKE command - invoke procedure with arguments"""
+        try:
+            if len(parts) >= 3:
+                proc_name = parts[1]
+                args = parts[2:]
+
+                # Simplified implementation
+                self.interpreter.log_output(
+                    f"INVOKE {proc_name} with {args} (simplified implementation)"
+                )
+            else:
+                self.interpreter.log_output(
+                    "INVOKE requires procedure name and arguments"
+                )
+        except Exception as e:
+            self.interpreter.debug_output(f"INVOKE error: {e}")
+        return "continue"
+
+    def _handle_foreach(self, parts):
+        """Handle FOREACH command - iterate over list"""
+        try:
+            if len(parts) >= 3:
+                var_name = parts[1]
+                list_name = parts[2]
+
+                if list_name in self.interpreter.variables:
+                    lst = self.interpreter.variables[list_name]
+                    if isinstance(lst, list):
+                        for item in lst:
+                            self.interpreter.variables[var_name] = item
+                            self.interpreter.log_output(f"FOREACH: {var_name} = {item}")
+                            # In real implementation, would execute a block here
+                    else:
+                        self.interpreter.log_output(f"'{list_name}' is not a list")
+                else:
+                    self.interpreter.log_output(f"Variable '{list_name}' not found")
+            else:
+                self.interpreter.log_output(
+                    "FOREACH requires variable name and list name"
+                )
+        except Exception as e:
+            self.interpreter.debug_output(f"FOREACH error: {e}")
+        return "continue"
+
+    def _handle_cascade(self, parts):
+        """Handle CASCADE command - cascade operations"""
+        try:
+            if len(parts) >= 2:
+                # Simplified implementation - would execute operations in sequence
+                operations = parts[1:]
+                self.interpreter.log_output(
+                    f"CASCADE operations: {operations} (simplified implementation)"
+                )
+            else:
+                self.interpreter.log_output("CASCADE requires operations")
+        except Exception as e:
+            self.interpreter.debug_output(f"CASCADE error: {e}")
+        return "continue"
+
+    def _handle_case(self, parts):
+        """Handle CASE command - case selection"""
+        try:
+            if len(parts) >= 3:
+                value = parts[1]
+                cases = parts[2:]
+
+                # Simplified case implementation
+                self.interpreter.log_output(
+                    f"CASE {value} with options {cases} (simplified implementation)"
+                )
+            else:
+                self.interpreter.log_output("CASE requires value and case options")
+        except Exception as e:
+            self.interpreter.debug_output(f"CASE error: {e}")
+        return "continue"
+
+    def _handle_cond(self, parts):
+        """Handle COND command - conditional execution"""
+        try:
+            if len(parts) >= 2:
+                # Simplified conditional implementation
+                conditions = parts[1:]
+                self.interpreter.log_output(
+                    f"COND with conditions: {conditions} (simplified implementation)"
+                )
+            else:
+                self.interpreter.log_output("COND requires conditions")
+        except Exception as e:
+            self.interpreter.debug_output(f"COND error: {e}")
+        return "continue"
+
+    def _handle_while(self, parts):
+        """Handle WHILE command - while loop"""
+        try:
+            if len(parts) >= 2:
+                condition = " ".join(parts[1:])
+                # Simplified while loop - would evaluate condition and execute block
+                self.interpreter.log_output(
+                    f"WHILE {condition} (simplified implementation)"
+                )
+            else:
+                self.interpreter.log_output("WHILE requires condition")
+        except Exception as e:
+            self.interpreter.debug_output(f"WHILE error: {e}")
+        return "continue"
+
+    def _handle_until(self, parts):
+        """Handle UNTIL command - until loop"""
+        try:
+            if len(parts) >= 2:
+                condition = " ".join(parts[1:])
+                # Simplified until loop
+                self.interpreter.log_output(
+                    f"UNTIL {condition} (simplified implementation)"
+                )
+            else:
+                self.interpreter.log_output("UNTIL requires condition")
+        except Exception as e:
+            self.interpreter.debug_output(f"UNTIL error: {e}")
+        return "continue"
+
+    def _handle_do_while(self, parts):
+        """Handle DO.WHILE command - do-while loop"""
+        try:
+            if len(parts) >= 2:
+                condition = " ".join(parts[1:])
+                # Simplified do-while loop
+                self.interpreter.log_output(
+                    f"DO.WHILE {condition} (simplified implementation)"
+                )
+            else:
+                self.interpreter.log_output("DO.WHILE requires condition")
+        except Exception as e:
+            self.interpreter.debug_output(f"DO.WHILE error: {e}")
+        return "continue"
+
+    def _handle_do_until(self, parts):
+        """Handle DO.UNTIL command - do-until loop"""
+        try:
+            if len(parts) >= 2:
+                condition = " ".join(parts[1:])
+                # Simplified do-until loop
+                self.interpreter.log_output(
+                    f"DO.UNTIL {condition} (simplified implementation)"
+                )
+            else:
+                self.interpreter.log_output("DO.UNTIL requires condition")
+        except Exception as e:
+            self.interpreter.debug_output(f"DO.UNTIL error: {e}")
+        return "continue"
+
+    def _handle_for(self, parts):
+        """Handle FOR command - for loop"""
+        try:
+            if len(parts) >= 5:
+                var_name = parts[1]
+                start_val = int(parts[2])
+                end_val = int(parts[3])
+                step = int(parts[4]) if len(parts) > 4 else 1
+
+                for i in range(start_val, end_val + 1, step):
+                    self.interpreter.variables[var_name] = i
+                    self.interpreter.log_output(f"FOR {var_name} = {i}")
+                    # In real implementation, would execute a block here
+            else:
+                self.interpreter.log_output(
+                    "FOR requires variable name, start, and end values"
+                )
+        except Exception as e:
+            self.interpreter.debug_output(f"FOR error: {e}")
+        return "continue"
+
+    # UCBLogo Advanced Turtle Commands
+    def _handle_setheading(self, parts):
+        """Handle SETHEADING command - set turtle heading"""
+        try:
+            if len(parts) >= 2:
+                angle = float(parts[1])
+                self.interpreter.turtle_graphics["heading"] = angle % 360
+                self.interpreter.update_turtle_display()
+                self.interpreter.log_output(f"Turtle heading set to {angle}°")
+            else:
+                self.interpreter.log_output("SETHEADING requires angle")
+        except Exception as e:
+            self.interpreter.debug_output(f"SETHEADING error: {e}")
+        return "continue"
+
+    def _handle_towards(self, parts):
+        """Handle TOWARDS command - point turtle towards position"""
+        try:
+            if len(parts) >= 3:
+                x = float(parts[1])
+                y = float(parts[2])
+
+                current_x = self.interpreter.turtle_graphics["x"]
+                current_y = self.interpreter.turtle_graphics["y"]
+
+                # Calculate angle to target
+                dx = x - current_x
+                dy = y - current_y
+                angle = math.degrees(math.atan2(dy, dx))
+
+                self.interpreter.turtle_graphics["heading"] = angle % 360
+                self.interpreter.update_turtle_display()
+                self.interpreter.log_output(
+                    f"Turtle turned towards ({x}, {y}) - heading {angle:.1f}°"
+                )
+            else:
+                self.interpreter.log_output("TOWARDS requires X and Y coordinates")
+        except Exception as e:
+            self.interpreter.debug_output(f"TOWARDS error: {e}")
+        return "continue"
+
+    def _handle_scrunch(self, parts):
+        """Handle SCRUNCH command - adjust coordinate system"""
+        try:
+            if len(parts) >= 3:
+                x_scale = float(parts[1])
+                y_scale = float(parts[2])
+
+                # Simplified scrunch implementation - would adjust coordinate scaling
+                self.interpreter.log_output(
+                    f"SCRUNCH coordinate system: x_scale={x_scale}, y_scale={y_scale} (simplified implementation)"
+                )
+            else:
+                self.interpreter.log_output("SCRUNCH requires X and Y scale factors")
+        except Exception as e:
+            self.interpreter.debug_output(f"SCRUNCH error: {e}")
+        return "continue"
+
+    # UCBLogo Error Handling
+    def _handle_erract(self, parts):
+        """Handle ERRACT command - set error action"""
+        try:
+            if len(parts) >= 2:
+                action = parts[1]
+                self.interpreter.logo_error_handler = action
+                self.interpreter.log_output(f"Error handler set to: {action}")
+            else:
+                self.interpreter.log_output("ERRACT requires error action")
+        except Exception as e:
+            self.interpreter.debug_output(f"ERRACT error: {e}")
+        return "continue"
+
+    def _handle_error(self, parts):
+        """Handle ERROR command - generate error"""
+        try:
+            if len(parts) >= 2:
+                error_msg = " ".join(parts[1:])
+                if self.interpreter.logo_error_handler:
+                    self.interpreter.log_output(
+                        f"Error handled by {self.interpreter.logo_error_handler}: {error_msg}"
+                    )
+                else:
+                    self.interpreter.log_output(f"ERROR: {error_msg}")
+            else:
+                self.interpreter.log_output("ERROR: Generic error")
+        except Exception as e:
+            self.interpreter.debug_output(f"ERROR command error: {e}")
+        return "continue"
+
+    # UCBLogo Advanced Arithmetic
+    def _handle_bitwise(self, cmd, parts):
+        """Handle bitwise operations"""
+        try:
+            if len(parts) >= 3:
+                op1 = int(parts[1])
+                op2 = int(parts[2]) if len(parts) > 2 else 0
+
+                if cmd == "BITAND":
+                    result = op1 & op2
+                    self.interpreter.log_output(f"{op1} BITAND {op2} = {result}")
+                elif cmd == "BITOR":
+                    result = op1 | op2
+                    self.interpreter.log_output(f"{op1} BITOR {op2} = {result}")
+                elif cmd == "BITXOR":
+                    result = op1 ^ op2
+                    self.interpreter.log_output(f"{op1} BITXOR {op2} = {result}")
+                elif cmd == "BITNOT":
+                    result = ~op1
+                    self.interpreter.log_output(f"BITNOT {op1} = {result}")
+                elif cmd == "ASHIFT":
+                    result = op1 << op2
+                    self.interpreter.log_output(f"{op1} ASHIFT {op2} = {result}")
+                elif cmd == "LSHIFT":
+                    result = op1 >> op2
+                    self.interpreter.log_output(f"{op1} LSHIFT {op2} = {result}")
+
+                self.interpreter.variables["BITWISE_RESULT"] = result
+            else:
+                self.interpreter.log_output(f"{cmd} requires operands")
+        except Exception as e:
+            self.interpreter.debug_output(f"Bitwise operation error: {e}")
+        return "continue"
+
+    # UCBLogo Macros
+    def _handle_macro_define(self, parts):
+        """Handle .MACRO command - define macro"""
+        try:
+            if len(parts) >= 2:
+                macro_name = parts[1]
+                # Simplified macro definition
+                self.interpreter.log_output(f"Macro '{macro_name}' defined (.MACRO)")
+            else:
+                self.interpreter.log_output(".MACRO requires macro name")
+        except Exception as e:
+            self.interpreter.debug_output(f".MACRO error: {e}")
+        return "continue"
+
+    def _handle_defmacro(self, parts):
+        """Handle .DEFMACRO command - define macro with parameters"""
+        try:
+            if len(parts) >= 3:
+                macro_name = parts[1]
+                params = parts[2:]
+                # Simplified macro definition with parameters
+                self.interpreter.log_output(
+                    f"Macro '{macro_name}' defined with params {params} (.DEFMACRO)"
+                )
+            else:
+                self.interpreter.log_output(
+                    ".DEFMACRO requires macro name and parameters"
+                )
+        except Exception as e:
+            self.interpreter.debug_output(f".DEFMACRO error: {e}")
+        return "continue"
+
+    def _call_logo_procedure(self, proc_name, args):
+        """Call a user-defined Logo procedure (TO/END)"""
+        if proc_name not in self.interpreter.logo_procedures:
+            self.interpreter.log_output(f"Undefined procedure: {proc_name}")
+            return "continue"
+
+        params, body = self.interpreter.logo_procedures[proc_name]
+
+        # Save current variable state
+        saved_vars = {}
+
+        # Bind arguments to parameters
+        for i, param in enumerate(params):
+            param_name = param[1:].upper() if param.startswith(":") else param.upper()
+            if i < len(args):
+                # Evaluate the argument (could be a variable or expression)
+                arg_value = args[i]
+                # If it starts with :, it's a variable reference
+                if arg_value.startswith(":"):
+                    var_name = arg_value[1:].upper()
+                    arg_value = self.interpreter.variables.get(var_name, 0)
+                else:
+                    # Try to evaluate as number or expression
+                    try:
+                        arg_value = self._eval_expression(arg_value)
+                    except Exception:
+                        pass  # Keep as string if can't evaluate
+
+                # Save old value if it exists
+                if param_name in self.interpreter.variables:
+                    saved_vars[param_name] = self.interpreter.variables[param_name]
+
+                self.interpreter.variables[param_name] = arg_value
+                self.interpreter.debug_output(f"  {param_name} = {arg_value}")
+
+        # Execute procedure body
+        for line in body:
+            self.execute_command(line)
+
+        # Restore saved variables
+        for var_name in params:
+            var_name = (
+                var_name[1:].upper() if var_name.startswith(":") else var_name.upper()
+            )
+            if var_name in saved_vars:
+                self.interpreter.variables[var_name] = saved_vars[var_name]
+            elif var_name in self.interpreter.variables:
+                del self.interpreter.variables[var_name]
+
+        return "continue"
+
+    def _eval_expression(self, expr):
+        """Evaluate a simple arithmetic expression"""
+        import re
+
+        try:
+
+            def replace_var(match):
+                var_name = match.group(1).upper()
+                return str(self.interpreter.variables.get(var_name, 0))
+
+            expr_str = re.sub(r":(\w+)", replace_var, str(expr))
+
+            # Evaluate the expression
+            result = eval(expr_str, {"__builtins__": {}}, {})
+            return result
+        except Exception:
+            # If evaluation fails, try to parse as number
+            try:
+                return float(expr)
+            except (ValueError, TypeError):
+                return expr
+
+        except Exception as e:
+            self.interpreter.debug_output(f".DEFMACRO error: {e}")
+        return "continue"

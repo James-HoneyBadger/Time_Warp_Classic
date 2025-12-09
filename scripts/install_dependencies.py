@@ -6,7 +6,6 @@ Installs all required and optional dependencies for Time_Warp IDE
 
 import subprocess
 import sys
-import os
 
 
 def install_package(package):
@@ -63,9 +62,9 @@ def main():
         print("⚠️  Some required dependencies failed to install")
         print("Please check the error messages above")
 
-    print(
-        f"📊 Total: {required_success + optional_success}/{len(required_packages) + len(optional_packages)} packages installed"
-    )
+    total_installed = required_success + optional_success
+    total_packages = len(required_packages) + len(optional_packages)
+    print(f"📊 Total: {total_installed}/{total_packages} packages installed")
 
 
 if __name__ == "__main__":

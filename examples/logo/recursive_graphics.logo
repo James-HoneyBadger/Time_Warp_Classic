@@ -1,0 +1,41 @@
+; Logo Recursive Graphics Demo
+; Drawing fractal-like patterns with recursion
+
+TO SPIRAL :SIZE :ANGLE
+  IF :SIZE > 5 [
+    FORWARD :SIZE
+    RIGHT :ANGLE
+    SPIRAL :SIZE - 2 :ANGLE
+  ]
+END
+
+TO TREE :SIZE :LEVEL
+  IF :LEVEL > 0 [
+    FORWARD :SIZE
+    RIGHT 30
+    TREE :SIZE * 0.7 :LEVEL - 1
+    LEFT 60
+    TREE :SIZE * 0.7 :LEVEL - 1
+    RIGHT 30
+    BACK :SIZE
+  ]
+END
+
+; Main program
+CLEARTEXT
+PRINT [Logo Recursive Graphics Demo]
+PRINT []
+
+PRINT [Drawing a spiral...]
+SPIRAL 80 20
+
+PRINT [Moving to draw a tree...]
+PENUP
+RIGHT 90
+FORWARD 200
+LEFT 90
+PENDOWN
+
+TREE 60 5
+
+PRINT [Recursive graphics complete!]

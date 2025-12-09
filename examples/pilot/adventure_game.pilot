@@ -1,0 +1,31 @@
+REM PILOT Adventure Game Demo
+REM A simple text adventure using PILOT commands
+
+T:Welcome to the PILOT Adventure!
+T:You find yourself in a dark cave...
+
+T:You see two paths ahead.
+T:One leads left, one leads right.
+
+A:Which path do you choose? (left/right)
+C:#CHOICE#=left
+TJ:left_path
+C:#CHOICE#=right
+TJ:right_path
+TN:I don't understand '#CHOICE#'. Please type 'left' or 'right'.
+
+left_path:
+T:You chose the left path.
+T:You find a treasure chest!
+T:Congratulations! You win!
+J:end
+
+right_path:
+T:You chose the right path.
+T:You encounter a dragon!
+T:Oh no! Game over.
+J:end
+
+end:
+T:Thanks for playing the PILOT Adventure!</content>
+<parameter name="filePath">/home/james/Time_Warp_Classic/examples/pilot/adventure_game.pilot

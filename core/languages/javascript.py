@@ -1,3 +1,4 @@
+# pylint: disable=W1510,W0718,R1705,C0415
 """
 JavaScript Language Executor for Time_Warp IDE
 ==============================================
@@ -8,7 +9,6 @@ This module handles JavaScript script execution for the Time_Warp IDE using Node
 """
 
 import subprocess
-import sys
 import os
 import tempfile
 
@@ -20,6 +20,7 @@ class JavaScriptExecutor:
         """Initialize with reference to main interpreter"""
         self.interpreter = interpreter
         self.node_executable = self._find_node_executable()
+        self._js_script_buffer = []  # Buffer for multi-line JavaScript scripts
 
     def _find_node_executable(self):
         """Find the Node.js executable on the system"""

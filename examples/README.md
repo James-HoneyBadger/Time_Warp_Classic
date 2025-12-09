@@ -1,43 +1,86 @@
-# Time_Warp IDE Sample Programs
+# Time Warp Language Examples
 
-This directory contains sample programs demonstrating the capabilities of Time_Warp IDE across all supported languages.
+This directory contains sample programs demonstrating the capabilities of each programming language supported by Time Warp IDE.
 
-## Sample Programs
+## Directory Structure
 
-### PILOT - Calculator Program (`sample_pilot_program.pilot`)
-- Demonstrates PILOT syntax and interactive programming
-- Shows user input, calculations, and conditional logic
-- Features labels, jumps, and variable handling
+```
+examples/
+├── basic/          # BASIC and Turbo BASIC programs
+├── forth/          # Forth stack-based programs
+├── javascript/     # JavaScript/Node.js programs
+├── logo/           # Logo turtle graphics programs
+├── pascal/         # Pascal structured programs
+├── perl/           # Perl text processing programs
+├── pilot/          # PILOT educational programs
+├── prolog/         # Prolog logic programming
+└── python/         # Python modern scripting
+```
 
-### BASIC - Number Guessing Game (`sample_basic_program.bas`)
-- Classic number guessing game implementation
-- Demonstrates loops, conditionals, and random numbers
-- Shows structured BASIC programming with line numbers
+## Language Examples
 
-### Logo - Geometric Art (`sample_logo_program.logo`)
-- Creates beautiful geometric patterns and mandalas
-- Demonstrates turtle graphics and recursive procedures
-- Shows Logo's power for mathematical art and education
+### PILOT (Programmed Inquiry, Learning Or Teaching)
+PILOT is an educational programming language designed for creating interactive lessons and quizzes.
 
-### Python - Text Adventure Game (`sample_python_program.py`)
-- Complete object-oriented adventure game
-- Demonstrates classes, methods, and data structures
-- Shows modern Python programming practices
+- `math_quiz.pilot` - Interactive math quiz with conditional responses
+- `adventure_game.pilot` - Simple text adventure using jump commands
+- `turtle_shapes.pilot` - Turtle graphics demonstration
 
-## How to Use
+### BASIC (Beginner's All-purpose Symbolic Instruction Code)
+Traditional line-numbered programming with Turbo BASIC extensions.
 
-1. Open Time_Warp IDE
-2. Load any sample program using File → Open
-3. Run the program to see it in action
-4. Modify the code to experiment and learn
-5. Use the Learning Assistant plugin for educational guidance
+- `hello_world.bas` - Simple "Hello World" program
+- `loop_demo.bas` - FOR loops and variable manipulation
+- `turbo_features.bas` - Advanced Turbo BASIC commands (DO/LOOP, WHILE/WEND, SELECT CASE, INCR/DECR, SWAP)
 
-## Features Demonstrated
+### Logo
+Turtle graphics programming language focused on educational geometry.
 
-- **Enhanced Code Editor**: Syntax highlighting, code completion, error detection
-- **Multi-language Support**: PILOT, BASIC, Logo, and Python
-- **Compilation**: Built-in compilers for interpreted languages
-- **Educational Tools**: Code analysis and learning assistance
-- **Interactive Execution**: Real-time program execution and debugging
+- `graphics_demo.logo` - Drawing geometric shapes (square, triangle, star)
+- `recursive_graphics.logo` - Recursive patterns (spiral, tree)
 
-Enjoy exploring programming with Time_Warp IDE! 🎓
+### Python
+Modern scripting language with extensive libraries and clean syntax.
+
+- `data_analysis.py` - Data processing and statistical analysis
+- `guessing_game.py` - Interactive number guessing game
+
+### JavaScript
+Web scripting language with modern features and async capabilities.
+
+- `calculator.js` - Interactive command-line calculator
+- `data_structures.js` - Arrays, objects, and modern JavaScript features
+
+### Perl
+Powerful text processing and system administration language.
+
+- `text_processing.pl` - String manipulation, regex, and text analysis
+
+### Pascal
+Structured programming language emphasizing readability and modularity.
+
+- `student_records.pas` - Records, procedures, functions, and data structures
+
+### Prolog
+Logic programming language based on formal logic and pattern matching.
+
+- `family_logic.pl` - Family relationships and logical queries
+
+### Forth
+Stack-based programming language known for efficiency and low-level control.
+
+- `stack_demo.fs` - Stack operations, word definitions, and mathematical functions
+
+## Running the Examples
+
+Load any of these programs into Time Warp IDE and run them to see the language features in action. Each program demonstrates key concepts and capabilities of its respective language.
+
+## Educational Value
+
+These examples are designed to:
+- Showcase language-specific features and syntax
+- Demonstrate programming concepts (loops, conditionals, functions, etc.)
+- Provide starting points for learning each language
+- Illustrate practical applications and use cases
+
+For more advanced examples or to contribute new programs, see the main Time Warp documentation.

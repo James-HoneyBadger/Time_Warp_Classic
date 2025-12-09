@@ -9,7 +9,6 @@ Time_Warp IDE is an educational programming IDE supporting multiple languages wi
 - **Core Interpreter**: `core/interpreter.py` - Central execution engine for all languages
 - **Language Executors**: `core/languages/` - Individual language implementations (PILOT, BASIC, Logo, etc.)
 - **Theme System**: `tools/theme.py` - Persistent theme management with 8 built-in themes
-- **Plugin System**: `plugins/` - Extensible architecture for custom functionality
 
 ### Multi-Language Support
 Each language has dedicated executor classes in `core/languages/`:
@@ -21,7 +20,6 @@ Each language has dedicated executor classes in `core/languages/`:
 ### Key Components
 - **Time_WarpInterpreter**: Central execution engine that dispatches to language-specific executors
 - **ThemeManager**: JSON-based configuration with 8 themes (4 dark: Dracula, Monokai, Solarized Dark, Ocean; 4 light: Spring, Sunset, Candy, Forest)
-- **Plugin System**: `PluginManager` with sample plugin architecture in `plugins/sample_plugin/`
 - **Game Engine**: Complete 2D game framework in `games/engine/` with physics, rendering, and object management
 
 ## Development Patterns
@@ -82,12 +80,6 @@ Themes defined in `tools/theme.py` with color schemes applied uniformly across:
 - Menu systems
 - Button styles
 - Output panels
-
-### Plugin Development
-See `plugins/sample_plugin/` for complete plugin template including:
-- `__init__.py` with plugin metadata
-- Main plugin class with `initialize()` method
-- Integration hooks for UI and interpreter
 
 ## Critical Integration Points
 

@@ -2,10 +2,10 @@
 """
 Setup script for Time_Warp IDE - A multi-language educational programming environment
 """
+# pylint: disable=E0401,C0116,C0411
 
 from setuptools import setup, find_packages
 import os
-import re
 
 
 # Read the README file

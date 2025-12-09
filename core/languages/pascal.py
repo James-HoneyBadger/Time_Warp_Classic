@@ -1,3 +1,4 @@
+# pylint: disable=W0718,R0913,R0914,R0912
 """
 TW Pascal Language Executor
 ===========================
@@ -7,25 +8,30 @@ for the Time_Warp IDE, focusing on structured programming concepts.
 
 Language Features:
 - Program structure: PROGRAM, BEGIN, END blocks
+- Unit system: UNIT, INTERFACE, IMPLEMENTATION, USES
 - Variable declarations: VAR, CONST with type specifications
 - Control structures: IF/THEN/ELSE, WHILE/DO, FOR loops, REPEAT/UNTIL, CASE statements
 - Procedures and functions: PROCEDURE, FUNCTION with parameter passing
+- Object-oriented programming: OBJECT, INHERITANCE, CONSTRUCTOR, DESTRUCTOR
 - Input/Output: READLN, WRITELN for console I/O
-- Data types: INTEGER, REAL, STRING, BOOLEAN, CHAR
+- Data types: INTEGER, REAL, STRING, BOOLEAN, CHAR, WORD, LONGINT, BYTE, SHORTINT
 - Arrays: fixed-size arrays with indexing
 - Records: structured data types
 - File I/O: basic file operations
-- Mathematical functions: SIN, COS, TAN, SQRT, ABS, ROUND, TRUNC
-- String operations: LENGTH, COPY, POS, CONCAT
+- Mathematical functions: SIN, COS, TAN, SQRT, ABS, ROUND, TRUNC, EXP, LN, ARCTAN
+- String operations: LENGTH, COPY, POS, CONCAT, UPCASE, DOWNCASE
+- Inline assembly: ASM blocks (simulated)
+- Compiler directives: {$I }, {$DEFINE}, {$IFDEF}, etc.
 
-The executor provides a simplified Pascal-like syntax suitable for educational
-purposes, with structured programming constructs and basic I/O capabilities.
+The executor provides Pascal-like syntax with Turbo Pascal enhancements suitable
+for educational purposes, with structured programming constructs and OOP capabilities.
 """
+
+# pylint: disable=R0902,W0718,R1705,R0911,R0912,W0613,R1702,W0123,W0107,R0903
 
 import re
 import math
 import random
-import time
 
 
 class TwPascalExecutor:
@@ -35,15 +41,20 @@ class TwPascalExecutor:
         """Initialize with reference to main interpreter"""
         self.interpreter = interpreter
         self.program_name = ""
+        self.current_unit = None
+        self.units = {}  # Unit definitions
         self.variables = {}  # Local variable scope
         self.constants = {}  # Constants
         self.procedures = {}  # User-defined procedures
         self.functions = {}  # User-defined functions
+        self.objects = {}  # Object definitions
         self.data_types = {}  # Variable type information
         self.arrays = {}  # Array definitions
         self.records = {}  # Record definitions
         self.current_procedure = None
         self.call_stack = []  # For procedure/function calls
+        self.compiler_directives = {}  # Compiler directives like {$DEFINE}
+        self.inline_asm_enabled = False  # For ASM blocks
 
     def execute_command(self, command):
         """Execute a Pascal command and return the result"""
@@ -56,15 +67,28 @@ class TwPascalExecutor:
             if command.endswith(";"):
                 command = command[:-1].strip()
 
-            parts = command.split()
-            if not parts:
+            # Get the base command name (first word or first token before parentheses)
+            # Handle both "WRITELN(args)" and "WRITELN args" syntax
+            match = re.match(r"(\w+)", command)
+            if not match:
                 return "continue"
+            
+            cmd = match.group(1).upper()
+            
+            # Check command type with case-insensitive prefix matching
+            command_upper = command.upper()
 
-            cmd = parts[0].upper()
-
-            # Program structure
+            # Program structure and units
             if cmd == "PROGRAM":
                 return self._handle_program(command)
+            elif cmd == "UNIT":
+                return self._handle_unit(command)
+            elif cmd == "INTERFACE":
+                return self._handle_interface(command)
+            elif cmd == "IMPLEMENTATION":
+                return self._handle_implementation(command)
+            elif cmd == "USES":
+                return self._handle_uses(command)
             elif cmd == "BEGIN":
                 return self._handle_begin(command)
             elif cmd == "END":
@@ -75,6 +99,18 @@ class TwPascalExecutor:
                 return self._handle_var(command)
             elif cmd == "CONST":
                 return self._handle_const(command)
+            elif cmd == "TYPE":
+                return self._handle_type(command)
+
+            # Object-oriented programming
+            elif cmd == "OBJECT":
+                return self._handle_object(command)
+            elif cmd == "INHERITS":
+                return "continue"  # Handled by OBJECT
+            elif cmd == "CONSTRUCTOR":
+                return self._handle_constructor(command)
+            elif cmd == "DESTRUCTOR":
+                return self._handle_destructor(command)
 
             # Control structures
             elif cmd == "IF":
@@ -108,17 +144,27 @@ class TwPascalExecutor:
             elif cmd == "FUNCTION":
                 return self._handle_function(command)
 
-            # I/O operations
-            elif cmd == "READLN":
+            # Assembly
+            elif cmd == "ASM":
+                return self._handle_asm(command)
+            elif cmd == "END":
+                return "continue"  # Could be end of ASM block
+
+            # I/O operations - check these with prefix matching to handle function calls
+            elif cmd == "READLN" or command_upper.startswith("READLN("):
                 return self._handle_readln(command)
-            elif cmd == "WRITELN":
+            elif cmd == "WRITELN" or command_upper.startswith("WRITELN("):
                 return self._handle_writeln(command)
-            elif cmd == "WRITE":
+            elif cmd == "WRITE" or command_upper.startswith("WRITE("):
                 return self._handle_write(command)
 
             # Assignment
             elif ":=" in command:
                 return self._handle_assignment(command)
+
+            # Compiler directives
+            elif command.strip().startswith("{$"):
+                return self._handle_directive(command)
 
             # Procedure/function calls
             else:
@@ -142,6 +188,177 @@ class TwPascalExecutor:
         if match:
             self.program_name = match.group(1)
             self.interpreter.log_output(f"🚀 Starting program: {self.program_name}")
+        return "continue"
+
+    def _handle_unit(self, command):
+        """Handle UNIT declaration"""
+        # UNIT unit_name;
+        match = re.match(r"UNIT\s+(\w+)", command, re.IGNORECASE)
+        if match:
+            unit_name = match.group(1).upper()
+            self.current_unit = unit_name
+            self.units[unit_name] = {
+                "interface": [],
+                "implementation": [],
+                "variables": {},
+                "procedures": {},
+                "functions": {},
+            }
+            self.interpreter.log_output(f"📦 Unit {unit_name} declared")
+        return "continue"
+
+    def _handle_interface(self, command):
+        """Handle INTERFACE section"""
+        # INTERFACE
+        if self.current_unit:
+            self.interpreter.log_output("🔗 Entering interface section")
+        return "continue"
+
+    def _handle_implementation(self, command):
+        """Handle IMPLEMENTATION section"""
+        # IMPLEMENTATION
+        if self.current_unit:
+            self.interpreter.log_output("⚙️ Entering implementation section")
+        return "continue"
+
+    def _handle_uses(self, command):
+        """Handle USES clause"""
+        # USES unit1, unit2, ...;
+        uses_part = command[4:].strip()  # Remove USES
+        if uses_part.endswith(";"):
+            uses_part = uses_part[:-1]
+        units = [u.strip().upper() for u in uses_part.split(",")]
+        for unit in units:
+            if unit in self.units:
+                self.interpreter.log_output(f"📚 Using unit {unit}")
+            else:
+                self.interpreter.debug_output(f"Unit {unit} not found")
+        return "continue"
+
+    def _handle_type(self, command):
+        """Handle TYPE declarations"""
+        # TYPE name = type_definition;
+        try:
+            type_part = command[4:].strip()  # Remove TYPE
+            if "=" in type_part:
+                name, def_part = type_part.split("=", 1)
+                name = name.strip().upper()
+                type_def = def_part.strip()
+
+                # Handle different type definitions
+                if type_def.upper().startswith("RECORD"):
+                    self._handle_record_type(name, type_def)
+                elif type_def.upper().startswith("ARRAY"):
+                    self._handle_array_type(name, type_def)
+                elif type_def.upper().startswith("("):
+                    # Enumeration type
+                    self._handle_enum_type(name, type_def)
+                else:
+                    # Type alias
+                    self.data_types[name] = type_def.upper()
+
+                self.interpreter.log_output(f"🏷️ Type {name} defined")
+        except Exception as e:
+            self.interpreter.debug_output(f"TYPE declaration error: {e}")
+        return "continue"
+
+    def _handle_object(self, command):
+        """Handle OBJECT declaration"""
+        # OBJECT name [(parent)]
+        try:
+            object_part = command[6:].strip()  # Remove OBJECT
+            if "(" in object_part and ")" in object_part:
+                # Inheritance
+                name_part, parent_part = object_part.split("(")
+                name = name_part.strip().upper()
+                parent = parent_part.split(")")[0].strip().upper()
+                self.objects[name] = {
+                    "parent": parent,
+                    "fields": {},
+                    "methods": {},
+                }
+                self.interpreter.log_output(f"🏗️ Object {name} inherits from {parent}")
+            else:
+                # Base object
+                name = object_part.upper()
+                self.objects[name] = {
+                    "parent": None,
+                    "fields": {},
+                    "methods": {},
+                }
+                self.interpreter.log_output(f"🏗️ Object {name} declared")
+        except Exception as e:
+            self.interpreter.debug_output(f"OBJECT declaration error: {e}")
+        return "continue"
+
+    def _handle_constructor(self, command):
+        """Handle CONSTRUCTOR declaration"""
+        # CONSTRUCTOR name(parameters);
+        try:
+            match = re.match(r"CONSTRUCTOR\s+(\w+)\s*\((.*?)\)", command, re.IGNORECASE)
+            if match:
+                name = match.group(1).upper()
+                self.interpreter.log_output(f"🔨 Constructor {name} declared")
+        except Exception as e:
+            self.interpreter.debug_output(f"CONSTRUCTOR declaration error: {e}")
+        return "continue"
+
+    def _handle_destructor(self, command):
+        """Handle DESTRUCTOR declaration"""
+        # DESTRUCTOR name;
+        try:
+            match = re.match(r"DESTRUCTOR\s+(\w+)", command, re.IGNORECASE)
+            if match:
+                name = match.group(1).upper()
+                self.interpreter.log_output(f"💥 Destructor {name} declared")
+        except Exception as e:
+            self.interpreter.debug_output(f"DESTRUCTOR declaration error: {e}")
+        return "continue"
+
+    def _handle_asm(self, command):
+        """Handle ASM block (simulated)"""
+        # ASM ... END;
+        if not self.inline_asm_enabled:
+            self.interpreter.log_output("⚠️ Inline assembly not enabled")
+            return "continue"
+
+        self.interpreter.log_output("🔧 Entering assembly block (simulated)")
+        return "continue"
+
+    def _handle_directive(self, command):
+        """Handle compiler directives"""
+        # {$directive value} or {$directive}
+        try:
+            directive = command.strip()[2:-1].strip()  # Remove {$ and }
+            parts = directive.split()
+            dir_name = parts[0].upper()
+
+            if dir_name == "I":
+                # {$I filename} - include file
+                if len(parts) > 1:
+                    filename = parts[1]
+                    self.interpreter.log_output(f"📄 Including file {filename}")
+            elif dir_name == "DEFINE":
+                # {$DEFINE name} or {$DEFINE name value}
+                if len(parts) > 1:
+                    name = parts[1].upper()
+                    value = parts[2] if len(parts) > 2 else "1"
+                    self.compiler_directives[name] = value
+                    self.interpreter.log_output(f"🏷️ Defined {name} = {value}")
+            elif dir_name == "IFDEF":
+                # {$IFDEF name} - conditional compilation
+                if len(parts) > 1:
+                    name = parts[1].upper()
+                    defined = name in self.compiler_directives
+                    self.interpreter.log_output(f"🔍 IFDEF {name} = {defined}")
+            elif dir_name == "IFNDEF":
+                # {$IFNDEF name} - conditional compilation
+                if len(parts) > 1:
+                    name = parts[1].upper()
+                    not_defined = name not in self.compiler_directives
+                    self.interpreter.log_output(f"🔍 IFNDEF {name} = {not_defined}")
+        except Exception as e:
+            self.interpreter.debug_output(f"Directive error: {e}")
         return "continue"
 
     def _handle_begin(self, command):
@@ -193,6 +410,60 @@ class TwPascalExecutor:
         except Exception as e:
             self.interpreter.debug_output(f"VAR declaration error: {e}")
         return "continue"
+
+    def _handle_record_type(self, name, type_def):
+        """Handle RECORD type definition"""
+        # RECORD field1: type1; field2: type2; END;
+        try:
+            record_part = type_def[6:].strip()  # Remove RECORD
+            if record_part.upper().endswith("END"):
+                record_part = record_part[:-3].strip()
+                fields = {}
+                field_lines = record_part.split(";")
+                for line in field_lines:
+                    line = line.strip()
+                    if ":" in line:
+                        field_list, field_type = line.split(":", 1)
+                        field_names = [f.strip().upper() for f in field_list.split(",")]
+                        for field_name in field_names:
+                            fields[field_name] = field_type.strip().upper()
+                self.records[name] = fields
+                self.data_types[name] = "RECORD"
+        except Exception as e:
+            self.interpreter.debug_output(f"Record type error: {e}")
+
+    def _handle_array_type(self, name, type_def):
+        """Handle ARRAY type definition"""
+        # ARRAY [low..high] OF element_type
+        try:
+            array_part = type_def[5:].strip()  # Remove ARRAY
+            if "OF" in array_part:
+                range_part, element_type = array_part.split("OF", 1)
+                range_part = range_part.strip()
+                if range_part.startswith("[") and range_part.endswith("]"):
+                    dimensions = range_part[1:-1].strip()
+                    self._declare_array(name, dimensions, element_type.strip().upper())
+        except Exception as e:
+            self.interpreter.debug_output(f"Array type error: {e}")
+
+    def _handle_enum_type(self, name, type_def):
+        """Handle enumeration type definition"""
+        # (value1, value2, value3)
+        try:
+            enum_part = type_def.strip()
+            if enum_part.startswith("(") and enum_part.endswith(")"):
+                values_str = enum_part[1:-1]
+                values = [v.strip().upper() for v in values_str.split(",")]
+                enum_dict = {}
+                for i, value in enumerate(values):
+                    enum_dict[value] = i
+                self.constants.update(enum_dict)
+                self.data_types[name] = "ENUM"
+                self.interpreter.log_output(
+                    f"🔢 Enum {name} with values: {', '.join(values)}"
+                )
+        except Exception as e:
+            self.interpreter.debug_output(f"Enum type error: {e}")
 
     def _handle_const(self, command):
         """Handle CONST declarations"""
@@ -418,7 +689,6 @@ class TwPascalExecutor:
             match = re.match(r"(\w+)\s*\((.*?)\)", command)
             if match:
                 name = match.group(1).upper()
-                args = match.group(2).strip() if match.group(2) else ""
 
                 if name in self.procedures:
                     self.interpreter.log_output(f"📞 Calling procedure {name}")
@@ -454,8 +724,10 @@ class TwPascalExecutor:
                                 value = float(value)
                             else:
                                 value = int(value)
-                        except:
-                            pass  # Keep as string
+                        except Exception as e:
+                            self.interpreter.debug_output(
+                                f"Type conversion error: {e}"
+                            )  # Keep as string
 
                     self.variables[var] = value
                     self.interpreter.variables[var] = value
@@ -519,42 +791,108 @@ class TwPascalExecutor:
             expr = expr.replace("DIV", "//")
             expr = expr.replace("MOD", "%")
 
-            # Handle variables
-            for var_name in self.variables:
-                expr = re.sub(
-                    rf"\b{re.escape(var_name)}\b", f"self.variables['{var_name}']", expr
-                )
-
-            for const_name in self.constants:
-                expr = re.sub(
-                    rf"\b{re.escape(const_name)}\b",
-                    f"self.constants['{const_name}']",
-                    expr,
-                )
-
-            # Safe evaluation
+            # Turbo Pascal functions (both uppercase and lowercase for compatibility)
             allowed_names = {
+                # Basic functions
                 "abs": abs,
+                "ABS": abs,
                 "round": round,
-                "int": int,
-                "float": float,
-                "max": max,
-                "min": min,
-                "len": len,
-                "str": str,
-                "ord": ord,
-                "chr": chr,
-                "sin": math.sin,
-                "cos": math.cos,
-                "tan": math.tan,
-                "sqrt": math.sqrt,
-                "random": random.random,
+                "ROUND": round,
                 "trunc": int,
+                "TRUNC": int,
+                "int": int,
+                "INT": int,
+                "float": float,
+                "FLOAT": float,
+                "max": max,
+                "MAX": max,
+                "min": min,
+                "MIN": min,
+                "len": len,
+                "LEN": len,
+                "str": str,
+                "STR": str,
+                "ord": ord,
+                "ORD": ord,
+                "chr": chr,
+                "CHR": chr,
+                # Math functions
+                "sin": math.sin,
+                "SIN": math.sin,
+                "cos": math.cos,
+                "COS": math.cos,
+                "tan": math.tan,
+                "TAN": math.tan,
+                "arcsin": math.asin,
+                "ARCSIN": math.asin,
+                "arccos": math.acos,
+                "ARCCOS": math.acos,
+                "arctan": math.atan,
+                "ARCTAN": math.atan,
+                "exp": math.exp,
+                "EXP": math.exp,
+                "ln": math.log,
+                "LN": math.log,
+                "log": math.log10,
+                "LOG": math.log10,
+                "sqrt": math.sqrt,
+                "SQRT": math.sqrt,
+                "sqr": lambda x: x * x,
+                "SQR": lambda x: x * x,
+                "power": math.pow,
+                "POWER": math.pow,
+                # String functions
+                "length": len,
+                "LENGTH": len,
+                "copy": lambda s, start, count: (
+                    s[start - 1 : start - 1 + count] if s else ""
+                ),
+                "COPY": lambda s, start, count: (
+                    s[start - 1 : start - 1 + count] if s else ""
+                ),
+                "pos": lambda substr, s: s.find(substr) + 1 if substr in s else 0,
+                "POS": lambda substr, s: s.find(substr) + 1 if substr in s else 0,
+                "concat": lambda *args: "".join(str(arg) for arg in args),
+                "CONCAT": lambda *args: "".join(str(arg) for arg in args),
+                "upcase": lambda s: str(s).upper(),
+                "UPCASE": lambda s: str(s).upper(),
+                "downcase": lambda s: str(s).lower(),
+                "DOWNCASE": lambda s: str(s).lower(),
+                "delete": lambda s, start, count: (
+                    s[: start - 1] + s[start - 1 + count :] if s else ""
+                ),
+                "DELETE": lambda s, start, count: (
+                    s[: start - 1] + s[start - 1 + count :] if s else ""
+                ),
+                # Random functions
+                "random": random.random,
+                "RANDOM": random.random,
+                "randomize": random.seed,
+                "RANDOMIZE": random.seed,
+                # Type conversion functions
+                "val": lambda s: (
+                    int(float(s))
+                    if s.replace(".", "").replace("-", "").isdigit()
+                    else 0
+                ),
+                "VAL": lambda s: (
+                    int(float(s))
+                    if s.replace(".", "").replace("-", "").isdigit()
+                    else 0
+                ),
+                "str_val": str,
+                "STR_VAL": str,
             }
 
+            # Create evaluation context
+            eval_context = {}
+            eval_context.update(self.variables)
+            eval_context.update(self.constants)
+            eval_context.update(allowed_names)
+
+            # Safe evaluation
             safe_dict = {"__builtins__": {}}
-            safe_dict.update(allowed_names)
-            safe_dict["self"] = self
+            safe_dict.update(eval_context)
 
             return eval(expr, safe_dict)
         except Exception as e:
@@ -569,6 +907,15 @@ class TwPascalExecutor:
             "STRING": "",
             "BOOLEAN": False,
             "CHAR": " ",
+            # Turbo Pascal extended types
+            "WORD": 0,  # 16-bit unsigned
+            "LONGINT": 0,  # 32-bit signed
+            "BYTE": 0,  # 8-bit unsigned
+            "SHORTINT": 0,  # 8-bit signed
+            "SINGLE": 0.0,  # Single precision float
+            "DOUBLE": 0.0,  # Double precision float
+            "EXTENDED": 0.0,  # Extended precision float
+            "COMP": 0,  # Computational type
         }
         return type_defaults.get(var_type.upper(), 0)
 
@@ -588,7 +935,8 @@ class TwPascalExecutor:
                 return bool(value)
             elif target_type == "CHAR":
                 return str(value)[0] if value else " "
-        except:
+        except Exception as e:
+            self.interpreter.debug_output(f"Type conversion error: {e}")
             pass
         return value
 

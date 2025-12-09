@@ -1,0 +1,46 @@
+T:PILOT Graphics Demo
+T:This demonstrates the new G: graphics commands
+
+; Clear the graphics area
+G:CLEAR
+
+; Set pen color to blue
+G:COLOR,blue
+
+; Draw a box using lines
+T:Drawing a box...
+G:LINE,50,50,150,50
+G:LINE,150,50,150,150
+G:LINE,150,150,50,150
+G:LINE,50,150,50,50
+
+; Draw a circle in the center
+T:Drawing a circle...
+G:COLOR,red
+G:CIRCLE,100,100,30
+
+; Draw another rectangle
+T:Drawing a filled area...
+G:COLOR,green
+G:RECT,200,50,100,80
+
+; Demonstrate pen up/down
+T:Testing pen control...
+G:PENUP
+; Move without drawing
+G:LINE,0,0,50,50
+G:PENDOWN
+; Now draw
+G:LINE,50,50,100,100
+
+; Multiple circles in different colors
+T:Drawing colored circles...
+G:COLOR,purple
+G:CIRCLE,250,100,20
+G:COLOR,orange
+G:CIRCLE,280,100,20
+G:COLOR,cyan
+G:CIRCLE,310,100,20
+
+T:Graphics demo complete!
+T:All G: commands working: LINE CIRCLE RECT CLEAR PENUP PENDOWN COLOR

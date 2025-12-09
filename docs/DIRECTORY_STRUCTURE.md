@@ -1,103 +1,142 @@
-# Time_Warp IDE - Directory Structure (Updated)
+# Time_Warp - Current Directory Structure
 
-## 📁 Current Project Organization
+## 📁 Actual Project Organization
 
-The Time_Warp IDE has been reorganized into a professional Python package structure:
+The Time_Warp interpreter follows a clean, organized structure focused on educational programming:
 
 ```
-Time_Warp/                             # Root project directory
-├── 📄 timewarp.py                     # Main application entry point
-├── 📄 README.md                       # Project documentation
-├── 📄 CHANGELOG.md                    # Version history
-├── 📄 requirements.txt                # Dependencies
+Time_Warp_Classic/                     # Root project directory
+├── 📄 Time_Warp.py                    # Unified entry point with dependency checking
+├── 📄 timewarp                        # CLI wrapper script
+├── 📄 README.md                       # Main project documentation
+├── 📄 requirements.txt                # Python dependencies
 ├── 📄 pyproject.toml                  # Modern Python configuration
-├── 📄 pytest.ini                     # Test configuration
-├── 📄 Time_Warp.code-workspace        # VS Code workspace
+├── 📄 .flake8                         # Code linting configuration
 ├── 📄 .gitignore                      # Git ignore patterns
-├── 📄 .pre-commit-config.yaml         # Code quality hooks
+├── 📄 .pre-commit-config.yaml         # Pre-commit hooks
 │
-├── 📁 src/timewarp/                   # Main application package
-│   ├── 📄 __init__.py                 # Package initialization
-│   ├── 📄 main.py                     # Core application (formerly Time_Warp.py)
-│   ├── 📁 core/                       # Core interpreter and language engines
-│   │   ├── 📄 interpreter.py          # Central execution engine
-│   │   ├── 📁 languages/              # Language-specific executors
-│   │   │   ├── 📄 pilot.py            # PILOT language support
-│   │   │   ├── 📄 basic.py            # BASIC language support
-│   │   │   ├── 📄 logo.py             # Logo turtle graphics
-│   │   │   ├── 📄 python_executor.py  # Python execution
-│   │   │   └── 📄 javascript_executor.py # JavaScript support
-│   │   ├── 📁 features/               # Advanced IDE features
-│   │   ├── 📁 hardware/               # Hardware integration
-│   │   ├── 📁 iot/                    # IoT device support
-│   │   └── 📁 utilities/              # Core utility functions
-│   ├── 📁 gui/                        # User interface components
-│   │   ├── 📁 components/             # Reusable GUI components
-│   │   └── 📁 dialogs/                # Dialog windows
-│   ├── 📁 utils/                      # Tools & utilities (formerly tools/)
-│   │   ├── 📄 theme.py                # Theme management (8 themes)
-│   │   └── 📄 performance_bench.py    # Performance tools
-│   └── 📁 games/                      # Game engine
-│       ├── 📁 engine/                 # 2D game engine
-│       └── 📁 samples/                # Sample games
-│
-├── 📁 tests/                          # Comprehensive test suite
-│   ├── 📄 README.md                   # Testing documentation
-│   ├── 📁 unit/                       # Unit tests
-│   ├── 📁 integration/                # Integration tests
-│   ├── 📁 fixtures/                   # Test data and fixtures
-│   ├── 📁 verification/               # Verification test suite
-│   ├── 📁 sample_outputs/             # Test output samples
-│   └── 📁 test_results/               # Test execution results
+├── 📁 core/                           # Core interpreter system
+│   ├── 📄 __init__.py                 # Core module initialization
+│   ├── 📄 interpreter.py              # Central execution engine
+│   ├── 📁 languages/                  # Language-specific executors
+│   │   ├── 📄 __init__.py
+│   │   ├── 📄 basic.py                # TW BASIC (Turbo BASIC)
+│   │   ├── 📄 forth.py                # Forth stack-based
+│   │   ├── 📄 javascript.py           # JavaScript execution
+│   │   ├── 📄 javascript_executor.py  # JS execution wrapper
+│   │   ├── 📄 logo.py                 # Logo turtle graphics
+│   │   ├── 📄 pascal.py               # Pascal structured
+│   │   ├── 📄 perl.py                 # Perl text processing
+│   │   ├── 📄 pilot.py                # PILOT educational
+│   │   ├── 📄 prolog.py               # Prolog logic
+│   │   ├── 📄 python.py               # Python execution
+│   │   └── 📄 python_executor.py      # Python execution wrapper
+│   ├── 📁 features/                   # Advanced features
+│   │   └── 📄 code_templates.py       # Code template system
+│   └── 📁 utilities/                  # Helper utilities
+│       └── 📄 __init__.py
 │
 ├── 📁 docs/                           # Documentation
-│   ├── 📄 PROJECT_STRUCTURE.md        # Project organization guide
+│   ├── 📄 README.md                   # Documentation index
+│   ├── 📄 CLI.md                      # CLI documentation
+│   ├── 📄 CHANGELOG.md                # Version history
+│   ├── 📄 LICENSE                     # Project license
 │   ├── 📄 MODULAR_ARCHITECTURE.md     # Architecture documentation
-│   ├── 📄 GITHUB_INTEGRATION.md       # GitHub integration guide
+│   ├── 📄 PROJECT_STRUCTURE.md        # Project structure guide
+│   ├── 📄 DIRECTORY_STRUCTURE.md      # This file
+│   ├── 📄 GITHUB_INTEGRATION.md       # GitHub integration
+│   ├── 📄 DEMO_GAMES.md               # Game demonstrations
+│   ├── 📄 VERSION_1_1_ROADMAP.md      # Development roadmap
 │   ├── 📄 compiler.md                 # Compiler documentation
-│   ├── 📁 user-guide/                 # End-user documentation
-│   ├── 📁 developer-guide/            # Contributing and development docs
-│   ├── 📁 api/                        # API reference documentation
-│   ├── 📁 languages/                  # Language-specific guides
-│   ├── 📁 development/                # Development documentation
+│   ├── 📄 README_v11.md               # Version 1.1 README
+│   ├── 📁 developer-guide/            # Developer documentation
+│   │   └── 📄 CONTRIBUTING.md         # Contributing guidelines
+│   ├── 📁 development/                # Development docs
+│   │   └── 📄 FILE_ORGANIZATION.md    # File organization guide
 │   ├── 📁 guides/                     # General guides
-│   ├── 📁 reports/                    # Project and development reports
-│   └── 📁 releases/                   # Release documentation
+│   │   ├── 📄 GITHUB_RELEASE_ASSETS.md
+│   │   └── 📄 GITHUB_RELEASE_UPDATE_INSTRUCTIONS.md
+│   ├── 📁 languages/                  # Language-specific guides
+│   │   ├── 📄 basic.md                # BASIC language guide
+│   │   ├── 📄 logo.md                 # Logo language guide
+│   │   ├── 📄 pilot.md                # PILOT language guide
+│   │   └── 📄 PILOT_EXTENDED_COMMANDS.md
+│   ├── 📁 releases/                   # Release documentation
+│   │   ├── 📄 GITHUB_RELEASE_INSTRUCTIONS.md
+│   │   ├── 📄 RELEASE_NOTES_v1.2.0.md
+│   │   ├── 📄 RELEASE_NOTES_v1.3.0.md
+│   │   ├── 📄 RELEASE_READY_v1.2.0.md
+│   │   └── 📄 RELEASE_UPDATE_STEPS.md
+│   └── 📁 reports/                    # Project reports
+│       ├── 📄 CRISIS_RESOLUTION_SUCCESS.md
+│       ├── 📄 GITHUB_PUSH_ISSUE_RESOLVED.md
+│       ├── 📄 ISSUES_RESOLVED.md
+│       └── 📄 VSCODE_DEBUG_FIX.md
 │
-├── 📁 examples/                       # Sample programs and tutorials
+├── 📁 examples/                       # Sample programs
 │   ├── 📄 README.md                   # Examples documentation
-│   ├── 📄 PROGRAMS_INDEX.md           # Program index and descriptions
-│   ├── 📁 BASIC/                      # BASIC language examples
-│   ├── 📁 Logo/                       # Logo turtle graphics examples
-│   ├── 📁 PILOT/                      # PILOT educational examples
-│   ├── 📁 Python/                     # Python scripting examples
-│   ├── 📁 basic/                      # Additional BASIC examples
-│   ├── 📁 logo/                       # Additional Logo examples
-│   ├── 📁 pilot/                      # Additional PILOT examples
-│   └── 📁 games/                      # Game development examples
+│   ├── 📄 PROGRAMS_INDEX.md           # Program index
+│   ├── 📁 basic/                      # BASIC example programs
+│   ├── 📁 forth/                      # Forth example programs
+│   ├── 📁 javascript/                 # JavaScript example programs
+│   ├── 📁 logo/                       # Logo example programs
+│   ├── 📁 pascal/                     # Pascal example programs
+│   ├── 📁 perl/                       # Perl example programs
+│   ├── 📁 pilot/                      # PILOT example programs
+│   ├── 📁 prolog/                     # Prolog example programs
+│   └── 📁 python/                     # Python example programs
 │
-├── 📁 scripts/                        # Development and build scripts
+├── 📁 scripts/                        # Development scripts
 │   ├── 📄 README.md                   # Scripts documentation
-│   ├── 📄 prepare_release.sh          # Release preparation
-│   ├── 📄 run_all_tests.py            # Master test runner
-│   ├── 📄 install_dependencies.py     # Dependency installer
-│   ├── 📄 launch.py                   # Cross-platform launcher
-│   ├── 📄 start.sh                    # Quick start script
-│   ├── 📁 build/                      # Build-related scripts
-│   └── 📁 development/                # Development utilities
+│   ├── 📄 timewarp-cli.py             # CLI implementation
+│   ├── 📄 create_github_release.sh
+│   ├── 📄 install_dependencies.py
+│   ├── 📄 integration_tests.py
+│   ├── 📄 launch.py
+│   ├── 📄 launch_Time_Warp.sh
+│   ├── 📄 prepare_release.sh
+│   ├── 📄 run_all_tests.py
+│   ├── 📄 run_tests.py
+│   ├── 📄 run_tests_ci.py
+│   ├── 📄 run_tests_minimal.py
+│   ├── 📄 run_tests_production.py
+│   ├── 📄 run_tests_ultra_minimal.py
+│   ├── 📄 setup.py
+│   ├── 📄 setup_dev.sh
+│   ├── 📄 standardize_names.py
+│   └── 📄 start.sh
 │
-├── 📁 plugins/                        # Plugin system and extensions
-│   ├── 📄 __init__.py                 # Plugin system initialization
-│   ├── 📁 sample_plugin/              # Example plugin implementation
-│   └── 📁 plugins/                    # Individual plugin implementations
-│
-├── 📁 marketing/                      # Marketing materials and outreach
-│   ├── 📄 README.md                   # Marketing documentation
-│   ├── 📄 marketing_summary.md        # Marketing strategy summary
-│   ├── 📁 graphics/                   # Marketing graphics and assets
-│   └── 📁 social_media/               # Social media content
-│
-├── 📁 release/                        # Release management
+└── 📁 src/                            # Extended features (future)
+    └── 📁 timewarp/                   # Extended Time_Warp package
+        ├── 📄 __init__.py
+        ├── 📄 main.py
+        ├── 📁 core/
+        ├── 📁 games/
+        ├── 📁 gui/
+        └── 📁 utils/
+```
+
+## 📋 Directory Descriptions
+
+### Core Components
+- **`core/`**: The heart of Time_Warp - interpreter and language executors
+- **`Time_Warp.py`**: Main GUI application using Tkinter
+- **`timewarp`**: CLI wrapper for command-line usage
+
+### Documentation
+- **`docs/`**: Comprehensive documentation covering all aspects
+- **Language guides** in `docs/languages/` for each supported language
+- **Developer docs** in `docs/developer-guide/` and `docs/development/`
+
+### Examples & Samples
+- **`examples/`**: Sample programs for all supported languages
+
+### Development Tools
+- **`scripts/`**: Utility scripts for development, testing, and deployment
+- **Build and test scripts** for CI/CD integration
+
+### Future Extensions
+- **`src/timewarp/`**: Placeholder for extended features and advanced capabilities
 │   └── 📁 v1.1/                       # Version 1.1 release files
 │
 ├── 📁 .github/                        # GitHub configuration
@@ -113,7 +152,7 @@ Time_Warp/                             # Root project directory
 
 ### Professional Python Package Structure
 - **src/timewarp/** - Modern Python package layout following best practices
-- **Proper entry points** - `timewarp.py` main entry, `src/timewarp/main.py` core app
+- **Proper entry points** - `Time_Warp.py` main entry, `src/timewarp/main.py` core app
 - **Clean separation** - Core logic, GUI, utilities, and games properly separated
 
 ### Educational Focus
@@ -126,7 +165,6 @@ Time_Warp/                             # Root project directory
 - **Modern configuration** - pyproject.toml, pytest.ini, pre-commit hooks
 - **Comprehensive testing** - Unit, integration, and verification tests
 - **Clean documentation** - Organized guides for users and developers
-- **Plugin architecture** - Extensible system for custom functionality
 
 ### Project Management
 - **Marketing ready** - Complete promotional materials and outreach
@@ -143,13 +181,12 @@ Time_Warp/                             # Root project directory
 | **Example Programs** | 50+ | Educational demonstrations |
 | **Test Modules** | 30+ | Comprehensive test coverage |
 | **Documentation Files** | 25+ | User and developer guides |
-| **Plugin Examples** | 5+ | Extensible plugin architecture |
 
 ## 🚀 Usage Patterns
 
 ### Direct Execution
 ```bash
-python timewarp.py          # Main entry point
+python Time_Warp.py        # Main entry point
 python -m src.timewarp.main # Module execution
 ```
 
@@ -163,7 +200,7 @@ python scripts/run_all_tests.py # Test execution
 ### Package Installation
 ```bash
 pip install -e .           # Development installation
-pip install timewarp-ide  # Production installation (future)
+pip install timewarp       # Production installation (future)
 ```
 
 ## 🔧 Maintenance Guidelines
@@ -180,4 +217,4 @@ pip install timewarp-ide  # Production installation (future)
 - **Documentation** - Uppercase for main docs, lowercase for specific guides
 - **Examples** - Language-specific directories with descriptive filenames
 
-This clean, professional structure makes Time_Warp IDE maintainable, contributor-friendly, and ready for serious educational use and distribution.
+This clean, professional structure makes Time_Warp maintainable, contributor-friendly, and ready for serious educational use and distribution.

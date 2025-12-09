@@ -1,18 +1,18 @@
-# Time_Warp IDE
+# Time_Warp
 
-A simple educational programming environment built with Python and Tkinter, supporting multiple programming languages through a unified interpreter.
+A command-line multi-language interpreter for educational programming, supporting 9 programming languages through a unified execution engine.
 
 ## Overview
 
-Time_Warp IDE is a minimal but powerful educational tool that allows users to write and execute programs in 9 different programming languages using a single, simple interface. It's designed for learning programming concepts across different paradigms.
+Time_Warp is an educational tool that allows users to write and execute programs in 9 different programming languages using a command-line interface. It's designed for learning programming concepts across different paradigms with immediate execution feedback.
 
 ## Features
 
 - **Multi-Language Support**: Execute code in PILOT, BASIC, Logo, Pascal, Prolog, Forth, Perl, Python, and JavaScript
-- **Simple GUI**: Clean Tkinter interface with text editor and run button
-- **Turtle Graphics**: Visual programming support for Logo and PILOT languages
+- **Command-Line Interface**: Powerful CLI for running programs and displaying code with syntax highlighting
+- **Turtle Graphics**: Text-based visual programming support for Logo and PILOT languages
 - **Educational Focus**: Clear error messages and immediate execution feedback
-- **Keyboard Shortcuts**: F5 or Ctrl+R to run programs
+- **Syntax Highlighting**: Display code with terminal-based syntax highlighting (requires pygments)
 
 ## Installation
 
@@ -29,20 +29,36 @@ Time_Warp IDE is a minimal but powerful educational tool that allows users to wr
    pip install -r requirements.txt
    ```
 
-3. Run the IDE:
+3. Run programs via CLI:
 
    ```bash
-   python Time_Warp.py
+   python scripts/timewarp-cli.py run examples/basic/hello_world.bas
    ```
 
 ## Usage
 
-1. **Launch** the application with `python Time_Warp.py`
-2. **Write** your program in the text area
-3. **Click "▶ Run Program"** or press **F5** to execute
-4. **View results** in the console output
+### Command Line Interface
 
-## Supported Languages
+Time_Warp provides a comprehensive CLI for running and managing programs:
+
+```bash
+# Run a program
+python scripts/timewarp-cli.py run examples/basic/hello_world.bas
+
+# Display code with syntax highlighting
+python scripts/timewarp-cli.py cat examples/basic/hello_world.bas
+
+# List available example programs
+python scripts/timewarp-cli.py list
+
+# Get information about a language
+python scripts/timewarp-cli.py info basic
+
+# Show help
+python scripts/timewarp-cli.py help
+```
+
+### Supported Languages
 
 ### TW PILOT (Educational Language)
 
@@ -102,21 +118,53 @@ print "x = $x\n";
 ## Architecture
 
 ```
-Time_Warp/
-├── Time_Warp.py          # Main GUI application
-├── core/
-│   ├── __init__.py       # Core module exports
-│   ├── interpreter.py    # Main interpreter engine
-│   ├── languages/        # Language-specific executors
-│   │   ├── __init__.py
-│   │   ├── pilot.py      # TW PILOT executor
-│   │   ├── basic.py      # TW BASIC executor
-│   │   ├── logo.py       # TW Logo executor
-│   │   └── ...           # Other language executors
-│   └── utilities/        # Helper utilities
-├── requirements.txt      # Python dependencies
-└── scripts/
-    └── start.sh          # Launch script
+Time_Warp_Classic/                     # Root project directory
+├── 📄 Time_Warp.py                    # Dependency checker and launcher
+├── 📄 timewarp                        # CLI wrapper script
+├── 📄 README.md                       # Main project documentation
+├── 📄 requirements.txt                # Python dependencies
+├── 📄 pyproject.toml                  # Modern Python configuration
+│
+├── 📁 core/                           # Core interpreter system
+│   ├── 📄 __init__.py                 # Core module initialization
+│   ├── 📄 interpreter.py              # Central execution engine
+│   ├── 📁 languages/                  # Language-specific executors
+│   │   ├── 📄 __init__.py
+│   │   ├── 📄 basic.py                # BASIC language support
+│   │   ├── 📄 forth.py                # Forth stack-based
+│   │   ├── 📄 javascript.py           # JavaScript execution
+│   │   ├── 📄 javascript_executor.py  # JS execution wrapper
+│   │   ├── 📄 logo.py                 # Logo turtle graphics
+│   │   ├── 📄 pascal.py               # Pascal structured
+│   │   ├── 📄 perl.py                 # Perl text processing
+│   │   ├── 📄 pilot.py                # PILOT educational
+│   │   ├── 📄 prolog.py               # Prolog logic
+│   │   ├── 📄 python.py               # Python execution
+│   │   └── 📄 python_executor.py      # Python execution wrapper
+│   ├── 📁 features/                   # Advanced features
+│   │   └── 📄 code_templates.py       # Code template system
+│   └── 📁 utilities/                  # Helper utilities
+│       └── 📄 __init__.py
+│
+├── 📁 docs/                           # Documentation
+│   ├── 📄 README.md                   # Documentation index
+│   ├── 📄 CLI.md                      # CLI documentation
+│   ├── 📄 *.md                        # Various guides and references
+│   └── 📁 developer-guide/            # Developer documentation
+│
+├── 📁 examples/                       # Sample programs
+│   ├── 📄 README.md                   # Examples documentation
+│   ├── 📄 PROGRAMS_INDEX.md           # Program index
+│   └── 📁 [language]/                 # Language-specific examples
+│
+├── 📁 scripts/                        # Development scripts
+│   ├── 📄 README.md                   # Scripts documentation
+│   ├── 📄 timewarp-cli.py             # CLI implementation
+│   └── 📄 [other scripts]             # Various utility scripts
+│
+└── 📁 .github/                        # GitHub workflows
+    └── 📁 workflows/                  # CI/CD automation
+        └── 📄 ci.yml                  # Continuous integration
 ```
 
 ## Language Details
@@ -147,12 +195,6 @@ Time_Warp/
 
 ## Development
 
-### Running Tests
-
-```bash
-python -m pytest tests/
-```
-
 ### Adding a New Language
 
 1. Create executor class in `core/languages/newlang.py`
@@ -170,8 +212,7 @@ python -m pytest tests/
 ## Requirements
 
 - Python 3.8+
-- Tkinter (usually included with Python)
-- PIL/Pillow (optional, for image features)
+- pygments (optional, for syntax highlighting in CLI)
 
 ## License
 
@@ -181,7 +222,7 @@ MIT License - see LICENSE file for details.
 
 Contributions welcome! Please:
 
-1. Test your changes
+1. Test your changes manually
 2. Update documentation
 3. Follow existing code style
 4. Add examples for new features

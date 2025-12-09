@@ -1,0 +1,42 @@
+; Logo Turtle Graphics Demo
+; Drawing geometric shapes
+
+TO SQUARE :SIZE
+  REPEAT 4 [FORWARD :SIZE RIGHT 90]
+END
+
+TO TRIANGLE :SIZE
+  REPEAT 3 [FORWARD :SIZE RIGHT 120]
+END
+
+TO STAR :SIZE
+  REPEAT 5 [FORWARD :SIZE RIGHT 144]
+END
+
+; Main program
+CLEARTEXT
+PRINT [Logo Turtle Graphics Demo]
+PRINT []
+
+PRINT [Drawing a square...]
+SQUARE 100
+
+PRINT [Moving to draw a triangle...]
+PENUP
+RIGHT 90
+FORWARD 150
+LEFT 90
+PENDOWN
+
+TRIANGLE 80
+
+PRINT [Moving to draw a star...]
+PENUP
+RIGHT 90
+FORWARD 120
+LEFT 90
+PENDOWN
+
+STAR 60
+
+PRINT [Graphics demo complete!]

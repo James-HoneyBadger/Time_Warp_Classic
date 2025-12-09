@@ -1,0 +1,329 @@
+{
+  "timestamp": "2025-12-08T22:30:41.883799",
+  "languages": {
+    "Logo": {
+      "passed": 11,
+      "total": 11,
+      "details": [
+        {
+          "command": "CLEARSCREEN",
+          "expected": "cleared",
+          "output": "Screen cleared",
+          "passed": true
+        },
+        {
+          "command": "SETCOLOR red",
+          "expected": "color",
+          "output": "Pen color set to red",
+          "passed": true
+        },
+        {
+          "command": "SETPENSIZE 4",
+          "expected": "pen size",
+          "output": "Pen size set to 4",
+          "passed": true
+        },
+        {
+          "command": "SETXY 30 40",
+          "expected": "setxy",
+          "output": "SETXY -> Turtle moved to position (30.0, 40.0)",
+          "passed": true
+        },
+        {
+          "command": "FORWARD 20",
+          "expected": "turtle moved",
+          "output": "\ud83c\udfa8 Drawing line from (330.0, 160.0) to (350.0, 160.0)\nTurtle moved\nTurtle moved",
+          "passed": true
+        },
+        {
+          "command": "LEFT 90",
+          "expected": "left",
+          "output": "Turtle turned left 90.0 degrees (heading=90.0)",
+          "passed": true
+        },
+        {
+          "command": "FORWARD 10",
+          "expected": "turtle moved",
+          "output": "\ud83c\udfa8 Drawing line from (350.0, 160.0) to (350.0, 150.0)\nTurtle moved\nTurtle moved",
+          "passed": true
+        },
+        {
+          "command": "PENUP",
+          "expected": "pen up",
+          "output": "Pen up - turtle will move without drawing",
+          "passed": true
+        },
+        {
+          "command": "RIGHT 45",
+          "expected": "right",
+          "output": "Turtle turned right 45.0 degrees (heading=135.0)",
+          "passed": true
+        },
+        {
+          "command": "PENDOWN",
+          "expected": "pen down",
+          "output": "Pen down - turtle will draw when moving",
+          "passed": true
+        },
+        {
+          "command": "CIRCLE 15",
+          "expected": "circle",
+          "output": "Drew circle with radius 15.0",
+          "passed": true
+        }
+      ]
+    },
+    "PILOT": {
+      "passed": 9,
+      "total": 9,
+      "details": [
+        {
+          "command": "T:Hello world",
+          "expected": "hello",
+          "output": "Hello world",
+          "passed": true
+        },
+        {
+          "command": "A:Enter name",
+          "expected": "awaiting input",
+          "output": "Awaiting input: Enter value for Enter name:",
+          "passed": true
+        },
+        {
+          "command": "Y:OK",
+          "expected": null,
+          "output": "",
+          "passed": true
+        },
+        {
+          "command": "N:OK",
+          "expected": null,
+          "output": "",
+          "passed": true
+        },
+        {
+          "command": "G:PENUP",
+          "expected": "pen",
+          "output": "Pen up",
+          "passed": true
+        },
+        {
+          "command": "G:PENDOWN",
+          "expected": "pen",
+          "output": "Pen down",
+          "passed": true
+        },
+        {
+          "command": "G:COLOR,blue",
+          "expected": "color",
+          "output": "Pen color set to blue",
+          "passed": true
+        },
+        {
+          "command": "G:LINE,0,0,50,50",
+          "expected": "line",
+          "output": "G:LINE from (0.0,0.0) to (50.0,50.0)",
+          "passed": true
+        },
+        {
+          "command": "MATH:SIN 90",
+          "expected": "1",
+          "output": "MATH:SIN(90.0\u00b0) = 1.0000",
+          "passed": true
+        }
+      ]
+    },
+    "BASIC": {
+      "passed": 7,
+      "total": 7,
+      "details": [
+        {
+          "command": "PRINT [HELLO]",
+          "expected": "hello",
+          "output": "[HELLO]",
+          "passed": true
+        },
+        {
+          "command": "LET A = 5",
+          "expected": null,
+          "output": "",
+          "passed": true
+        },
+        {
+          "command": "LET B = 3",
+          "expected": null,
+          "output": "",
+          "passed": true
+        },
+        {
+          "command": "IF A > B THEN PRINT [A greater]",
+          "expected": "greater",
+          "output": "[5 greater]",
+          "passed": true
+        },
+        {
+          "command": "FOR I = 1 TO 3",
+          "expected": null,
+          "output": "",
+          "passed": true
+        },
+        {
+          "command": "PRINT [LOOP]",
+          "expected": "loop",
+          "output": "[LOOP]",
+          "passed": true
+        },
+        {
+          "command": "NEXT I",
+          "expected": null,
+          "output": "",
+          "passed": true
+        }
+      ]
+    },
+    "Python": {
+      "passed": 3,
+      "total": 3,
+      "details": [
+        {
+          "command": "print('py start')",
+          "expected": "py start",
+          "output": "py start",
+          "passed": true
+        },
+        {
+          "command": "x=5\nprint(x*2)",
+          "expected": "10",
+          "output": "py start\n10",
+          "passed": true
+        },
+        {
+          "command": "for i in range(3):\n    print(i)",
+          "expected": "2",
+          "output": "py start\n10\n0\n1\n2",
+          "passed": true
+        }
+      ]
+    },
+    "JavaScript": {
+      "passed": 3,
+      "total": 3,
+      "details": [
+        {
+          "command": "console.log('js start')",
+          "expected": "js start",
+          "output": "js start",
+          "passed": true
+        },
+        {
+          "command": "var a = 2; var b = 3; console.log(a + b);",
+          "expected": "5",
+          "output": "js start\n5",
+          "passed": true
+        },
+        {
+          "command": "if (true) { console.log('yes'); }",
+          "expected": "yes",
+          "output": "js start\n5\nyes",
+          "passed": true
+        }
+      ]
+    },
+    "Forth": {
+      "passed": 5,
+      "total": 5,
+      "details": [
+        {
+          "command": "5 DUP .",
+          "expected": null,
+          "output": "5",
+          "passed": true
+        },
+        {
+          "command": "5 6 DROP",
+          "expected": null,
+          "output": "",
+          "passed": true
+        },
+        {
+          "command": "1 2 SWAP . .",
+          "expected": null,
+          "output": "1\n2",
+          "passed": true
+        },
+        {
+          "command": "5 3 + .",
+          "expected": null,
+          "output": "8",
+          "passed": true
+        },
+        {
+          "command": "42 .",
+          "expected": null,
+          "output": "42",
+          "passed": true
+        }
+      ]
+    },
+    "Pascal": {
+      "passed": 3,
+      "total": 3,
+      "details": [
+        {
+          "command": "writeln('Hello Pascal')",
+          "expected": "hello",
+          "output": "Hello Pascal",
+          "passed": true
+        },
+        {
+          "command": "write('test')",
+          "expected": "test",
+          "output": "test",
+          "passed": true
+        },
+        {
+          "command": "IF 1 = 1 THEN writeln('yes')",
+          "expected": "yes",
+          "output": "yes",
+          "passed": true
+        }
+      ]
+    },
+    "Perl": {
+      "passed": 2,
+      "total": 2,
+      "details": [
+        {
+          "command": "print 'Hello Perl'",
+          "expected": "hello",
+          "output": "Hello Perl",
+          "passed": true
+        },
+        {
+          "command": "print 4+6;",
+          "expected": "10",
+          "output": "10",
+          "passed": true
+        }
+      ]
+    },
+    "Prolog": {
+      "passed": 2,
+      "total": 2,
+      "details": [
+        {
+          "command": "parent(tom, bob).",
+          "expected": null,
+          "output": "\ud83d\udcda Fact added: parent({'type': 'atom', 'name': 'tom'}, {'type': 'atom', 'name': 'bob'})",
+          "passed": true
+        },
+        {
+          "command": "?- parent(tom, bob).",
+          "expected": "query succeeded",
+          "output": "\u2705 Query succeeded",
+          "passed": true
+        }
+      ]
+    }
+  }
+}

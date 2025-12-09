@@ -1,66 +1,142 @@
-# Time_Warp IDE 1.1 - Project Structure (Organized)
+# Time_Warp - Current Project Structure
 
-## 📁 Directory Organization
+## 📁 Actual Directory Organization
 
-### Root Directory (Essential Files Only)
+### Root Directory
 ```
-Time_Warp/
-├── timewarp.py              # Main application entry point
-├── README.md                # Project documentation
+Time_Warp_Classic/
+├── Time_Warp.py              # Unified entry point with dependency checking
+├── timewarp                  # CLI wrapper script (executable)
+├── README.md                 # Main project documentation
+├── requirements.txt          # Python dependencies
+├── pyproject.toml           # Modern Python project configuration
+├── .flake8                  # Code linting configuration
+├── .gitignore               # Git ignore patterns
+├── .pre-commit-config.yaml  # Pre-commit hooks
+├── .mypy_cache/             # MyPy type checking cache
+├── .venv/                   # Virtual environment (auto-created)
+├── .vscode/                 # VS Code workspace settings
+├── __pycache__/             # Python bytecode cache
+└── .git/                    # Git repository
+```
+
+### Core Interpreter System
+```
+core/
+├── __init__.py              # Core module initialization
+├── interpreter.py           # Central execution engine for all languages
+├── languages/               # Language-specific executors
+│   ├── __init__.py
+│   ├── basic.py             # TW BASIC with Turbo BASIC extensions
+│   ├── forth.py             # Forth stack-based programming
+│   ├── javascript.py        # JavaScript execution
+│   ├── javascript_executor.py # JS execution wrapper
+│   ├── logo.py              # Logo turtle graphics
+│   ├── pascal.py            # Pascal structured programming
+│   ├── perl.py              # Perl text processing
+│   ├── pilot.py             # PILOT educational language
+│   ├── prolog.py            # Prolog logic programming
+│   ├── python.py            # Python execution
+│   └── python_executor.py   # Python execution wrapper
+├── features/                # Advanced features
+│   └── code_templates.py    # Code template system
+└── utilities/               # Helper utilities
+    └── __init__.py
+```
+
+### Documentation
+```
+docs/
+├── README.md                # Documentation index
+├── CLI.md                   # CLI documentation
 ├── CHANGELOG.md             # Version history
-├── requirements.txt         # Python dependencies
-├── pyproject.toml          # Modern Python project configuration
-├── pytest.ini             # Testing configuration
-├── Time_Warp.code-workspace # VS Code workspace configuration
-├── .gitignore              # Git ignore patterns
-├── .pre-commit-config.yaml # Pre-commit hooks configuration
-└── .venv/                  # Virtual environment (auto-created)
+├── LICENSE                  # Project license
+├── MODULAR_ARCHITECTURE.md  # Architecture documentation
+├── PROJECT_STRUCTURE.md     # This file
+├── DIRECTORY_STRUCTURE.md   # Directory organization
+├── GITHUB_INTEGRATION.md    # GitHub integration
+├── DEMO_GAMES.md            # Game demonstrations
+├── VERSION_1_1_ROADMAP.md    # Development roadmap
+├── compiler.md              # Compiler documentation
+├── developer-guide/
+│   └── CONTRIBUTING.md      # Contributing guidelines
+├── development/
+│   └── FILE_ORGANIZATION.md  # File organization guide
+├── guides/
+│   ├── GITHUB_RELEASE_ASSETS.md
+│   └── GITHUB_RELEASE_UPDATE_INSTRUCTIONS.md
+├── languages/
+│   ├── basic.md             # BASIC language guide
+│   ├── logo.md              # Logo language guide
+│   ├── pilot.md             # PILOT language guide
+│   └── PILOT_EXTENDED_COMMANDS.md
+├── releases/
+│   ├── GITHUB_RELEASE_INSTRUCTIONS.md
+│   ├── RELEASE_NOTES_v1.2.0.md
+│   ├── RELEASE_NOTES_v1.3.0.md
+│   ├── RELEASE_READY_v1.2.0.md
+│   └── RELEASE_UPDATE_STEPS.md
+└── reports/
+    ├── CRISIS_RESOLUTION_SUCCESS.md
+    ├── GITHUB_PUSH_ISSUE_RESOLVED.md
+    ├── ISSUES_RESOLVED.md
+    └── VSCODE_DEBUG_FIX.md
 ```
 
-### Main Application Package
+### Example Programs
 ```
-src/timewarp/
-├── __init__.py             # Package initialization
-├── main.py                 # Main application (formerly Time_Warp.py)
-├── core/                   # Core framework
-│   ├── interpreter.py      # Central execution engine
-│   ├── languages/          # Language-specific executors
-│   │   ├── pilot.py        # PILOT language support
-│   │   ├── basic.py        # BASIC language support
-│   │   ├── logo.py         # Logo turtle graphics
-│   │   ├── python_executor.py # Python execution
-│   │   ├── javascript_executor.py # JavaScript support
-│   │   └── perl.py         # Perl language support
-│   ├── features/           # IDE feature implementations
-│   │   ├── tutorial_system.py # Interactive tutorials
-│   │   ├── ai_assistant.py # Code assistance
-│   │   └── gamification.py # Achievement system
-│   ├── audio/              # Audio system
-│   ├── hardware/           # Hardware integration
-│   ├── iot/                # IoT device support
-│   ├── networking/         # Collaboration features
-│   ├── optimizations/      # Performance enhancements
-│   └── utilities/          # Helper utilities
-├── gui/                    # User interface components
-│   ├── components/         # Reusable UI components
-│   │   └── multi_tab_editor.py # Multi-tab code editor
-│   ├── dialogs/            # Dialog windows
-│   └── themes/             # UI theme definitions
-├── utils/                  # Tools & utilities (formerly tools/)
-│   ├── theme.py            # Theme management system
+examples/
+├── README.md                # Examples documentation
+├── PROGRAMS_INDEX.md        # Program index
+├── basic/                   # BASIC example programs
+├── forth/                   # Forth example programs
+├── javascript/              # JavaScript example programs
+├── logo/                    # Logo example programs
+├── pascal/                  # Pascal example programs
+├── perl/                    # Perl example programs
+├── pilot/                   # PILOT example programs
+└── python/                  # Python example programs
+```
+
+### Development Scripts
+```
+scripts/
+├── README.md                # Scripts documentation
+├── timewarp-cli.py          # CLI implementation
+├── create_github_release.sh
+├── install_dependencies.py
+├── integration_tests.py
+├── launch.py
+├── launch_Time_Warp.sh
+├── prepare_release.sh
+├── run_all_tests.py
+├── run_tests.py
+├── run_tests_ci.py
+├── run_tests_minimal.py
+├── run_tests_production.py
+├── run_tests_ultra_minimal.py
+├── setup.py
+├── setup_dev.sh
+├── standardize_names.py
+└── start.sh
+```
+
+### Extended Features (Future)
+```
+src/
+└── timewarp/                # Extended Time_Warp features
+    ├── __init__.py
+    ├── main.py
+    ├── core/
+    ├── games/
+    ├── gui/
+    └── utils/
+```
 │   ├── performance_bench.py # Performance benchmarking
 │   └── tool_manager.py     # Tool coordination
 └── games/                  # Game engine
     ├── engine/             # 2D game engine
     └── samples/            # Sample games
-```
-
-### Plugin Architecture
-```
-plugins/
-├── __init__.py             # Plugin system initialization
-├── sample_plugin/          # Example plugin implementation
-└── plugins/                # Additional plugins directory
 ```
 
 ### Development & Testing
@@ -163,8 +239,8 @@ release/                    # Release management
 ## 🎯 Key Files
 
 ### Primary Entry Points
-- `timewarp.py` - Main application entry point
-- `src/timewarp/main.py` - Core application module (formerly Time_Warp.py)
+- `Time_Warp.py` - Unified entry point with dependency checking
+- `src/timewarp/main.py` - Core application module
 - `scripts/launch.py` - Cross-platform launcher
 
 ### Configuration
@@ -183,7 +259,7 @@ release/                    # Release management
 
 ### Direct Execution
 ```bash
-python timewarp.py          # Main entry point
+python Time_Warp.py        # Main entry point
 python -m src.timewarp.main # Module execution
 ```
 
@@ -203,8 +279,7 @@ python scripts/launch.py   # Cross-platform launcher
 - **Languages Supported**: 6 (PILOT, BASIC, Logo, Python, JavaScript, Perl)
 - **Themes Available**: 8 (4 dark, 4 light)
 - **Test Coverage**: 23 comprehensive tests
-- **Plugin System**: Extensible architecture
 - **Total Files**: ~200+ organized files
 - **Code Quality**: All tests passing ✅
 
-This clean, organized structure makes Time_Warp IDE 1.1 professional, maintainable, and ready for production use.
+This clean, organized structure makes Time_Warp 1.1 professional, maintainable, and ready for production use.

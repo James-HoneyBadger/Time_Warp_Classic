@@ -1,214 +1,124 @@
-# ⏰ Time_Warp IDE v1.1 - Enhanced Educational Programming Environment
+# Time_Warp - Current Version Overview
 
-## 🔥 What's New in v1.1
+## 🎯 About Time_Warp
 
-Time_Warp IDE v1.1 brings significant usability improvements while maintaining our core educational focus. This release transforms the single-window experience into a modern, multi-panel IDE that's perfect for both students and educators.
+Time_Warp is a simple, educational programming environment that supports 9 programming languages with integrated turtle graphics. It provides an accessible way to learn programming through multiple languages from different eras of computing history.
 
-### ✨ **Major New Features**
+## ✨ Current Features
 
-#### 📝 **Multi-Tab Code Editor** 
-- **Tabbed Interface**: Edit multiple files simultaneously with clean tab management
-- **Enhanced Syntax Highlighting**: Improved color-coded syntax for all supported languages
-- **Line Numbers**: Toggle line numbers for better code navigation  
-- **Auto-Indentation**: Smart indentation based on language context
-- **File Type Detection**: Automatic language detection from file extensions
+### Core Functionality
+- **Multi-Language Support** - PILOT, BASIC, Logo, Python, JavaScript, Perl, Pascal, Prolog, Forth
+- **Interactive Execution** - Real-time code execution with immediate feedback
+- **Turtle Graphics** - Visual programming with drawing capabilities
+- **Simple Interface** - Clean Tkinter-based GUI for easy learning
+- **File Operations** - Load and save programs with proper extensions
 
-#### 📁 **File Explorer Panel**
-- **Project Tree View**: Navigate project files with expandable folder structure
-- **File Operations**: Create, rename, delete files and folders directly from the explorer
-- **Context Menu**: Right-click operations for common file tasks
-- **Quick File Access**: Double-click to open files in new tabs
-- **Project Support**: Open entire folders as projects
+### Educational Value
+- **Progressive Learning** - Languages range from simple (PILOT) to advanced (Python)
+- **Visual Feedback** - Turtle graphics make abstract concepts concrete
+- **Comprehensive Examples** - Sample programs for each supported language
+- **Error Education** - Clear error messages help learning from mistakes
 
-#### 🎨 **Enhanced Graphics Canvas**
-- **Zoom Controls**: Zoom in/out of turtle graphics with precision
-- **Grid Overlay**: Optional coordinate grid for precise positioning
-- **Export Graphics**: Save turtle drawings as PNG, SVG, or PostScript
-- **Canvas History**: Undo/redo support for graphics operations
-- **Status Display**: Real-time cursor position and zoom level indicators
+### Technical Features
+- **Cross-Platform** - Runs on Windows, macOS, and Linux
+- **Command Line Interface** - Alternative CLI execution mode
+- **Basic Syntax Highlighting** - Color-coded keywords and syntax
 
-#### ❌ **Better Error Handling**
-- **Educational Error Messages**: Clear, friendly explanations of what went wrong
-- **Smart Suggestions**: Specific suggestions for common programming mistakes
-- **Error Location**: Highlight exact error position in code
-- **Language-Specific Help**: Tailored advice for each programming language
-- **Code Context**: Show problematic code with surrounding lines for context
+## 🚀 Getting Started
 
-#### 🖥️ **Improved UI Layout**
-- **Three-Panel Design**: File explorer, code editor, and output/graphics in optimal layout
-- **Resizable Panels**: Adjust panel sizes based on your workflow
-- **Tabbed Output**: Switch between text output and graphics canvas
-- **Enhanced Status Bar**: Real-time feedback on current operations
-
-### 🎯 **Supported Languages** (Enhanced)
-- **PILOT** (1962) - Educational programming with enhanced command support
-- **BASIC** (1964) - Line-numbered programming with improved syntax highlighting  
-- **Logo** (1967) - Turtle graphics with enhanced canvas features
-- **Python** - Modern scripting with better error messages
-- **JavaScript** - Web scripting with educational feedback
-- **Perl** - Text processing with syntax awareness
-
-## 🚀 **Getting Started with v1.1**
-
-### **Installation**
+### Installation
 ```bash
 # Clone the repository
-git clone https://github.com/James-HoneyBadger/Time_Warp.git
-cd Time_Warp
+git clone https://github.com/your-username/Time_Warp_Classic.git
+cd Time_Warp_Classic
 
-# Install dependencies (enhanced graphics require PIL)
-pip install Pillow
+# Install dependencies
+pip install -r requirements.txt
 
-# Run Time_Warp IDE v1.1
-python TimeWarp_v11.py
+# Run the IDE
+python Time_Warp.py
 ```
 
-### **First Steps**
-1. **Open a Project**: Use `File > Open Folder` to load a project directory
-2. **Create New File**: Click the 📄 button in file explorer or use `Ctrl+N`
-3. **Write Code**: Use the multi-tab editor with enhanced syntax highlighting
-4. **Run Code**: Press `F5` or use `Run > Run Code`
-5. **View Results**: Check output in the Output tab or graphics in Graphics tab
+### First Program
+1. Launch Time_Warp
+2. Select a language (start with PILOT for beginners)
+3. Type: `T:Hello World!`
+4. Click Run to see your first program execute
 
-## 📝 **New Keyboard Shortcuts**
+## 🗣️ Supported Languages
 
-| Shortcut | Action |
-|----------|--------|
-| `Ctrl+N` | New file |
-| `Ctrl+O` | Open file |
-| `Ctrl+Shift+O` | Open folder |
-| `Ctrl+S` | Save current file |
-| `Ctrl+Shift+S` | Save as |
-| `Ctrl+Alt+S` | Save all files |
-| `Ctrl+W` | Close current tab |
-| `Ctrl+B` | Toggle file explorer |
-| `Ctrl++` | Zoom in graphics |
-| `Ctrl+-` | Zoom out graphics |
-| `Ctrl+0` | Reset graphics zoom |
-| `F5` | Run code |
-| `F1` | Quick help |
+| Language | Best For | Example |
+|----------|----------|---------|
+| **PILOT** | Complete beginners | `T:Hello World!` |
+| **BASIC** | Structured programming | `10 PRINT "Hello"` |
+| **Logo** | Visual programming | `FORWARD 100` |
+| **Python** | Modern programming | `print("Hello")` |
+| **JavaScript** | Web concepts | `console.log("Hello")` |
+| **Perl** | Text processing | `print "Hello\n"` |
+| **Pascal** | Academic learning | `writeln('Hello')` |
+| **Prolog** | Logic programming | `write('Hello').` |
+| **Forth** | Stack-based thinking | `." Hello" CR` |
 
-## 🔧 **Technical Improvements**
+## 📚 Learning Resources
 
-### **Code Architecture**
-- **Modular Components**: Each new feature is a separate, reusable component
-- **Clean Separation**: UI components separated from core logic
-- **Enhanced Error Handling**: Comprehensive error processing and display
-- **Better Integration**: Improved communication between components
+### Documentation
+- **Main README** - Complete user guide and installation
+- **Language Guides** - Syntax references in `docs/languages/`
+- **Examples** - Sample programs in `examples/` directory
+- **Architecture** - Technical details in `docs/MODULAR_ARCHITECTURE.md`
 
-### **Performance Enhancements**
-- **Lazy Loading**: File explorer loads directories on-demand
-- **Optimized Rendering**: Graphics canvas uses efficient rendering
-- **Memory Management**: Better cleanup of resources
-- **Responsive UI**: Non-blocking operations for better user experience
+### Educational Approach
+- **Start Simple** - Begin with PILOT or BASIC
+- **Visual Learning** - Use turtle graphics to understand programming
+- **Compare Languages** - See how concepts translate between languages
+- **Build Projects** - Combine multiple files for complex programs
 
-### **File Format Support**
-- **Enhanced Detection**: Better file type recognition
-- **Syntax Highlighting**: Improved highlighting for all languages
-- **Error Location**: Precise error positioning in code
-- **Auto-Completion**: Basic completion for common commands
+## 🔧 Development & Contribution
 
-## 📚 **Educational Features**
-
-### **Improved Learning Experience**
-- **Clear Error Messages**: Educational explanations instead of cryptic technical errors
-- **Code Context**: See problematic code with surrounding lines
-- **Language-Specific Help**: Tailored suggestions for each programming language
-- **Visual Programming**: Enhanced turtle graphics with grid and zoom
-
-### **Teacher-Friendly Features**
-- **Project Management**: Easy organization of student work
-- **File Operations**: Simple file management within the IDE
-- **Multi-File Support**: Work with complex projects easily
-- **Export Graphics**: Save student artwork and diagrams
-
-## 🐛 **Bug Fixes**
-
-- Fixed syntax highlighting for all supported languages
-- Improved file handling and path management
-- Better error detection and reporting
-- Enhanced graphics canvas stability
-- Resolved UI layout issues on different screen sizes
-
-## 🔄 **Migration from v1.0.0**
-
-Time_Warp IDE v1.1 is fully backward compatible with v1.0.0:
-
-- **Existing Projects**: All your existing code files work without changes
-- **Settings**: Theme and configuration settings are preserved
-- **Plugins**: Existing plugins continue to work (may need updates for new features)
-- **File Formats**: All supported file types remain the same
-
-## 🗂️ **New File Structure**
-
+### Project Structure
 ```
-Time_Warp/
-├── TimeWarp_v11.py           # Enhanced main application
-├── gui/components/           # New UI components
-│   ├── multi_tab_editor.py   # Multi-tab code editor
-│   ├── file_explorer.py      # Project file explorer
-│   └── enhanced_graphics_canvas.py  # Enhanced graphics
-├── core/
-│   └── enhanced_error_handler.py    # Better error handling
-└── test_v11_components.py    # Component testing
+Time_Warp_Classic/
+├── Time_Warp.py          # Main GUI application
+├── core/                 # Interpreter system
+├── examples/             # Sample programs
+├── scripts/              # Development tools
+└── docs/                 # Documentation
 ```
 
-## 🎯 **Use Cases Enhanced**
+### Contributing
+- **Bug Reports** - Use GitHub Issues for problems
+- **Feature Requests** - Suggest improvements via Issues
+- **Code Contributions** - Fork and submit Pull Requests
+- **Documentation** - Help improve guides and examples
 
-### **For Students**
-- **Multi-File Projects**: Work on complex assignments with multiple files
-- **Visual Learning**: Enhanced graphics with zoom and grid for precision
-- **Better Debugging**: Clear error messages help learn from mistakes
-- **Project Organization**: Keep all related files organized in the file explorer
+### Development Setup
+```bash
+# Run tests
+python scripts/run_tests.py
 
-### **For Teachers**
-- **Classroom Management**: Easy navigation between student projects
-- **Visual Demonstrations**: Export graphics for presentations and handouts
-- **Error Analysis**: Help students understand errors with clear explanations
-- **Project Templates**: Set up project folders for consistent assignments
+# Run specific test
+python -m pytest tests/test_interpreter.py -v
 
-### **For Developers**
-- **Modern IDE Feel**: Professional development environment
-- **Multi-Language Support**: Switch between languages seamlessly
-- **Enhanced Debugging**: Better error location and suggestions
-- **Export Capabilities**: Save work in multiple formats
+# Check code quality
+python -m flake8 core/
+```
 
-## 🔮 **Coming in Future Versions**
+## 🎯 Educational Mission
 
-### **v1.0.2 (Planned)**
-- Find and Replace functionality in multi-tab editor
-- Improved plugin system integration
-- Enhanced theme customization
-- Better keyboard shortcut customization
+Time_Warp aims to:
+- **Democratize Programming** - Make programming accessible to all ages
+- **Preserve Computing History** - Keep classic languages alive and relevant
+- **Teach Core Concepts** - Focus on fundamental programming principles
+- **Encourage Exploration** - Provide a safe environment for experimentation
 
-### **v1.1.0 (Major Features)**
-- Built-in tutorial system integration
-- AI-powered code assistance
-- Collaborative editing features
-- Web-based IDE version
+## 📞 Community & Support
 
-## 🤝 **Contributing**
-
-Time_Warp IDE v1.1 introduces new components that welcome contributions:
-
-- **UI Components**: Enhance the multi-tab editor, file explorer, or graphics canvas
-- **Error Handling**: Improve educational error messages and suggestions
-- **Language Support**: Add new programming languages or enhance existing ones
-- **Themes**: Create new themes for the enhanced UI components
-
-## 📞 **Support**
-
-- **GitHub Issues**: Report bugs or request features
-- **Discussions**: Join community discussions about educational programming
-- **Documentation**: Comprehensive guides for all new features
-- **Examples**: Sample projects demonstrating v1.1 features
+- **GitHub Repository** - Source code and issue tracking
+- **Documentation** - Comprehensive guides and references
+- **Examples Library** - Growing collection of sample programs
 
 ---
 
-**Time_Warp IDE v1.1** - Enhanced Educational Programming Made Simple! 
+**Time_Warp** - Where programming history meets modern education! 🐢
 
-*Experience the evolution of programming languages through a modern, user-friendly interface that brings the best of both worlds: historical programming languages with contemporary development tools.*
-
-🌟 **Star us on GitHub**: https://github.com/James-HoneyBadger/Time_Warp
-📧 **Report Issues**: https://github.com/James-HoneyBadger/Time_Warp/issues
-📖 **Documentation**: https://github.com/James-HoneyBadger/Time_Warp/tree/main/docs
+*Learn programming through the evolution of languages, from the earliest educational systems to today's modern scripting languages.*

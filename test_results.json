@@ -1,0 +1,711 @@
+{
+  "timestamp": "2025-12-08T22:30:39.048202",
+  "languages": {
+    "Logo": [
+      {
+        "test": "Movement: FORWARD",
+        "command": "FORWARD 50",
+        "passed": true,
+        "status": "PASS",
+        "output": "\ud83c\udfa8 Drawing line from (300.0, 200.0) to (350.0, 200.0)\nTurtle moved\nTurtle moved",
+        "exception": null
+      },
+      {
+        "test": "Movement: FD alias",
+        "command": "FD 50",
+        "passed": true,
+        "status": "PASS",
+        "output": "\ud83c\udfa8 Drawing line from (350.0, 200.0) to (400.0, 200.0)\nTurtle moved\nTurtle moved",
+        "exception": null
+      },
+      {
+        "test": "Movement: BACK",
+        "command": "BACK 50",
+        "passed": true,
+        "status": "PASS",
+        "output": "\ud83c\udfa8 Drawing line from (400.0, 200.0) to (350.0, 200.0)\nTurtle moved",
+        "exception": null
+      },
+      {
+        "test": "Movement: BK alias",
+        "command": "BK 50",
+        "passed": true,
+        "status": "PASS",
+        "output": "\ud83c\udfa8 Drawing line from (350.0, 200.0) to (300.0, 200.0)\nTurtle moved",
+        "exception": null
+      },
+      {
+        "test": "Movement: BACKWARD",
+        "command": "BACKWARD 50",
+        "passed": true,
+        "status": "PASS",
+        "output": "\ud83c\udfa8 Drawing line from (300.0, 200.0) to (250.0, 200.0)\nTurtle moved",
+        "exception": null
+      },
+      {
+        "test": "Movement: LEFT",
+        "command": "LEFT 90",
+        "passed": true,
+        "status": "PASS",
+        "output": "Turtle turned left 90.0 degrees (heading=90.0)",
+        "exception": null
+      },
+      {
+        "test": "Movement: LT alias",
+        "command": "LT 90",
+        "passed": true,
+        "status": "PASS",
+        "output": "Turtle turned left 90.0 degrees (heading=180.0)",
+        "exception": null
+      },
+      {
+        "test": "Movement: RIGHT",
+        "command": "RIGHT 90",
+        "passed": true,
+        "status": "PASS",
+        "output": "Turtle turned right 90.0 degrees (heading=270.0)",
+        "exception": null
+      },
+      {
+        "test": "Movement: RT alias",
+        "command": "RT 90",
+        "passed": true,
+        "status": "PASS",
+        "output": "Turtle turned right 90.0 degrees (heading=0.0)",
+        "exception": null
+      },
+      {
+        "test": "Pen: PENUP",
+        "command": "PENUP",
+        "passed": true,
+        "status": "PASS",
+        "output": "Pen up - turtle will move without drawing",
+        "exception": null
+      },
+      {
+        "test": "Pen: PU alias",
+        "command": "PU",
+        "passed": true,
+        "status": "PASS",
+        "output": "Pen up - turtle will move without drawing",
+        "exception": null
+      },
+      {
+        "test": "Pen: PENDOWN",
+        "command": "PENDOWN",
+        "passed": true,
+        "status": "PASS",
+        "output": "Pen down - turtle will draw when moving",
+        "exception": null
+      },
+      {
+        "test": "Pen: PD alias",
+        "command": "PD",
+        "passed": true,
+        "status": "PASS",
+        "output": "Pen down - turtle will draw when moving",
+        "exception": null
+      },
+      {
+        "test": "Screen: CLEARSCREEN",
+        "command": "CLEARSCREEN",
+        "passed": true,
+        "status": "PASS",
+        "output": "Screen cleared",
+        "exception": null
+      },
+      {
+        "test": "Screen: CS alias",
+        "command": "CS",
+        "passed": true,
+        "status": "PASS",
+        "output": "Screen cleared",
+        "exception": null
+      },
+      {
+        "test": "Screen: HOME",
+        "command": "HOME",
+        "passed": true,
+        "status": "PASS",
+        "output": "Turtle returned to home position",
+        "exception": null
+      },
+      {
+        "test": "Output: PRINT",
+        "command": "PRINT [Hello]",
+        "passed": true,
+        "status": "PASS",
+        "output": "Hello",
+        "exception": null
+      },
+      {
+        "test": "Output: CLEARTEXT",
+        "command": "CLEARTEXT",
+        "passed": true,
+        "status": "PASS",
+        "output": "Text output cleared",
+        "exception": null
+      },
+      {
+        "test": "Comments: semicolon",
+        "command": "; This is a comment",
+        "passed": true,
+        "status": "PASS",
+        "output": "",
+        "exception": null
+      },
+      {
+        "test": "State: SHOWTURTLE",
+        "command": "SHOWTURTLE",
+        "passed": true,
+        "status": "PASS",
+        "output": "Turtle is now visible",
+        "exception": null
+      },
+      {
+        "test": "State: HIDETURTLE",
+        "command": "HIDETURTLE",
+        "passed": true,
+        "status": "PASS",
+        "output": "Turtle is now hidden",
+        "exception": null
+      },
+      {
+        "test": "State: HEADING",
+        "command": "HEADING",
+        "passed": true,
+        "status": "PASS",
+        "output": "Turtle heading: 0.0 degrees",
+        "exception": null
+      },
+      {
+        "test": "State: POSITION",
+        "command": "POSITION",
+        "passed": true,
+        "status": "PASS",
+        "output": "Turtle position: (0.0, 0.0)",
+        "exception": null
+      },
+      {
+        "test": "Color: SETCOLOR",
+        "command": "SETCOLOR red",
+        "passed": true,
+        "status": "PASS",
+        "output": "Pen color set to red",
+        "exception": null
+      },
+      {
+        "test": "Color: COLOR",
+        "command": "COLOR blue",
+        "passed": true,
+        "status": "PASS",
+        "output": "Pen color set to blue",
+        "exception": null
+      },
+      {
+        "test": "Shapes: CIRCLE",
+        "command": "CIRCLE 50",
+        "passed": true,
+        "status": "PASS",
+        "output": "Drew circle with radius 50.0",
+        "exception": null
+      },
+      {
+        "test": "Shapes: DOT",
+        "command": "DOT 5",
+        "passed": true,
+        "status": "PASS",
+        "output": "Drew dot with size 5",
+        "exception": null
+      },
+      {
+        "test": "Shapes: RECT",
+        "command": "RECT 50 40",
+        "passed": true,
+        "status": "PASS",
+        "output": "Drew rectangle 50.0x40.0",
+        "exception": null
+      },
+      {
+        "test": "Shapes: TEXT",
+        "command": "TEXT Test",
+        "passed": true,
+        "status": "PASS",
+        "output": "Drew text: Test",
+        "exception": null
+      },
+      {
+        "test": "Pen: SETPENSIZE",
+        "command": "SETPENSIZE 3",
+        "passed": true,
+        "status": "PASS",
+        "output": "Pen size set to 3",
+        "exception": null
+      },
+      {
+        "test": "Pen: SETXY",
+        "command": "SETXY 100 100",
+        "passed": true,
+        "status": "PASS",
+        "output": "SETXY -> Turtle moved to position (100.0, 100.0)",
+        "exception": null
+      },
+      {
+        "test": "Control: REPEAT",
+        "command": "REPEAT 3 [FORWARD 10]",
+        "passed": true,
+        "status": "PASS",
+        "output": "\ud83c\udfa8 Drawing line from (400.0, 100.0) to (410.0, 100.0)\nTurtle moved\nTurtle moved\n\ud83c\udfa8 Drawing line from (",
+        "exception": null
+      },
+      {
+        "test": "Control: IF",
+        "command": "IF 1 = 1 [FORWARD 20]",
+        "passed": true,
+        "status": "PASS",
+        "output": "IF condition error: invalid syntax (<string>, line 1)",
+        "exception": null
+      }
+    ],
+    "PILOT": [
+      {
+        "test": "Output: T:",
+        "command": "T:Hello World",
+        "passed": true,
+        "status": "PASS",
+        "output": "Hello World",
+        "exception": null
+      },
+      {
+        "test": "Input: A:",
+        "command": "A:Enter name",
+        "passed": true,
+        "status": "PASS",
+        "output": "Awaiting input: Enter value for Enter name: \nuy",
+        "exception": null
+      },
+      {
+        "test": "Conditional: Y:",
+        "command": "Y:Test",
+        "passed": true,
+        "status": "PASS",
+        "output": "",
+        "exception": null
+      },
+      {
+        "test": "Conditional: N:",
+        "command": "N:Test",
+        "passed": true,
+        "status": "PASS",
+        "output": "",
+        "exception": null
+      },
+      {
+        "test": "Jump: J:",
+        "command": "J:END",
+        "passed": true,
+        "status": "PASS",
+        "output": "",
+        "exception": null
+      },
+      {
+        "test": "Match: MT:",
+        "command": "MT:test,pattern",
+        "passed": true,
+        "status": "PASS",
+        "output": "test,pattern",
+        "exception": null
+      },
+      {
+        "test": "Compute: C:",
+        "command": "C:x = 5",
+        "passed": true,
+        "status": "PASS",
+        "output": "",
+        "exception": null
+      },
+      {
+        "test": "Graphics: G:LINE",
+        "command": "G:LINE,0,0,100,100",
+        "passed": true,
+        "status": "PASS",
+        "output": "G:LINE from (0.0,0.0) to (100.0,100.0)",
+        "exception": null
+      },
+      {
+        "test": "Graphics: G:CIRCLE",
+        "command": "G:CIRCLE,50,50,25",
+        "passed": true,
+        "status": "PASS",
+        "output": "G:CIRCLE at (50.0,50.0) radius 25.0",
+        "exception": null
+      },
+      {
+        "test": "Graphics: G:RECT",
+        "command": "G:RECT,0,0,100,100",
+        "passed": true,
+        "status": "PASS",
+        "output": "G:RECT at (0.0,0.0) 100.0x100.0\n\ud83c\udfa8 Drawing line from (300.0, 200.0) to (400.0, 200.0)\nTurtle moved",
+        "exception": null
+      },
+      {
+        "test": "Graphics: G:CLEAR",
+        "command": "G:CLEAR",
+        "passed": true,
+        "status": "PASS",
+        "output": "Graphics screen cleared",
+        "exception": null
+      },
+      {
+        "test": "Graphics: G:PENUP",
+        "command": "G:PENUP",
+        "passed": true,
+        "status": "PASS",
+        "output": "Pen up",
+        "exception": null
+      },
+      {
+        "test": "Graphics: G:PENDOWN",
+        "command": "G:PENDOWN",
+        "passed": true,
+        "status": "PASS",
+        "output": "Pen down",
+        "exception": null
+      },
+      {
+        "test": "Graphics: G:COLOR",
+        "command": "G:COLOR,red",
+        "passed": true,
+        "status": "PASS",
+        "output": "Pen color set to red",
+        "exception": null
+      },
+      {
+        "test": "Label: L:",
+        "command": "L:LABEL",
+        "passed": true,
+        "status": "PASS",
+        "output": "",
+        "exception": null
+      },
+      {
+        "test": "Math: MATH:SIN",
+        "command": "MATH:SIN 90",
+        "passed": true,
+        "status": "PASS",
+        "output": "MATH:SIN(90.0\u00b0) = 1.0000",
+        "exception": null
+      }
+    ],
+    "BASIC": [
+      {
+        "test": "Output: PRINT string",
+        "command": "PRINT \"Hello\"",
+        "passed": true,
+        "status": "PASS",
+        "output": "Hello",
+        "exception": null
+      },
+      {
+        "test": "Output: PRINT number",
+        "command": "PRINT 42",
+        "passed": true,
+        "status": "PASS",
+        "output": "42",
+        "exception": null
+      },
+      {
+        "test": "Variables: LET",
+        "command": "LET x = 10",
+        "passed": true,
+        "status": "PASS",
+        "output": "",
+        "exception": null
+      },
+      {
+        "test": "Variables: Assignment",
+        "command": "x = 20",
+        "passed": true,
+        "status": "PASS",
+        "output": "",
+        "exception": null
+      },
+      {
+        "test": "Control: IF...THEN",
+        "command": "IF 1 = 1 THEN PRINT \"True\"",
+        "passed": true,
+        "status": "PASS",
+        "output": "True",
+        "exception": null
+      },
+      {
+        "test": "Loop: FOR...NEXT",
+        "command": "FOR i = 1 TO 3\nPRINT i\nNEXT",
+        "passed": true,
+        "status": "PASS",
+        "output": "",
+        "exception": null
+      },
+      {
+        "test": "Comment: REM",
+        "command": "REM This is a comment",
+        "passed": true,
+        "status": "PASS",
+        "output": "",
+        "exception": null
+      }
+    ],
+    "Python": [
+      {
+        "test": "Output: print()",
+        "command": "print(\"Hello\")",
+        "passed": true,
+        "status": "PASS",
+        "output": "Hello",
+        "exception": null
+      },
+      {
+        "test": "Output: print number",
+        "command": "print(42)",
+        "passed": true,
+        "status": "PASS",
+        "output": "Hello\n42",
+        "exception": null
+      },
+      {
+        "test": "Variables: assignment",
+        "command": "x = 10",
+        "passed": true,
+        "status": "PASS",
+        "output": "Hello\n42",
+        "exception": null
+      },
+      {
+        "test": "Control: if...else",
+        "command": "if True:\n    print(\"yes\")\nelse:\n    print(\"no\")",
+        "passed": true,
+        "status": "PASS",
+        "output": "Hello\n42\nyes",
+        "exception": null
+      },
+      {
+        "test": "Control: for loop",
+        "command": "for i in range(3):\n    print(i)",
+        "passed": true,
+        "status": "PASS",
+        "output": "Hello\n42\nyes\n0\n1\n2",
+        "exception": null
+      },
+      {
+        "test": "Functions: call",
+        "command": "print(len(\"test\"))",
+        "passed": true,
+        "status": "PASS",
+        "output": "Hello\n42\nyes\n0\n1\n2\n4",
+        "exception": null
+      },
+      {
+        "test": "Math: addition",
+        "command": "print(1 + 2)",
+        "passed": true,
+        "status": "PASS",
+        "output": "Hello\n42\nyes\n0\n1\n2\n4\n3",
+        "exception": null
+      },
+      {
+        "test": "Math: multiplication",
+        "command": "print(3 * 4)",
+        "passed": true,
+        "status": "PASS",
+        "output": "Hello\n42\nyes\n0\n1\n2\n4\n3\n12",
+        "exception": null
+      },
+      {
+        "test": "String: concat",
+        "command": "print(\"a\" + \"b\")",
+        "passed": true,
+        "status": "PASS",
+        "output": "Hello\n42\nyes\n0\n1\n2\n4\n3\n12\nab",
+        "exception": null
+      }
+    ],
+    "JavaScript": [
+      {
+        "test": "Output: console.log()",
+        "command": "console.log(\"Hello\")",
+        "passed": true,
+        "status": "PASS",
+        "output": "Hello",
+        "exception": null
+      },
+      {
+        "test": "Output: print number",
+        "command": "console.log(42)",
+        "passed": true,
+        "status": "PASS",
+        "output": "Hello\n42",
+        "exception": null
+      },
+      {
+        "test": "Variables: var",
+        "command": "var x = 10",
+        "passed": true,
+        "status": "PASS",
+        "output": "Hello\n42",
+        "exception": null
+      },
+      {
+        "test": "Variables: let",
+        "command": "let y = 20",
+        "passed": true,
+        "status": "PASS",
+        "output": "Hello\n42",
+        "exception": null
+      },
+      {
+        "test": "Variables: const",
+        "command": "const z = 30",
+        "passed": true,
+        "status": "PASS",
+        "output": "Hello\n42",
+        "exception": null
+      },
+      {
+        "test": "Control: if...else",
+        "command": "if (true) { console.log(\"yes\") }",
+        "passed": true,
+        "status": "PASS",
+        "output": "Hello\n42\nyes",
+        "exception": null
+      },
+      {
+        "test": "Math: addition",
+        "command": "console.log(1 + 2)",
+        "passed": true,
+        "status": "PASS",
+        "output": "Hello\n42\nyes\n3",
+        "exception": null
+      },
+      {
+        "test": "Math: string concat",
+        "command": "console.log(\"a\" + \"b\")",
+        "passed": true,
+        "status": "PASS",
+        "output": "Hello\n42\nyes\n3\nab",
+        "exception": null
+      }
+    ],
+    "Forth": [
+      {
+        "test": "Stack: DUP",
+        "command": "5 DUP",
+        "passed": true,
+        "status": "PASS",
+        "output": "",
+        "exception": null
+      },
+      {
+        "test": "Stack: DROP",
+        "command": "5 DROP",
+        "passed": true,
+        "status": "PASS",
+        "output": "",
+        "exception": null
+      },
+      {
+        "test": "Stack: SWAP",
+        "command": "1 2 SWAP",
+        "passed": true,
+        "status": "PASS",
+        "output": "",
+        "exception": null
+      },
+      {
+        "test": "Arithmetic: +",
+        "command": "5 3 +",
+        "passed": true,
+        "status": "PASS",
+        "output": "",
+        "exception": null
+      },
+      {
+        "test": "Arithmetic: -",
+        "command": "5 3 -",
+        "passed": true,
+        "status": "PASS",
+        "output": "",
+        "exception": null
+      },
+      {
+        "test": "Output: .",
+        "command": "42 .",
+        "passed": true,
+        "status": "PASS",
+        "output": "42",
+        "exception": null
+      }
+    ],
+    "Pascal": [
+      {
+        "test": "Output: writeln",
+        "command": "writeln(\"Hello\")",
+        "passed": true,
+        "status": "PASS",
+        "output": "Hello",
+        "exception": null
+      },
+      {
+        "test": "Output: write",
+        "command": "write(\"test\")",
+        "passed": true,
+        "status": "PASS",
+        "output": "test",
+        "exception": null
+      },
+      {
+        "test": "Control: IF",
+        "command": "IF 1 = 1 THEN writeln(\"yes\")",
+        "passed": true,
+        "status": "PASS",
+        "output": "yes",
+        "exception": null
+      }
+    ],
+    "Perl": [
+      {
+        "test": "Output: print",
+        "command": "print \"Hello\"",
+        "passed": true,
+        "status": "PASS",
+        "output": "Hello",
+        "exception": null
+      },
+      {
+        "test": "Variables: $",
+        "command": "$x = 10",
+        "passed": true,
+        "status": "PASS",
+        "output": "",
+        "exception": null
+      }
+    ],
+    "Prolog": [
+      {
+        "test": "Facts: assertion",
+        "command": "parent(tom, bob).",
+        "passed": true,
+        "status": "PASS",
+        "output": "\ud83d\udcda Fact added: parent({'type': 'atom', 'name': 'tom'}, {'type': 'atom', 'name': 'bob'})",
+        "exception": null
+      },
+      {
+        "test": "Queries: ?-",
+        "command": "?- parent(tom, bob).",
+        "passed": true,
+        "status": "PASS",
+        "output": "\u2705 Query succeeded",
+        "exception": null
+      }
+    ]
+  }
+}

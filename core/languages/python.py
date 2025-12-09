@@ -20,6 +20,7 @@ class PythonExecutor:
         """Initialize with reference to main interpreter"""
         self.interpreter = interpreter
         self.python_executable = sys.executable  # Use the same Python as Time_Warp
+        self._python_script_buffer = []
 
     def execute_command(self, command):
         """Execute a Python command or script"""
@@ -52,6 +53,7 @@ class PythonExecutor:
                 capture_output=True,
                 text=True,
                 timeout=30,
+                check=False,
             )
 
             # Clean up temporary file
@@ -76,7 +78,7 @@ class PythonExecutor:
         except subprocess.TimeoutExpired:
             self.interpreter.log_output("❌ Python script execution timed out")
             return "error"
-        except Exception as e:
+        except Exception as e:  # pylint: disable=broad-except
             self.interpreter.log_output(f"❌ Error executing Python script: {e}")
             return "error"
 
@@ -92,6 +94,7 @@ class PythonExecutor:
                 capture_output=True,
                 text=True,
                 timeout=30,
+                check=False,
             )
 
             if result.stdout:
@@ -103,7 +106,7 @@ class PythonExecutor:
 
             return result.returncode == 0
 
-        except Exception as e:
+        except Exception as e:  # pylint: disable=broad-except
             self.interpreter.log_output(f"❌ Error executing Python file: {e}")
             return False
 

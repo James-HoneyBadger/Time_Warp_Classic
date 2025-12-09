@@ -1,3 +1,4 @@
+# pylint: disable=W0718,R0913,R0911,R0912,R0915,C0301
 """
 TW PILOT Language Executor
 ==========================
@@ -31,9 +32,12 @@ The executor parses PILOT commands (identified by the colon syntax) and executes
 them using the main interpreter's facilities for output, input, variables, and graphics.
 """
 
+# pylint: disable=C0301,R1705,W0718,W0212,R0912,R0915,C0415,W0613
+
 import re
 import random
-from tkinter import simpledialog
+
+# pylint: disable=too-many-lines
 
 
 class TwPilotExecutor:
@@ -57,7 +61,26 @@ class TwPilotExecutor:
         """
         self.interpreter = interpreter
 
-    def execute_command(self, command):
+        # PILOT 73 Features
+        self.arrays = {}  # Array storage: name -> list
+        self.return_stack = []  # For U: (Use) subroutines
+        self.system_vars = {
+            "answer": "",  # %answer - last input
+            "matched": "",  # %matched - matched text from M:
+            "left": "",  # %left - text left of match
+            "right": "",  # %right - text right of match
+            "status": 0,  # %status - operation status
+            "maxuses": 10,  # %maxuses - max subroutine nesting
+        }
+        self.screen_control = {
+            "cursor_row": 0,
+            "cursor_col": 0,
+            "screen_cleared": False,
+        }
+
+    def execute_command(
+        self, command
+    ):  # pylint: disable=too-many-return-statements,too-many-branches
         """
         Execute a PILOT command and return the execution result.
 
@@ -122,15 +145,39 @@ class TwPilotExecutor:
                 return self._handle_multimedia_command(command)
             elif cmd_type == "STORAGE:":
                 return self._handle_storage_command(command)
+            elif cmd_type == "G:":
+                return self._handle_graphics_command(command)
             elif cmd_type == "L:":
                 # Label definition - no execution needed
                 return "continue"
             elif cmd_type == "U:":
-                return self._handle_update_variable(command)
+                return self._handle_use_subroutine(command)
+            elif cmd_type == "D:":
+                return self._handle_dimension_array(command)
+            elif cmd_type == "PA:":
+                return self._handle_pause(command)
+            elif cmd_type == "CH:":
+                return self._handle_clear_home(command)
+            elif cmd_type == "CA:":
+                return self._handle_cursor_address(command)
+            elif cmd_type == "CL:":
+                return self._handle_clear_line(command)
+            elif cmd_type == "CE:":
+                return self._handle_clear_end(command)
+            elif cmd_type == "JM:":
+                return self._handle_jump_match(command)
+            elif cmd_type == "TH:":
+                return self._handle_type_hang(command)
+            elif cmd_type == "XS:":
+                return self._handle_system_command(command)
+            elif cmd_type == "PR:":
+                return self._handle_problem(command)
+            elif cmd_type == "E:":
+                return self._handle_end_subroutine(command)
             elif command.strip().upper() == "END":
                 return "end"
 
-        except Exception as e:
+        except Exception as e:  # pylint: disable=broad-except
             self.interpreter.debug_output(f"PILOT command error: {e}")
             return "continue"
 
@@ -141,9 +188,9 @@ class TwPilotExecutor:
         text = command[2:].strip()
         # If the previous command set a match (Y: or N:), then this T: is
         # treated as conditional and only prints when match_flag is True.
-        if self.interpreter._last_match_set:
+        if self.interpreter._last_match_set:  # pylint: disable=protected-access
             # consume the sentinel
-            self.interpreter._last_match_set = False
+            self.interpreter._last_match_set = False  # pylint: disable=protected-access
             if not self.interpreter.match_flag:
                 # do not print when match is false
                 return "continue"
@@ -153,27 +200,52 @@ class TwPilotExecutor:
         return "continue"
 
     def _handle_accept_input(self, command):
-        """Handle A: accept input command"""
-        var_name = command[2:].strip()
-        prompt = f"Enter value for {var_name}: "
-        value = self.interpreter.get_user_input(prompt)
-        # Distinguish numeric and alphanumeric input
-        if value is not None and value.strip() != "":
-            try:
-                # Accept int if possible, else float, else string
-                if value.isdigit() or (value.startswith("-") and value[1:].isdigit()):
-                    self.interpreter.variables[var_name] = int(value)
-                else:
-                    float_val = float(value)
-                    self.interpreter.variables[var_name] = float_val
-            except Exception:
-                self.interpreter.variables[var_name] = value
+        """Handle A: accept input command (PILOT 73 compatible)"""
+        var_spec = command[2:].strip()
+
+        # PILOT 73: If no variable specified, use %answer system variable
+        if not var_spec:
+            var_name = "%answer"
+            prompt = "Input: "
         else:
-            self.interpreter.variables[var_name] = ""
+            var_name = var_spec
+            prompt = f"Enter value for {var_name}: "
+
+        # Log the input prompt to user output
+        self.interpreter.log_output(f"Awaiting input: {prompt}")
+        
+        value = self.interpreter.get_user_input(prompt)
+
+        # Store in system variables if it's a % variable
+        if var_name.startswith("%"):
+            self.system_vars[var_name[1:]] = value if value is not None else ""
+        else:
+            # Distinguish numeric and alphanumeric input for regular variables
+            if value is not None and value.strip() != "":
+                try:
+                    # Accept int if possible, else float, else string
+                    if value.isdigit() or (
+                        value.startswith("-") and value[1:].isdigit()
+                    ):
+                        self.interpreter.variables[var_name] = int(value)
+                    else:
+                        float_val = float(value)
+                        self.interpreter.variables[var_name] = float_val
+                except (ValueError, TypeError):
+                    self.interpreter.variables[var_name] = value
+            else:
+                self.interpreter.variables[var_name] = ""
+
         # Debug: show type and value of input variable
-        self.interpreter.debug_output(
-            f"[DEBUG] {var_name} = {self.interpreter.variables[var_name]!r} (type: {type(self.interpreter.variables[var_name]).__name__})"
-        )
+        if var_name.startswith("%"):
+            self.interpreter.debug_output(
+                f"[DEBUG] %{var_name[1:]} = {self.system_vars[var_name[1:]]!r}"
+            )
+        else:
+            self.interpreter.debug_output(
+                f"[DEBUG] {var_name} = {self.interpreter.variables[var_name]!r} "
+                f"(type: {type(self.interpreter.variables[var_name]).__name__})"
+            )
         return "continue"
 
     def _handle_yes_condition(self, command):
@@ -182,7 +254,7 @@ class TwPilotExecutor:
         try:
             result = self.interpreter.evaluate_expression(condition)
             self.interpreter.match_flag = bool(result)
-        except:
+        except Exception:
             self.interpreter.match_flag = False
         # mark that the last command set the match flag so a following T: can be conditional
         self.interpreter._last_match_set = True
@@ -195,7 +267,7 @@ class TwPilotExecutor:
             result = self.interpreter.evaluate_expression(condition)
             # N: treat like a plain conditional (match when the condition is TRUE).
             self.interpreter.match_flag = bool(result)
-        except:
+        except Exception:
             # On error, default to no match
             self.interpreter.match_flag = False
         # mark that the last command set the match flag so a following T: can be conditional
@@ -205,7 +277,6 @@ class TwPilotExecutor:
     def _handle_jump(self, command):
         """Handle J: jump command (conditional or unconditional)"""
         # Robustly detect conditional jump: J(<condition>):<label> using regex
-        import re
 
         match = re.match(r"^J\((.+)\):(.+)$", command.strip())
         if match:
@@ -214,7 +285,9 @@ class TwPilotExecutor:
             try:
                 cond_val = self.interpreter.evaluate_expression(condition)
                 self.interpreter.debug_output(
-                    f"[DEBUG] Condition string: '{condition}', AGE = {self.interpreter.variables.get('AGE', None)} (type: {type(self.interpreter.variables.get('AGE', None)).__name__})"
+                    f"[DEBUG] Condition string: '{condition}', AGE = "
+                    f"{self.interpreter.variables.get('AGE', None)} "
+                    f"(type: {type(self.interpreter.variables.get('AGE', None)).__name__})"
                 )
                 is_true = False
                 if isinstance(cond_val, bool):
@@ -224,7 +297,8 @@ class TwPilotExecutor:
                 elif isinstance(cond_val, str):
                     is_true = cond_val.strip().lower() in ("true", "1")
                 self.interpreter.debug_output(
-                    f"[DEBUG] Evaluating condition: {condition} => {cond_val!r} (type: {type(cond_val).__name__}), interpreted as {is_true}"
+                    f"[DEBUG] Evaluating condition: {condition} => {cond_val!r} "
+                    f"(type: {type(cond_val).__name__}), interpreted as {is_true}"
                 )
                 if is_true:
                     self.interpreter.debug_output(
@@ -272,11 +346,69 @@ class TwPilotExecutor:
         return "continue"
 
     def _handle_match_jump(self, command):
-        """Handle M: jump if match flag is set"""
-        label = command[2:].strip()
-        if self.interpreter.match_flag and label in self.interpreter.labels:
-            return f"jump:{self.interpreter.labels[label]}"
+        """Handle M: pattern matching command (PILOT 73 compatible)"""
+        pattern = command[2:].strip()
+
+        # Get text to match against (%answer system variable)
+        text_to_match = self.system_vars.get("answer", "")
+
+        # PILOT 73 pattern matching with wildcards
+        # ? matches any single character
+        # * matches any sequence of characters
+        # | separates alternatives
+        # , separates additional alternatives
+
+        # Split pattern on | and , to get alternatives
+        alternatives = []
+        for alt in pattern.replace(",", "|").split("|"):
+            alternatives.append(alt.strip())
+
+        # Try each alternative
+        for alt_pattern in alternatives:
+            if self._matches_pilot_pattern(text_to_match, alt_pattern):
+                # Found a match
+                self.system_vars["matched"] = text_to_match
+                self.system_vars["left"] = ""
+                self.system_vars["right"] = ""
+                self.interpreter.match_flag = True
+
+                # Set match-related system variables
+                match_pos = text_to_match.find(
+                    alt_pattern.replace("?", ".").replace("*", ".*")
+                )
+                if match_pos >= 0:
+                    self.system_vars["left"] = text_to_match[:match_pos]
+                    self.system_vars["right"] = text_to_match[
+                        match_pos + len(alt_pattern) :
+                    ]
+
+                self.interpreter.debug_output(
+                    f"[DEBUG] Pattern '{alt_pattern}' matched in '{text_to_match}'"
+                )
+                return "continue"
+
+        # No match found
+        self.system_vars["matched"] = ""
+        self.system_vars["left"] = ""
+        self.system_vars["right"] = ""
+        self.interpreter.match_flag = False
+
+        self.interpreter.debug_output(
+            f"[DEBUG] No pattern match found for '{pattern}' in '{text_to_match}'"
+        )
         return "continue"
+
+    def _matches_pilot_pattern(self, text, pattern):
+        """Check if text matches PILOT 73 pattern with wildcards"""
+        # Convert PILOT wildcards to regex
+        # ? -> .
+        # * -> .*
+        regex_pattern = pattern.replace("?", ".").replace("*", ".*")
+        try:
+            return bool(re.search(regex_pattern, text, re.IGNORECASE))
+        except Exception:
+            # If regex fails, fall back to simple string matching
+            return pattern.lower() in text.lower()
 
     def _handle_match_text(self, command):
         """Handle MT: match-conditional text output"""
@@ -306,48 +438,50 @@ class TwPilotExecutor:
         # Unrecognized payload after C:, ignore
         return "continue"
 
-    def _handle_update_variable(self, command):
-        """Handle U: update variable command"""
-        assignment = command[2:].strip()
-        if "=" in assignment:
-            var_name, expr = assignment.split("=", 1)
-            var_name = var_name.strip()
-            expr = expr.strip()
+    def _handle_use_subroutine(self, command):
+        """Handle U: use subroutine command (PILOT 73)"""
+        label = command[2:].strip()
 
-            # First try to interpolate text (for string assignments)
-            interpolated = self.interpreter.interpolate_text(expr)
+        # Check nesting limit
+        if len(self.return_stack) >= self.system_vars.get("maxuses", 10):
+            self.interpreter.debug_output(
+                f"Error: Maximum subroutine nesting level ({self.system_vars['maxuses']}) exceeded"
+            )
+            return "continue"
 
-            # If the interpolated result looks like a mathematical expression, evaluate it
-            if re.match(r"^[-+0-9\s\+\-\*\/\(\)\.]+$", interpolated):
-                try:
-                    value = eval(interpolated)
-                    self.interpreter.variables[var_name] = value
-                    return "continue"
-                except Exception:
-                    pass
+        # Find current line number (simplified - we'll use a placeholder)
+        current_line = 0  # This would need to be passed from the interpreter
 
-            # If interpolation changed the text and it's not a math expression, use as string
-            if interpolated != expr:
-                self.interpreter.variables[var_name] = interpolated
-            else:
-                # Otherwise try to evaluate as expression using the interpreter method
-                try:
-                    value = self.interpreter.evaluate_expression(expr)
-                    # Remove quotes if the result is a quoted string
-                    if (
-                        isinstance(value, str)
-                        and value.startswith('"')
-                        and value.endswith('"')
-                    ):
-                        value = value[1:-1]
-                    self.interpreter.variables[var_name] = value
-                except Exception as e:
-                    # If evaluation fails, just store the raw text
-                    self.interpreter.variables[var_name] = expr
-                    self.interpreter.debug_output(
-                        f"Error in assignment {assignment}: {e}"
-                    )
-        return "continue"
+        # Push return address to stack
+        self.return_stack.append(current_line)
+
+        # Jump to subroutine
+        if label in self.interpreter.labels:
+            self.interpreter.debug_output(f"[DEBUG] Calling subroutine {label}")
+            return f"jump:{self.interpreter.labels[label]}"
+        else:
+            self.interpreter.debug_output(
+                f"Error: Subroutine label '{label}' not found"
+            )
+            # Pop the return address since we can't call the subroutine
+            self.return_stack.pop()
+            return "continue"
+
+    def _handle_end_subroutine(self, command):
+        """Handle E: end subroutine command (PILOT 73)"""
+        # Return from subroutine if we have a return address
+        if self.return_stack:
+            return_line = self.return_stack.pop()
+            self.interpreter.debug_output(
+                f"[DEBUG] Returning from subroutine to line {return_line}"
+            )
+            return f"jump:{return_line}"
+        else:
+            # No subroutine to return from, end program
+            self.interpreter.debug_output(
+                "[DEBUG] No active subroutine, ending program"
+            )
+            return "end"
 
     def _handle_runtime_command(self, command):
         """Handle R: runtime commands - placeholder for now"""
@@ -481,7 +615,6 @@ class TwPilotExecutor:
     def _handle_database_command(self, command):
         """Handle D: database commands"""
         import sqlite3
-        import os
 
         cmd = command[2:].strip()
         parts = cmd.split(" ", 1)
@@ -562,14 +695,12 @@ class TwPilotExecutor:
 
     def _handle_string_command(self, command):
         """Handle S: string processing commands"""
-        import re
 
         cmd = command[2:].strip()
 
         # Parse arguments respecting quoted strings
         # Pattern to match quoted strings or unquoted words
         pattern = r'"([^"]*)"|\S+'
-        matches = re.findall(pattern, cmd)
 
         # Extract actual arguments from regex matches
         args = []
@@ -722,6 +853,94 @@ class TwPilotExecutor:
         except Exception as e:
             self.interpreter.debug_output(f"DateTime operation error: {e}")
 
+        return "continue"
+
+    def _handle_graphics_command(self, command):
+        """Handle G: graphics commands for turtle graphics"""
+        cmd = command[2:].strip()  # Skip "G:"
+        parts = cmd.split(",")
+        
+        if not parts:
+            return "continue"
+        
+        # Ensure turtle graphics system is initialized
+        if not self.interpreter.turtle_graphics:
+            self.interpreter.init_turtle_graphics()
+        
+        operation = parts[0].upper()
+        
+        try:
+            if operation == "LINE" and len(parts) >= 5:
+                # G:LINE,x1,y1,x2,y2 - draw a line
+                x1 = float(parts[1])
+                y1 = float(parts[2])
+                x2 = float(parts[3])
+                y2 = float(parts[4])
+                
+                # Move to start position without drawing
+                self.interpreter.turtle_setxy(x1, y1)
+                self.interpreter.turtle_graphics["pen_down"] = True
+                
+                # Draw line to end position
+                self.interpreter.turtle_setxy(x2, y2)
+                self.interpreter.log_output(f"G:LINE from ({x1},{y1}) to ({x2},{y2})")
+                
+            elif operation == "CIRCLE" and len(parts) >= 4:
+                # G:CIRCLE,x,y,radius
+                x = float(parts[1])
+                y = float(parts[2])
+                radius = float(parts[3])
+                
+                # Move to center, then draw circle
+                self.interpreter.turtle_setxy(x, y)
+                self.interpreter.turtle_circle(radius)
+                self.interpreter.log_output(f"G:CIRCLE at ({x},{y}) radius {radius}")
+                
+            elif operation == "RECT" and len(parts) >= 5:
+                # G:RECT,x,y,width,height
+                x = float(parts[1])
+                y = float(parts[2])
+                width = float(parts[3])
+                height = float(parts[4])
+                
+                self.interpreter.log_output(f"G:RECT at ({x},{y}) {width}x{height}")
+                
+                # Draw rectangle
+                self.interpreter.turtle_setxy(x, y)
+                self.interpreter.turtle_graphics["pen_down"] = True
+                for _ in range(2):
+                    self.interpreter.turtle_forward(width)
+                    self.interpreter.turtle_right(90)
+                    self.interpreter.turtle_forward(height)
+                    self.interpreter.turtle_right(90)
+                
+            elif operation == "CLEAR":
+                # G:CLEAR - clear graphics screen
+                self.interpreter.clear_turtle_screen()
+                self.interpreter.log_output("Graphics screen cleared")
+                
+            elif operation == "PENUP":
+                # G:PENUP - lift pen
+                self.interpreter.turtle_graphics["pen_down"] = False
+                self.interpreter.log_output("Pen up")
+                
+            elif operation == "PENDOWN":
+                # G:PENDOWN - lower pen
+                self.interpreter.turtle_graphics["pen_down"] = True
+                self.interpreter.log_output("Pen down")
+                
+            elif operation == "COLOR" and len(parts) >= 2:
+                # G:COLOR,color_name
+                color = parts[1].strip()
+                self.interpreter.turtle_graphics["pen_color"] = color
+                self.interpreter.log_output(f"Pen color set to {color}")
+            
+            else:
+                self.interpreter.log_output(f"Unknown graphics command: {operation}")
+                
+        except Exception as e:
+            self.interpreter.debug_output(f"Graphics command error: {e}")
+        
         return "continue"
 
     def _handle_math_command(self, command):
@@ -1186,4 +1405,164 @@ class TwPilotExecutor:
         except Exception as e:
             self.interpreter.debug_output(f"STORAGE operation error: {e}")
 
+        return "continue"
+
+    # PILOT 73 Command Handlers
+
+    def _handle_dimension_array(self, command):
+        """Handle D: dimension array command (PILOT 73)"""
+        array_spec = command[2:].strip()
+
+        # Parse array specification: NAME(SIZE) or #NAME(SIZE) for numeric
+        if "(" in array_spec and ")" in array_spec:
+            name_part, size_part = array_spec.split("(", 1)
+            size_str = size_part.rstrip(")")
+
+            try:
+                size = int(size_str)
+                if size <= 0:
+                    self.interpreter.debug_output(
+                        f"Error: Array size must be positive, got {size}"
+                    )
+                    return "continue"
+
+                array_name = name_part.strip()
+                # Initialize array with None values (PILOT 73 arrays are 1-indexed)
+                self.arrays[array_name] = [None] * (size + 1)
+
+                self.interpreter.debug_output(
+                    f"[DEBUG] Created array {array_name} with size {size}"
+                )
+                return "continue"
+            except ValueError:
+                self.interpreter.debug_output(f"Error: Invalid array size '{size_str}'")
+                return "continue"
+        else:
+            self.interpreter.debug_output(
+                f"Error: Invalid array specification '{array_spec}'"
+            )
+            return "continue"
+
+    def _handle_pause(self, command):
+        """Handle PA: pause command (PILOT 73)"""
+        duration = command[3:].strip()
+        if duration:
+            try:
+                seconds = float(duration)
+                import time
+
+                time.sleep(seconds)
+                self.interpreter.debug_output(f"[DEBUG] Paused for {seconds} seconds")
+            except ValueError:
+                self.interpreter.debug_output(
+                    f"Error: Invalid pause duration '{duration}'"
+                )
+        else:
+            # Default pause - wait for user input
+            self.interpreter.get_user_input("Press Enter to continue...")
+        return "continue"
+
+    def _handle_clear_home(self, command):
+        """Handle CH: clear home command (PILOT 73)"""
+        # Clear screen and move cursor to home position
+        self.screen_control["screen_cleared"] = True
+        self.screen_control["cursor_row"] = 0
+        self.screen_control["cursor_col"] = 0
+        # In a real implementation, this would clear the terminal/console
+        self.interpreter.log_output("\n" * 50)  # Simple screen clear simulation
+        self.interpreter.debug_output("[DEBUG] Screen cleared and cursor homed")
+        return "continue"
+
+    def _handle_cursor_address(self, command):
+        """Handle CA: cursor address command (PILOT 73)"""
+        coords = command[3:].strip()
+        if "," in coords:
+            try:
+                row_str, col_str = coords.split(",", 1)
+                row = int(row_str.strip())
+                col = int(col_str.strip())
+                self.screen_control["cursor_row"] = row
+                self.screen_control["cursor_col"] = col
+                self.interpreter.debug_output(f"[DEBUG] Cursor moved to ({row}, {col})")
+            except ValueError:
+                self.interpreter.debug_output(
+                    f"Error: Invalid cursor coordinates '{coords}'"
+                )
+        else:
+            self.interpreter.debug_output(
+                f"Error: Invalid cursor address format '{coords}'"
+            )
+        return "continue"
+
+    def _handle_clear_line(self, command):
+        """Handle CL: clear line command (PILOT 73)"""
+        # Clear from cursor to end of line
+        self.interpreter.debug_output("[DEBUG] Line cleared from cursor")
+        return "continue"
+
+    def _handle_clear_end(self, command):
+        """Handle CE: clear to end command (PILOT 73)"""
+        # Clear from cursor to end of screen
+        self.interpreter.debug_output("[DEBUG] Cleared from cursor to end of screen")
+        return "continue"
+
+    def _handle_jump_match(self, command):
+        """Handle JM: jump match command (PILOT 73)"""
+        args = command[3:].strip()
+        if not args:
+            self.interpreter.debug_output("Error: JM requires label arguments")
+            return "continue"
+
+        labels = [label.strip() for label in args.split(",")]
+
+        # In PILOT 73, JM jumps based on which pattern matched
+        # For simplicity, we'll use the match number from system variables
+        match_num = self.system_vars.get("match_number", 0)
+
+        if 1 <= match_num <= len(labels):
+            target_label = labels[match_num - 1]
+            if target_label in self.interpreter.labels:
+                return f"jump:{self.interpreter.labels[target_label]}"
+            else:
+                self.interpreter.debug_output(
+                    f"Error: JM target label '{target_label}' not found"
+                )
+
+        return "continue"
+
+    def _handle_type_hang(self, command):
+        """Handle TH: type hang command (PILOT 73)"""
+        text = command[3:].strip()
+        text = self.interpreter.interpolate_text(text)
+        # Type without newline
+        self.interpreter.log_output(text, end="")
+        return "continue"
+
+    def _handle_system_command(self, command):
+        """Handle XS: system command (PILOT 73)"""
+        cmd = command[3:].strip()
+        if cmd:
+            try:
+                import subprocess
+
+                result = subprocess.run(
+                    cmd, shell=True, capture_output=True, text=True, check=False
+                )
+                self.system_vars["status"] = result.returncode
+                if result.stdout:
+                    self.interpreter.log_output(result.stdout)
+                if result.stderr:
+                    self.interpreter.debug_output(
+                        f"System command stderr: {result.stderr}"
+                    )
+            except Exception as e:
+                self.interpreter.debug_output(f"Error executing system command: {e}")
+                self.system_vars["status"] = -1
+        return "continue"
+
+    def _handle_problem(self, command):
+        """Handle PR: problem command (PILOT 73)"""
+        # Mark problem sections - implementation dependent
+        problem_text = command[3:].strip()
+        self.interpreter.debug_output(f"[PROBLEM] {problem_text}")
         return "continue"

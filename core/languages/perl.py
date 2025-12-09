@@ -1,3 +1,4 @@
+# pylint: disable=C0415,W0718
 """
 TW Perl Language Executor
 =========================
@@ -23,8 +24,9 @@ The executor provides a bridge to system Perl installations, allowing
 execution of Perl code with output capture and error handling within the IDE.
 """
 
+# pylint: disable=W1510,W0718,R1705
+
 import subprocess
-import sys
 import os
 import tempfile
 
@@ -36,6 +38,7 @@ class PerlExecutor:
         """Initialize with reference to main interpreter"""
         self.interpreter = interpreter
         self.perl_executable = self._find_perl_executable()
+        self._perl_script_buffer = []  # Buffer for multi-line Perl scripts
 
     def _find_perl_executable(self):
         """Find the Perl executable on the system"""
@@ -57,17 +60,12 @@ class PerlExecutor:
 
     def execute_command(self, command):
         """Execute a Perl command or script"""
-        # Handle multi-line Perl scripts
-        if hasattr(self, "_perl_script_buffer"):
-            self._perl_script_buffer.append(command)
-        else:
-            self._perl_script_buffer = [command]
-
-        # Check if this looks like a complete Perl script
-        script_text = "\n".join(self._perl_script_buffer)
-
-        # For now, execute each command immediately
-        # In future versions, could buffer until explicit run command
+        # Treat each execute_command call as a standalone Perl snippet
+        # (avoid accumulating snippets across calls which can cause syntax errors)
+        script_text = command if isinstance(command, str) else str(command)
+        # Ensure a trailing newline so the Perl parser handles single-line statements
+        if not script_text.endswith("\n"):
+            script_text += "\n"
         return self._execute_perl_script(script_text)
 
     def _execute_perl_script(self, script_text):

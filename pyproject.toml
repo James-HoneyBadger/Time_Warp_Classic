@@ -49,39 +49,8 @@ dev = [
 ]
 
 [tool.flake8]
-max-line-length = 99
-extend-ignore = ["E501", "W503", "E701"]
-exclude = [".git", "__pycache__", "build", "dist", ".venv"]
-
-[project.urls]
-Homepage = "https://github.com/James-HoneyBadger/Time_Warp"
-Repository = "https://github.com/James-HoneyBadger/Time_Warp"
-Issues = "https://github.com/James-HoneyBadger/Time_Warp/issues"
-Documentation = "https://github.com/James-HoneyBadger/Time_Warp/tree/main/docs"
-
-[project.scripts]
-timewarp = "timewarp.main:main"
-
-[tool.setuptools]
-package-dir = {"" = "src"}
-
-[tool.setuptools.packages.find]
-where = ["src"]
-
-[tool.pytest.ini_options]
-testpaths = ["tests"]
-python_files = ["test_*.py"]
-python_classes = ["Test*"]
-python_functions = ["test_*"]
-addopts = "-v --tb=short"
-
-[tool.black]
-line-length = 88
-target-version = ['py38']
-
-[tool.flake8]
 max-line-length = 88
-extend-ignore = ["E203", "W503"]
+extend-ignore = ["E203", "W503", "E501", "E701"]
 exclude = [".git", "__pycache__", "build", "dist", ".venv"]
 
 [tool.mypy]
