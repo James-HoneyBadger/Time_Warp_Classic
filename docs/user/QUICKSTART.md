@@ -197,7 +197,7 @@ console.log("Hello, World!");
 
 1. **Read the [User Manual](USER_MANUAL.md)** - Complete guide
 2. **Try all examples** - Program → Load Example
-3. **Learn each language** - See [Language Reference](LANGUAGE_REFERENCE.md)
+3. **Learn each language** - Explore examples in Program → Load Example
 4. **Experiment** - Modify examples and see what happens
 5. **Create your own programs** - Start simple, build up
 
@@ -205,8 +205,7 @@ console.log("Hello, World!");
 
 ## Getting Help
 
-- **Press F1** in the IDE for built-in help
-- **Check [docs/](.)** for comprehensive documentation
+- **Check [docs/](../)** for comprehensive documentation
 - **Look at examples/** for working code
 - **Read error messages** - they tell you what's wrong
 
@@ -228,7 +227,7 @@ console.log("Hello, World!");
 - Try an example program first to verify IDE works
 
 ### Graphics don't show
-- Check View → Graphics Panel is visible
+- Graphics automatically display in the IDE output area
 - Use PENDOWN in turtle graphics
 - Verify you're using Logo or BASIC turtle commands
 

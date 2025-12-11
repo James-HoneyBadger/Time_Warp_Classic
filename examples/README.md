@@ -359,9 +359,8 @@ Try these exercises using the example programs as starting points:
 
 ## Additional Resources
 
-- **[User Manual](../docs/USER_MANUAL.md)** - Complete IDE guide
-- **[Language Reference](../docs/LANGUAGE_REFERENCE.md)** - Syntax for all languages
-- **[Technical Manual](../docs/TECHNICAL_MANUAL.md)** - Implementation details
+- **[User Manual](../docs/user/USER_MANUAL.md)** - Complete IDE guide
+- **[Technical Manual](../docs/dev/TECHNICAL_MANUAL.md)** - Implementation details
 
 ---
 

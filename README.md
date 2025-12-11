@@ -123,17 +123,15 @@ Or this BASIC program:
 ## 📚 Documentation
 
 ### User Documentation
-- **[User Manual](docs/USER_MANUAL.md)** - Complete guide to using the IDE
-- **[Quick Start Guide](docs/QUICKSTART.md)** - Get up and running quickly
-- **[Example Programs](examples/README.md)** - Guided tour of example programs
+ - **[User Manual](docs/user/USER_MANUAL.md)** - Complete guide to using the IDE
+ - **[Quick Start Guide](docs/user/QUICKSTART.md)** - Get up and running quickly
+ - **[Example Programs](examples/README.md)** - Guided tour of example programs
 
 ### Technical Documentation
-- **[Technical Manual](docs/TECHNICAL_MANUAL.md)** - Architecture and implementation details
+ - **[Technical Manual](docs/dev/TECHNICAL_MANUAL.md)** - Architecture and implementation details
 
 ### Additional References
 - **[Documentation Index](docs/README.md)** - Doc suite overview
-
----
 
 ## 🎨 Supported Languages
 
@@ -256,9 +254,12 @@ Time_Warp_Classic/
 │   └── javascript/         # JavaScript examples
 │
 ├── docs/                   # Comprehensive documentation
-│   ├── USER_MANUAL.md      # Complete user guide
-│   ├── TECHNICAL_MANUAL.md # Technical architecture
-│   └── QUICKSTART.md       # Quick start guide
+│   ├── README.md           # Documentation index
+│   ├── user/               # User-facing guides
+│   │   ├── USER_MANUAL.md  # Complete user guide
+│   │   └── QUICKSTART.md   # Quick start guide
+│   └── dev/                # Developer-facing docs
+│       └── TECHNICAL_MANUAL.md # Technical architecture
 │
 └── scripts/                # Launcher scripts
     ├── launch.py           # Python launcher

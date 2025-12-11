@@ -502,10 +502,8 @@ Found a bug? Please report it on GitHub Issues with:
 
 Now that you know the IDE, explore:
 
-1. **[Language Reference](LANGUAGE_REFERENCE.md)** - Syntax for all 9 languages
 2. **[Example Programs](../examples/README.md)** - Working code to study
-3. **[Technical Manual](TECHNICAL_MANUAL.md)** - How the IDE works internally
-4. **[Developer Guide](DEVELOPER_GUIDE.md)** - Extend and customize
+3. **[Technical Manual](../dev/TECHNICAL_MANUAL.md)** - How the IDE works internally
 
 ---
 
