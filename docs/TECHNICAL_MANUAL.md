@@ -714,4 +714,4 @@ This prints internal state changes to console.
 
 ---
 
-© 2025 Time_Warp Project | Technical Documentation
+© 2025 Honey Badger Universe | Technical Documentation

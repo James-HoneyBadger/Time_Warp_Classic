@@ -135,7 +135,7 @@ All Time_Warp documentation follows these principles:
 2. **Examples Included** - Show, don't just tell
 3. **Progressive Difficulty** - Start simple, build up
 4. **Cross-Referenced** - Link to related docs
-5. **Up-to-Date** - Matches current version (1.3.0)
+5. **Up-to-Date** - Matches current version (1.0.0)
 
 ---
 
@@ -160,4 +160,4 @@ Found an error? Want to improve the docs?
 
 **Complete Documentation for Complete Programming** 📚
 
-© 2025 Time_Warp Project | Documentation
+© 2025 Honey Badger Universe | Documentation

@@ -367,4 +367,4 @@ Try these exercises using the example programs as starting points:
 
 **Happy Coding Through the Ages!** 🕰️
 
-© 2025 Time_Warp Project | Example Programs
+© 2025 Honey Badger Universe | Example Programs

@@ -1,10 +1,10 @@
-# Time_Warp Classic IDE
+# Time Warp Classic IDE
 
 > **A Multi-Language Programming Environment for Vintage and Modern Languages**
 
 Time_Warp Classic is a sophisticated educational IDE that bridges the past and present of programming, supporting 9 programming languages through an elegant graphical interface with integrated turtle graphics, inspired by the golden age of computing.
 
-[![Version](https://img.shields.io/badge/version-1.3.0-blue.svg)](https://github.com/James-HoneyBadger/Time_Warp_Classic)
+[![Version](https://img.shields.io/badge/version-1.0.0-blue.svg)](https://github.com/James-HoneyBadger/Time_Warp_Classic)
 [![Python](https://img.shields.io/badge/python-3.9+-green.svg)](https://www.python.org/)
 [![License](https://img.shields.io/badge/license-MIT-orange.svg)](LICENSE)
 
@@ -25,13 +25,13 @@ Execute code in 9 different programming languages, each with full language-speci
 - **JavaScript** - Web scripting with ES6+ features
 
 ### Professional IDE Interface
-- **Refined Menu System** - File, Edit, Program, View, Preferences, Help
+- **Refined Menu System** - File, Edit, Program, Preferences, About
 - **Integrated Editor** - Syntax-aware code editing with undo/redo
 - **Real-time Output** - Immediate program execution feedback
 - **Turtle Graphics Canvas** - Visual programming with integrated graphics display
-- **Theme Support** - Light, Dark, and Classic color schemes
-- **Customizable Fonts** - Adjustable font sizes (9pt to 16pt)
-- **Panel Management** - Resizable, toggleable output and graphics panels
+- **Theme Support** - 9 color themes with persistence
+- **Customizable Fonts** - 7 font sizes plus system monospace choices
+- **Panel Management** - Resizable output and graphics panels
 
 ### Educational Focus
 - Clear, descriptive error messages
@@ -73,8 +73,6 @@ Execute code in 9 different programming languages, each with full language-speci
    ```bash
    python Time_Warp.py
    ```
-
-The IDE will automatically check for dependencies and install missing packages if needed.
 
 ---
 
@@ -126,20 +124,14 @@ Or this BASIC program:
 
 ### User Documentation
 - **[User Manual](docs/USER_MANUAL.md)** - Complete guide to using the IDE
-- **[Language Reference](docs/LANGUAGE_REFERENCE.md)** - Syntax and features for all 9 languages
+- **[Quick Start Guide](docs/QUICKSTART.md)** - Get up and running quickly
 - **[Example Programs](examples/README.md)** - Guided tour of example programs
-- **[Keyboard Shortcuts](docs/SHORTCUTS.md)** - Quick reference for key bindings
 
 ### Technical Documentation
 - **[Technical Manual](docs/TECHNICAL_MANUAL.md)** - Architecture and implementation details
-- **[Developer Guide](docs/DEVELOPER_GUIDE.md)** - Contributing and extending Time_Warp
-- **[API Reference](docs/API_REFERENCE.md)** - Core interpreter API documentation
-- **[Language Implementation](docs/LANGUAGE_IMPLEMENTATION.md)** - How language executors work
 
-### Quick References
-- **[Quick Start Guide](docs/QUICKSTART.md)** - Get up and running in 5 minutes
-- **[Troubleshooting](docs/TROUBLESHOOTING.md)** - Common issues and solutions
-- **[FAQ](docs/FAQ.md)** - Frequently asked questions
+### Additional References
+- **[Documentation Index](docs/README.md)** - Doc suite overview
 
 ---
 
@@ -266,8 +258,7 @@ Time_Warp_Classic/
 ├── docs/                   # Comprehensive documentation
 │   ├── USER_MANUAL.md      # Complete user guide
 │   ├── TECHNICAL_MANUAL.md # Technical architecture
-│   ├── LANGUAGE_REFERENCE.md # All language syntax
-│   └── ... (see docs/README.md for full list)
+│   └── QUICKSTART.md       # Quick start guide
 │
 └── scripts/                # Launcher scripts
     ├── launch.py           # Python launcher
@@ -281,7 +272,6 @@ Time_Warp_Classic/
 
 ### Program Execution
 - **F5** - Run current program
-- **F1** - Show help
 
 ### File Operations
 - **Ctrl+N** - New file
@@ -441,4 +431,4 @@ Compare implementations across all 9 languages, or extend the interpreter with n
 
 **Time_Warp Classic** - *Programming Through the Ages* 🕰️
 
-© 2025 Time_Warp Project | Educational Software
+© 2025 Honey Badger Universe | Educational Software

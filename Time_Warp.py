@@ -644,7 +644,7 @@ def main():
                 about_text = (
                     f"{sep}\n"
                     "Time Warp Classic\n"
-                    "Version 1.3.0\n\n"
+                    "Version 1.0.0\n\n"
                     "A multi-language playground for exploring\n"
                     "vintage and modern programming styles.\n\n"
                     "FEATURES:\n"

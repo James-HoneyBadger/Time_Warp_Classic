@@ -511,4 +511,4 @@ Now that you know the IDE, explore:
 
 **Happy Programming Through the Ages!** 🕰️
 
-© 2025 Time_Warp Project | Educational Software
+© 2025 Honey Badger Universe | Educational Software

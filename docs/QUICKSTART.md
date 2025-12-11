@@ -240,4 +240,4 @@ Explore 9 programming languages and enjoy the journey through computing history.
 
 ---
 
-© 2025 Time_Warp Project | Quick Start Guide
+© 2025 Honey Badger Universe | Quick Start Guide
