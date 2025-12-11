@@ -1,277 +1,443 @@
-# Time_Warp
+# Time_Warp Classic IDE
 
-A multi-language interpreter IDE for educational programming, supporting 9 programming languages through a unified execution engine with GUI and CLI interfaces.
+> **A Multi-Language Programming Environment for Vintage and Modern Languages**
 
-## Overview
+Time_Warp Classic is a sophisticated educational IDE that bridges the past and present of programming, supporting 9 programming languages through an elegant graphical interface with integrated turtle graphics, inspired by the golden age of computing.
 
-Time_Warp is an educational tool that allows users to write and execute programs in 9 different programming languages using either a graphical IDE or command-line interface. It's designed for learning programming concepts across different paradigms with immediate execution feedback.
+[![Version](https://img.shields.io/badge/version-1.3.0-blue.svg)](https://github.com/James-HoneyBadger/Time_Warp_Classic)
+[![Python](https://img.shields.io/badge/python-3.9+-green.svg)](https://www.python.org/)
+[![License](https://img.shields.io/badge/license-MIT-orange.svg)](LICENSE)
 
-## Features
+---
 
-- **Multi-Language Support**: Execute code in PILOT, BASIC, Logo, Pascal, Prolog, Forth, Perl, Python, and JavaScript
-- **GUI IDE**: Interactive editor with syntax highlighting and real-time output display
-- **Turtle Graphics**: Visual programming support for Logo and PILOT languages with graphical canvas
-- **User Input**: Bottom input field for program input (no popup dialogs)
-- **String Output**: PRINT commands with quoted text output directly to display
-- **Educational Focus**: Clear error messages and immediate execution feedback
-- **CLI Mode**: Command-line interface for running and managing programs
+## 🌟 Features
 
-## Installation
+### Multi-Language Support
+Execute code in 9 different programming languages, each with full language-specific features:
+- **PILOT** - Educational computer-assisted instruction
+- **BASIC** - Classic line-numbered programming with turtle graphics
+- **Logo** - Visual turtle graphics programming
+- **Pascal** - Structured programming with strong typing
+- **Prolog** - Logic programming with facts and rules
+- **Forth** - Stack-based concatenative programming
+- **Perl** - Text processing and pattern matching
+- **Python** - Modern general-purpose programming
+- **JavaScript** - Web scripting with ES6+ features
 
-1. Clone the repository:
+### Professional IDE Interface
+- **Refined Menu System** - File, Edit, Program, View, Preferences, Help
+- **Integrated Editor** - Syntax-aware code editing with undo/redo
+- **Real-time Output** - Immediate program execution feedback
+- **Turtle Graphics Canvas** - Visual programming with integrated graphics display
+- **Theme Support** - Light, Dark, and Classic color schemes
+- **Customizable Fonts** - Adjustable font sizes (9pt to 16pt)
+- **Panel Management** - Resizable, toggleable output and graphics panels
 
+### Educational Focus
+- Clear, descriptive error messages
+- Example programs for every language
+- Immediate execution feedback
+- Visual programming support
+- Interactive learning environment
+
+---
+
+## 📦 Installation
+
+### Prerequisites
+- Python 3.9 or higher
+- tkinter (usually included with Python)
+- pip package manager
+
+### Quick Start
+
+1. **Clone the repository:**
    ```bash
-   git clone https://github.com/James-HoneyBadger/Time_Warp.git
-   cd Time_Warp
+   git clone https://github.com/James-HoneyBadger/Time_Warp_Classic.git
+   cd Time_Warp_Classic
    ```
 
-2. Install dependencies:
-
+2. **Install dependencies:**
    ```bash
    pip install -r requirements.txt
    ```
+   
+   Or use a virtual environment (recommended):
+   ```bash
+   python -m venv venv
+   source venv/bin/activate  # On Windows: venv\Scripts\activate
+   pip install -r requirements.txt
+   ```
 
-3. Run the IDE:
-
+3. **Launch the IDE:**
    ```bash
    python Time_Warp.py
    ```
 
-## Usage
+The IDE will automatically check for dependencies and install missing packages if needed.
 
-### GUI IDE Mode (Default)
+---
 
-When you run `python Time_Warp.py` without arguments, the graphical IDE launches:
+## 🚀 Getting Started
 
-1. **Code Editor**: Left panel for writing code in any supported language
-2. **Output Display**: Right panel shows program output in real-time
-3. **Graphics Canvas**: Bottom-right area for turtle graphics visualization
-4. **Input Field**: Bottom input field for providing user input to programs
-   - When a program executes an `INPUT` command, it waits for you to enter text in the bottom field and press Enter or Submit
-   - The text is NOT entered via a popup dialog, but through the input field at the bottom of the window
-5. **Control Buttons**: Run, Load, Save, Clear Output, Clear Editor
+### Using the GUI
 
-Example BASIC program with input:
-```basic
-10 PRINT "What is your name?"
-20 INPUT NAME
-30 PRINT "Hello, "; NAME
-```
+When you launch Time_Warp.py, you'll see the main IDE interface:
 
-When you run this:
-1. The program prints "What is your name?" to the output display
-2. The interpreter waits for input from the bottom input field
-3. You type your name and press Enter in the bottom field
-4. Your input is displayed as ">> YourName" in the output
-5. The program continues and prints the greeting
+1. **Select Language** - Choose from the dropdown (PILOT, BASIC, Logo, etc.)
+2. **Write Code** - Use the left editor panel
+3. **Run Program** - Press **F5** or use **Program → Run Program**
+4. **View Results** - See output in the right panel and graphics below
 
-### Command Line Interface
+### Quick Example
 
-For CLI execution, use the CLI scripts:
-
-```bash
-python scripts/timewarp-cli.py run program.bas
-python scripts/launch.py program.logo
-```
-
-### Supported Languages
-
-### TW PILOT (Educational Language)
-
-```pilot
-T:Hello World!
-A:What is your name?
-T:Nice to meet you, *NAME*!
-U:X=10
-T:X equals *X*
-```
-
-### TW BASIC (Classic Programming)
-
-```basic
-10 PRINT "Hello BASIC!"
-20 LET X = 5
-30 PRINT "X = "; X
-40 END
-```
-
-### TW Logo (Turtle Graphics)
-
+Try this Logo program:
 ```logo
-FORWARD 100
-RIGHT 90
-FORWARD 100
-RIGHT 90
-FORWARD 100
-RIGHT 90
-FORWARD 100
+REPEAT 4 [
+  FORWARD 100
+  RIGHT 90
+]
 ```
 
-### Python
-
-```python
-print("Hello from Python!")
-x = 42
-print(f"x = {x}")
+Or this BASIC program:
+```basic
+10 PRINT "Hello from the past!"
+20 FOR I = 1 TO 5
+30   PRINT "Count: "; I
+40 NEXT I
+50 END
 ```
-
-### JavaScript
-
-```javascript
-console.log("Hello from JavaScript!");
-let x = 42;
-console.log(`x = ${x}`);
-```
-
-### Perl
-
-```perl
-print "Hello from Perl!\n";
-my $x = 42;
-print "x = $x\n";
-```
-
-## Example Programs
-
-The `examples/` directory contains ready-to-run example programs for all supported languages. These demonstrate language features and can be loaded directly in the GUI via **File → Open**.
-
-### Available Examples
-
-- **hello_basic.bas** - BASIC with turtle graphics (square drawing with pen control)
-- **spiral_logo.logo** - Logo colorful spiral with SETPENCOLOR and loops
-- **quiz_pilot.pilot** - PILOT interactive quiz demonstrating educational features
-- **hello_pascal.pas** - Pascal structured program with functions
-- **facts_prolog.pl** - Prolog logic programming with family relationships
-- **stack_forth.fth** - Forth stack operations and RPN calculations
-- **patterns_perl.pl** - Perl text processing with regex and functional programming
-- **modern_python.py** - Modern Python features (comprehensions, classes, generators)
-- **interactive_javascript.js** - JavaScript ES6+ features (async/await, classes, promises)
-
-Each example includes comments explaining the code and demonstrates core language features. See `examples/README.md` for detailed documentation, or run `INDEX.bas` in the GUI for an interactive menu.
 
 ### Loading Examples
 
-**GUI Mode:**
-1. Launch Time Warp: `python Time_Warp.py`
-2. Click **File → Open**
-3. Navigate to `examples/`
-4. Select any example file and click **Open**
-5. Click **Run** to execute
+**Via Menu:**
+1. **Program → Load Example**
+2. Select a language submenu
+3. Choose an example program
 
-**CLI Mode:**
+**Via File Menu:**
+1. **File → Open File...**
+2. Navigate to `examples/[language]/`
+3. Select an example file
+
+---
+
+## 📚 Documentation
+
+### User Documentation
+- **[User Manual](docs/USER_MANUAL.md)** - Complete guide to using the IDE
+- **[Language Reference](docs/LANGUAGE_REFERENCE.md)** - Syntax and features for all 9 languages
+- **[Example Programs](examples/README.md)** - Guided tour of example programs
+- **[Keyboard Shortcuts](docs/SHORTCUTS.md)** - Quick reference for key bindings
+
+### Technical Documentation
+- **[Technical Manual](docs/TECHNICAL_MANUAL.md)** - Architecture and implementation details
+- **[Developer Guide](docs/DEVELOPER_GUIDE.md)** - Contributing and extending Time_Warp
+- **[API Reference](docs/API_REFERENCE.md)** - Core interpreter API documentation
+- **[Language Implementation](docs/LANGUAGE_IMPLEMENTATION.md)** - How language executors work
+
+### Quick References
+- **[Quick Start Guide](docs/QUICKSTART.md)** - Get up and running in 5 minutes
+- **[Troubleshooting](docs/TROUBLESHOOTING.md)** - Common issues and solutions
+- **[FAQ](docs/FAQ.md)** - Frequently asked questions
+
+---
+
+## 🎨 Supported Languages
+
+### Vintage Languages
+
+#### PILOT (1968)
+Computer-Assisted Instruction language designed for educational software.
+```pilot
+T:Welcome to PILOT programming!
+A:What is your name?
+T:Hello, *NAME*!
+```
+
+#### BASIC (1964)
+The classic beginner's language with line numbers and turtle graphics.
+```basic
+10 PRINT "Drawing a square..."
+20 FOR I = 1 TO 4
+30   FORWARD 100
+40   RIGHT 90
+50 NEXT I
+```
+
+#### Logo (1967)
+Educational language famous for turtle graphics.
+```logo
+REPEAT 36 [
+  FORWARD 100
+  RIGHT 10
+]
+```
+
+#### Pascal (1970)
+Structured programming language emphasizing clear code.
+```pascal
+program Hello;
+begin
+  WriteLn('Hello from Pascal!');
+end.
+```
+
+#### Prolog (1972)
+Logic programming with facts, rules, and queries.
+```prolog
+parent(john, mary).
+parent(john, tom).
+sibling(X, Y) :- parent(P, X), parent(P, Y), X \= Y.
+```
+
+#### Forth (1970)
+Stack-based concatenative programming language.
+```forth
+: SQUARE DUP * ;
+5 SQUARE .
+```
+
+### Modern Languages
+
+#### Perl (1987)
+Powerful text processing and scripting.
+```perl
+my @numbers = (1, 2, 3, 4, 5);
+my $sum = 0;
+$sum += $_ for @numbers;
+print "Sum: $sum\n";
+```
+
+#### Python (1991)
+Clean, readable general-purpose programming.
+```python
+numbers = [1, 2, 3, 4, 5]
+squares = [n**2 for n in numbers]
+print(f"Squares: {squares}")
+```
+
+#### JavaScript (1995)
+Modern web scripting with ES6+ features.
+```javascript
+const numbers = [1, 2, 3, 4, 5];
+const squares = numbers.map(n => n ** 2);
+console.log(`Squares: ${squares}`);
+```
+
+---
+
+## 🗂️ Project Structure
+
+```
+Time_Warp_Classic/
+├── Time_Warp.py              # Main application entry point
+├── README.md                 # This file
+├── requirements.txt          # Python dependencies
+├── pyproject.toml           # Modern Python configuration
+│
+├── core/                    # Core interpreter engine
+│   ├── interpreter.py       # Central execution engine
+│   ├── languages/           # Language-specific executors
+│   │   ├── pilot.py         # PILOT executor
+│   │   ├── basic.py         # BASIC executor
+│   │   ├── logo.py          # Logo executor
+│   │   ├── pascal.py        # Pascal executor
+│   │   ├── prolog.py        # Prolog executor
+│   │   ├── forth.py         # Forth executor
+│   │   ├── perl.py          # Perl executor
+│   │   ├── python.py        # Python executor
+│   │   └── javascript.py    # JavaScript executor
+│   ├── features/            # Advanced features
+│   └── utilities/           # Helper utilities
+│
+├── examples/                # Example programs (organized by language)
+│   ├── README.md           # Examples documentation
+│   ├── pilot/              # PILOT examples
+│   ├── basic/              # BASIC examples
+│   ├── logo/               # Logo examples
+│   ├── pascal/             # Pascal examples
+│   ├── prolog/             # Prolog examples
+│   ├── forth/              # Forth examples
+│   ├── perl/               # Perl examples
+│   ├── python/             # Python examples
+│   └── javascript/         # JavaScript examples
+│
+├── docs/                   # Comprehensive documentation
+│   ├── USER_MANUAL.md      # Complete user guide
+│   ├── TECHNICAL_MANUAL.md # Technical architecture
+│   ├── LANGUAGE_REFERENCE.md # All language syntax
+│   └── ... (see docs/README.md for full list)
+│
+└── scripts/                # Utility scripts
+    ├── timewarp-cli.py     # Command-line interface
+    └── launch.py           # Alternative launcher
+```
+
+---
+
+## ⌨️ Keyboard Shortcuts
+
+### Program Execution
+- **F5** - Run current program
+- **F1** - Show help
+
+### File Operations
+- **Ctrl+N** - New file
+- **Ctrl+O** - Open file
+- **Ctrl+S** - Save file
+- **Ctrl+Q** - Exit application
+
+### Editing
+- **Ctrl+Z** - Undo
+- **Ctrl+Y** - Redo
+- **Ctrl+X** - Cut
+- **Ctrl+C** - Copy
+- **Ctrl+V** - Paste
+- **Ctrl+A** - Select all
+
+---
+
+## 🎯 Use Cases
+
+### Education
+- **Learn Programming Fundamentals** - Start with PILOT or BASIC
+- **Explore Programming Paradigms** - Compare procedural, logic, and functional styles
+- **Visual Learning** - Use Logo for immediate visual feedback
+- **Historical Perspective** - Experience the evolution of programming languages
+
+### Hobbyist Programming
+- **Retro Computing** - Experience classic languages on modern hardware
+- **Creative Coding** - Use turtle graphics for artistic expression
+- **Language Exploration** - Try 9 languages without multiple installations
+- **Quick Prototyping** - Test algorithms in different paradigms
+
+### Teaching
+- **Classroom Tool** - Teach multiple languages with one IDE
+- **Interactive Lessons** - Use example programs as teaching aids
+- **Comparative Learning** - Show same concepts across languages
+- **Hands-on Practice** - Immediate execution and feedback
+
+---
+
+## 🔧 System Requirements
+
+### Minimum Requirements
+- **OS:** Windows 7+, macOS 10.12+, Linux (any modern distribution)
+- **Python:** 3.9 or higher
+- **RAM:** 512 MB
+- **Display:** 1024x768 or higher
+
+### Recommended Requirements
+- **OS:** Windows 10+, macOS 11+, Ubuntu 20.04+
+- **Python:** 3.11 or higher
+- **RAM:** 2 GB
+- **Display:** 1920x1080 or higher
+
+### Required Python Packages
+- **tkinter** - GUI framework (usually included with Python)
+- **pygame** - Graphics support (installed automatically)
+- **Pillow** - Image processing (installed automatically)
+
+### Optional Packages
+- **pygments** - Syntax highlighting (for advanced features)
+- **pytest** - Testing framework (for development)
+- **black** - Code formatting (for development)
+- **flake8** - Linting (for development)
+
+---
+
+## 🤝 Contributing
+
+Contributions are welcome! Please see **[DEVELOPER_GUIDE.md](docs/DEVELOPER_GUIDE.md)** for detailed information.
+
+### Quick Contributing Guide
+
+1. **Fork the repository**
+2. **Create a feature branch** (`git checkout -b feature/amazing-feature`)
+3. **Make your changes** and test thoroughly
+4. **Commit your changes** (`git commit -m 'Add amazing feature'`)
+5. **Push to the branch** (`git push origin feature/amazing-feature`)
+6. **Open a Pull Request**
+
+### Development Setup
+
 ```bash
-python scripts/timewarp-cli.py run examples/hello_basic.bas
-python scripts/launch.py examples/spiral_logo.logo
+# Clone your fork
+git clone https://github.com/YOUR_USERNAME/Time_Warp_Classic.git
+cd Time_Warp_Classic
+
+# Create virtual environment
+python -m venv venv
+source venv/bin/activate  # On Windows: venv\Scripts\activate
+
+# Install dependencies including dev tools
+pip install -r requirements.txt
+pip install pytest black flake8 mypy
+
+# Run tests
+pytest
+
+# Format code
+black .
+
+# Lint code
+flake8
 ```
 
-## Architecture
+---
 
-```
-Time_Warp_Classic/                     # Root project directory
-├── 📄 Time_Warp.py                    # Dependency checker and launcher
-├── 📄 timewarp                        # CLI wrapper script
-├── 📄 README.md                       # Main project documentation
-├── 📄 requirements.txt                # Python dependencies
-├── 📄 pyproject.toml                  # Modern Python configuration
-│
-├── 📁 core/                           # Core interpreter system
-│   ├── 📄 __init__.py                 # Core module initialization
-│   ├── 📄 interpreter.py              # Central execution engine
-│   ├── 📁 languages/                  # Language-specific executors
-│   │   ├── 📄 __init__.py
-│   │   ├── 📄 basic.py                # BASIC language support
-│   │   ├── 📄 forth.py                # Forth stack-based
-│   │   ├── 📄 javascript.py           # JavaScript execution
-│   │   ├── 📄 javascript_executor.py  # JS execution wrapper
-│   │   ├── 📄 logo.py                 # Logo turtle graphics
-│   │   ├── 📄 pascal.py               # Pascal structured
-│   │   ├── 📄 perl.py                 # Perl text processing
-│   │   ├── 📄 pilot.py                # PILOT educational
-│   │   ├── 📄 prolog.py               # Prolog logic
-│   │   ├── 📄 python.py               # Python execution
-│   │   └── 📄 python_executor.py      # Python execution wrapper
-│   ├── 📁 features/                   # Advanced features
-│   │   └── 📄 code_templates.py       # Code template system
-│   └── 📁 utilities/                  # Helper utilities
-│       └── 📄 __init__.py
-│
-├── 📁 docs/                           # Documentation
-│   ├── 📄 README.md                   # Documentation index
-│   ├── 📄 CLI.md                      # CLI documentation
-│   ├── 📄 *.md                        # Various guides and references
-│   └── 📁 developer-guide/            # Developer documentation
-│
-├── 📁 examples/                       # Sample programs
-│   ├── 📄 README.md                   # Examples documentation
-│   ├── 📄 PROGRAMS_INDEX.md           # Program index
-│   └── 📁 [language]/                 # Language-specific examples
-│
-├── 📁 scripts/                        # Development scripts
-│   ├── 📄 README.md                   # Scripts documentation
-│   ├── 📄 timewarp-cli.py             # CLI implementation
-│   └── 📄 [other scripts]             # Various utility scripts
-│
-└── 📁 .github/                        # GitHub workflows
-    └── 📁 workflows/                  # CI/CD automation
-        └── 📄 ci.yml                  # Continuous integration
-```
+## 📄 License
 
-## Language Details
+This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
 
-### TW PILOT
+---
 
-- **Purpose**: Educational programming with simple commands
-- **Commands**: T: (text), A: (input), J: (jump), Y: (yes branch), N: (no branch), U: (update variable)
-- **Features**: Variable interpolation with `*VAR*` syntax, turtle graphics integration
+## 🙏 Acknowledgments
 
-### TW BASIC
+- **PILOT Language** - Inspired by John Amsden Starkweather's original 1968 design
+- **BASIC** - Tribute to Kemeny and Kurtz's accessible programming vision
+- **Logo** - Honoring Seymour Papert's educational computing legacy
+- **Classic Computing Community** - For keeping vintage computing alive
+- **Open Source Contributors** - Everyone who helps improve Time_Warp
 
-- **Purpose**: Classic line-numbered programming
-- **Commands**: PRINT, LET, GOTO, IF...THEN, FOR...NEXT, INPUT
-- **Features**: Traditional BASIC syntax with modern enhancements
+---
 
-### TW Logo
+## 📞 Support
 
-- **Purpose**: Educational turtle graphics programming
-- **Commands**: FORWARD, BACK, LEFT, RIGHT, PENUP, PENDOWN, REPEAT
-- **Features**: Visual programming with turtle graphics
+- **Documentation:** See the `docs/` directory
+- **Issues:** Report bugs on [GitHub Issues](https://github.com/James-HoneyBadger/Time_Warp_Classic/issues)
+- **Questions:** Check the [FAQ](docs/FAQ.md) first
+- **Community:** Share your programs and experiences!
 
-### Modern Languages (Perl, Python, JavaScript)
+---
 
-- **Purpose**: Full scripting language support
-- **Execution**: Direct execution with proper error handling
-- **Features**: Access to standard libraries and modern language features
+## 🎓 Learning Resources
 
-## Development
+### For Beginners
+Start with PILOT or BASIC, then try Logo for visual programming.
 
-### Adding a New Language
+### For Intermediate Programmers
+Explore Pascal for structured programming, then try Prolog for logic programming.
 
-1. Create executor class in `core/languages/newlang.py`
-2. Implement `execute_command()` method
-3. Add import to `core/languages/__init__.py`
-4. Register in `interpreter.py` language mapping
+### For Advanced Users
+Compare implementations across all 9 languages, or extend the interpreter with new features.
 
-### Code Style
+---
 
-- Use descriptive docstrings for all classes and methods
-- Follow PEP 8 style guidelines
-- Include type hints where helpful
-- Write clear, educational error messages
+## 🚧 Roadmap
 
-## Requirements
+- [ ] Code completion and IntelliSense
+- [ ] Syntax highlighting in editor
+- [ ] Debugger with breakpoints
+- [ ] More example programs
+- [ ] Language tutorials
+- [ ] Plugin system for custom languages
+- [ ] Export programs to standalone executables
+- [ ] Web-based version
 
-- Python 3.8+
-- pygments (optional, for syntax highlighting in CLI)
+---
 
-## License
+**Time_Warp Classic** - *Programming Through the Ages* 🕰️
 
-MIT License - see LICENSE file for details.
-
-## Contributing
-
-Contributions welcome! Please:
-
-1. Test your changes manually
-2. Update documentation
-3. Follow existing code style
-4. Add examples for new features
+© 2025 Time_Warp Project | Educational Software

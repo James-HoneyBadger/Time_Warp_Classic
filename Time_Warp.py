@@ -463,7 +463,7 @@ Examples:
             examples_menu.add_cascade(label="PILOT", menu=pilot_menu)
             pilot_menu.add_command(
                 label="Quiz Demo",
-                command=lambda: load_example("examples/quiz_pilot.pilot"),
+                command=lambda: load_example("examples/pilot/quiz_pilot.pilot"),
             )
 
             # BASIC examples submenu
@@ -471,11 +471,11 @@ Examples:
             examples_menu.add_cascade(label="BASIC", menu=basic_menu)
             basic_menu.add_command(
                 label="Hello World + Turtle Graphics",
-                command=lambda: load_example("examples/hello_basic.bas"),
+                command=lambda: load_example("examples/basic/hello_basic.bas"),
             )
             basic_menu.add_command(
                 label="Index Menu",
-                command=lambda: load_example("examples/INDEX.bas"),
+                command=lambda: load_example("examples/basic/INDEX.bas"),
             )
 
             # Logo examples submenu
@@ -483,7 +483,7 @@ Examples:
             examples_menu.add_cascade(label="Logo", menu=logo_menu)
             logo_menu.add_command(
                 label="Colorful Spiral",
-                command=lambda: load_example("examples/spiral_logo.logo"),
+                command=lambda: load_example("examples/logo/spiral_logo.logo"),
             )
 
             # Pascal examples submenu
@@ -491,7 +491,7 @@ Examples:
             examples_menu.add_cascade(label="Pascal", menu=pascal_menu)
             pascal_menu.add_command(
                 label="Hello World + Functions",
-                command=lambda: load_example("examples/hello_pascal.pas"),
+                command=lambda: load_example("examples/pascal/hello_pascal.pas"),
             )
 
             # Prolog examples submenu
@@ -499,7 +499,7 @@ Examples:
             examples_menu.add_cascade(label="Prolog", menu=prolog_menu)
             prolog_menu.add_command(
                 label="Facts & Rules",
-                command=lambda: load_example("examples/facts_prolog.pl"),
+                command=lambda: load_example("examples/prolog/facts_prolog.pl"),
             )
 
             # Forth examples submenu
@@ -507,7 +507,7 @@ Examples:
             examples_menu.add_cascade(label="Forth", menu=forth_menu)
             forth_menu.add_command(
                 label="Stack Operations",
-                command=lambda: load_example("examples/stack_forth.fth"),
+                command=lambda: load_example("examples/forth/stack_forth.fth"),
             )
 
             # Perl examples submenu
@@ -515,7 +515,7 @@ Examples:
             examples_menu.add_cascade(label="Perl", menu=perl_menu)
             perl_menu.add_command(
                 label="Patterns & Text Processing",
-                command=lambda: load_example("examples/patterns_perl.pl"),
+                command=lambda: load_example("examples/perl/patterns_perl.pl"),
             )
 
             # Python examples submenu
@@ -523,7 +523,7 @@ Examples:
             examples_menu.add_cascade(label="Python", menu=python_menu)
             python_menu.add_command(
                 label="Modern Python Features",
-                command=lambda: load_example("examples/modern_python.py"),
+                command=lambda: load_example("examples/python/modern_python.py"),
             )
 
             # JavaScript examples submenu
@@ -531,7 +531,7 @@ Examples:
             examples_menu.add_cascade(label="JavaScript", menu=js_menu)
             js_menu.add_command(
                 label="Modern JavaScript (ES6+)",
-                command=lambda: load_example("examples/interactive_javascript.js"),
+                command=lambda: load_example("examples/javascript/interactive_javascript.js"),
             )
 
             # View menu
