@@ -125,9 +125,9 @@ class TwLogoExecutor:
                 return self._handle_text(parts)
 
             # Information commands
-            elif cmd == "SHOWTURTLE":
+            elif cmd in ["SHOWTURTLE", "ST"]:
                 return self._handle_showturtle()
-            elif cmd == "HIDETURTLE":
+            elif cmd in ["HIDETURTLE", "HT"]:
                 return self._handle_hideturtle()
             elif cmd == "PRINT":
                 return self._handle_print(parts)
@@ -361,6 +361,8 @@ class TwLogoExecutor:
         var_name = parts[1].strip('"').upper()
         value_expr = ' '.join(parts[2:])
         
+        self.interpreter.debug_output(f"MAKE: var={var_name}, expr='{value_expr}'")
+        
         try:
             # Evaluate the value expression (handles :VARS, literals, math)
             value = self._eval_argument(value_expr)
@@ -368,6 +370,7 @@ class TwLogoExecutor:
             self.interpreter.debug_output(f"MAKE {var_name} = {value}")
         except Exception as e:
             self.interpreter.debug_output(f"MAKE error: {e}")
+            self.interpreter.log_output(f"Error in MAKE: {e}")
         
         return "continue"
 
@@ -544,22 +547,29 @@ class TwLogoExecutor:
 
         arg = str(arg).strip()
 
-        # If it starts with :, it's a variable reference
-        if arg.startswith(":"):
+        # Check if it's a simple variable reference (just :VARNAME with no operators)
+        if arg.startswith(":") and re.match(r'^:\w+$', arg):
             var_name = arg[1:].upper()
-            return self.interpreter.variables.get(var_name, 0)
+            value = self.interpreter.variables.get(var_name, 0)
+            self.interpreter.debug_output(f"_eval_argument: :{var_name} -> {value}")
+            return value
 
-        # Otherwise try to evaluate as expression
+        # Otherwise try to evaluate as expression (may contain :VARS, operators, numbers)
         try:
             # Replace any :VARS in the expression
             def replace_var(m):
                 var_name = m.group(1).upper()
-                return str(self.interpreter.variables.get(var_name, 0))
+                val = self.interpreter.variables.get(var_name, 0)
+                self.interpreter.debug_output(f"_eval_argument: replacing :{var_name} with {val}")
+                return str(val)
 
             expr_str = re.sub(r":(\w+)", replace_var, arg)
+            self.interpreter.debug_output(f"_eval_argument: '{arg}' -> '{expr_str}'")
             result = eval(expr_str, {"__builtins__": {}}, {})
+            self.interpreter.debug_output(f"_eval_argument: eval result = {result}")
             return float(result)
-        except Exception:
+        except Exception as e:
+            self.interpreter.debug_output(f"_eval_argument: exception {e}")
             try:
                 return float(arg)
             except (ValueError, TypeError):
@@ -1658,13 +1668,17 @@ class TwLogoExecutor:
             "SETCOLOR",
             "SETCOLOUR",
             "COLOR",
+            "SETPENCOLOR",
+            "SETPC",
             "SETPENSIZE",
             "CIRCLE",
             "DOT",
             "RECT",
             "TEXT",
             "SHOWTURTLE",
+            "ST",
             "HIDETURTLE",
+            "HT",
             "HEADING",
             "POSITION",
             "TRACE",
@@ -1672,6 +1686,10 @@ class TwLogoExecutor:
             "REPEAT",
             "DEFINE",
             "CALL",
+            "MAKE",
+            "PRINT",
+            "IF",
+            "STOP",
         }
 
         # Tokenize the input respecting brackets

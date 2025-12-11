@@ -802,17 +802,32 @@ class Time_WarpInterpreter:  # pylint: disable=too-many-public-methods
             self.log_output("Turtle graphics initialized (headless stub mode)")
 
     def turtle_forward(self, distance):
-        """Move turtle forward by distance units"""
+        """Move turtle forward by distance units
+        
+        Uses Logo/turtle graphics convention where:
+        - 0° = North (up on screen)
+        - 90° = East (right)
+        - 180° = South (down)
+        - 270° = West (left)
+        """
         if not self.turtle_graphics:
             self.init_turtle_graphics()
 
         import math
 
-        # Calculate new position
-        heading_rad = math.radians(self.turtle_graphics["heading"])
+        # Convert Logo heading to math radians
+        # Logo: 0° = North (up), clockwise
+        # Math: 0° = East (right), counter-clockwise
+        # Conversion: math_angle = 90 - logo_heading
+        logo_heading = self.turtle_graphics["heading"]
+        math_angle_degrees = 90 - logo_heading
+        heading_rad = math.radians(math_angle_degrees)
+        
         old_x = self.turtle_graphics["x"]
         old_y = self.turtle_graphics["y"]
 
+        # Calculate movement in turtle coordinate space
+        # Positive Y = up on screen (north), Negative Y = down (south)
         new_x = old_x + distance * math.cos(heading_rad)
         new_y = old_y + distance * math.sin(heading_rad)
 
@@ -830,10 +845,11 @@ class Time_WarpInterpreter:  # pylint: disable=too-many-public-methods
             canvas = self.turtle_graphics.get("canvas")
             if canvas:
                 # Convert turtle coordinates to canvas coordinates
+                # Canvas: Y increases downward, so flip the turtle Y coordinate
                 canvas_old_x = old_x + self.turtle_graphics["center_x"]
-                canvas_old_y = self.turtle_graphics["center_y"] - old_y  # Flip Y axis
+                canvas_old_y = self.turtle_graphics["center_y"] - old_y  # Flip Y for canvas
                 canvas_new_x = new_x + self.turtle_graphics["center_x"]
-                canvas_new_y = self.turtle_graphics["center_y"] - new_y  # Flip Y axis
+                canvas_new_y = self.turtle_graphics["center_y"] - new_y  # Flip Y for canvas
 
                 self.log_output(
                     f"🎨 Drawing line from ({canvas_old_x:.1f}, {canvas_old_y:.1f}) to ({canvas_new_x:.1f}, {canvas_new_y:.1f})"
@@ -908,7 +924,14 @@ class Time_WarpInterpreter:  # pylint: disable=too-many-public-methods
         self.update_turtle_display()
 
     def update_turtle_display(self):
-        """Update the turtle display on canvas"""
+        """Update the turtle display on canvas
+        
+        Draws turtle as triangle pointing in the Logo heading direction where:
+        - 0° = North (up)
+        - 90° = East (right)  
+        - 180° = South (down)
+        - 270° = West (left)
+        """
         if not self.turtle_graphics or not self.turtle_graphics["canvas"]:
             return
 
@@ -921,22 +944,32 @@ class Time_WarpInterpreter:  # pylint: disable=too-many-public-methods
         if self.turtle_graphics["visible"]:
             import math
 
+            # Get canvas coordinates (Y flipped from turtle coordinates)
             x = self.turtle_graphics["x"] + self.turtle_graphics["center_x"]
             y = self.turtle_graphics["center_y"] - self.turtle_graphics["y"]
-            heading = math.radians(self.turtle_graphics["heading"])
+            
+            # Convert Logo heading to canvas drawing angle
+            # Logo: 0° = North (up), clockwise
+            # Canvas/Math: 0° = East (right), counter-clockwise
+            logo_heading = self.turtle_graphics["heading"]
+            canvas_angle = math.radians(90 - logo_heading)  # Same conversion as movement
 
             # Draw turtle as a triangle pointing in heading direction
             size = 10
 
-            # Calculate triangle points
-            tip_x = x + size * math.cos(heading)
-            tip_y = y - size * math.sin(heading)
+            # Calculate triangle points (tip points in direction of travel)
+            tip_x = x + size * math.cos(canvas_angle)
+            tip_y = y - size * math.sin(canvas_angle)  # Y flipped for canvas
 
-            left_x = x + size * 0.6 * math.cos(heading + 2.5)
-            left_y = y - size * 0.6 * math.sin(heading + 2.5)
+            # Left corner (120° from tip)
+            left_angle = canvas_angle + math.radians(140)
+            left_x = x + size * 0.6 * math.cos(left_angle)
+            left_y = y - size * 0.6 * math.sin(left_angle)
 
-            right_x = x + size * 0.6 * math.cos(heading - 2.5)
-            right_y = y - size * 0.6 * math.sin(heading - 2.5)
+            # Right corner (120° from tip, other direction)
+            right_angle = canvas_angle - math.radians(140)
+            right_x = x + size * 0.6 * math.cos(right_angle)
+            right_y = y - size * 0.6 * math.sin(right_angle)
 
             # Create turtle triangle
             canvas.create_polygon(

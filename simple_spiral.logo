@@ -1,0 +1,14 @@
+; Simple expanding spiral
+; Distance increases with each step creating an outward spiral
+
+CLEARSCREEN
+HOME
+PENDOWN
+SETPENCOLOR red
+
+MAKE "DISTANCE 3
+REPEAT 40 [
+  FORWARD :DISTANCE
+  RIGHT 12
+  MAKE "DISTANCE :DISTANCE + 3
+]

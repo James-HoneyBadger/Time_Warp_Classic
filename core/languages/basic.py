@@ -1001,7 +1001,13 @@ class TwBasicExecutor:
     def _handle_turtle_forward(self, parts):
         """Handle FORWARD/FD turtle graphics command"""
         try:
-            distance = float(parts[1]) if len(parts) > 1 else 50.0
+            if len(parts) > 1:
+                # Try to evaluate as expression (handles variables and math)
+                distance_expr = ' '.join(parts[1:])
+                distance = self.interpreter.evaluate_expression(distance_expr)
+            else:
+                distance = 50.0
+                
             if not self.interpreter.turtle_graphics:
                 self.interpreter.init_turtle_graphics()
             self.interpreter.turtle_forward(distance)
@@ -1013,7 +1019,13 @@ class TwBasicExecutor:
     def _handle_turtle_backward(self, parts):
         """Handle BACK/BACKWARD/BK turtle graphics command"""
         try:
-            distance = float(parts[1]) if len(parts) > 1 else 50.0
+            if len(parts) > 1:
+                # Try to evaluate as expression (handles variables and math)
+                distance_expr = ' '.join(parts[1:])
+                distance = self.interpreter.evaluate_expression(distance_expr)
+            else:
+                distance = 50.0
+                
             if not self.interpreter.turtle_graphics:
                 self.interpreter.init_turtle_graphics()
             self.interpreter.turtle_forward(-distance)
@@ -1025,7 +1037,13 @@ class TwBasicExecutor:
     def _handle_turtle_left(self, parts):
         """Handle LEFT turtle graphics command"""
         try:
-            angle = float(parts[1]) if len(parts) > 1 else 90.0
+            if len(parts) > 1:
+                # Try to evaluate as expression (handles variables and math)
+                angle_expr = ' '.join(parts[1:])
+                angle = self.interpreter.evaluate_expression(angle_expr)
+            else:
+                angle = 90.0
+                
             if not self.interpreter.turtle_graphics:
                 self.interpreter.init_turtle_graphics()
             self.interpreter.turtle_turn(-angle)  # Negative for left turn
@@ -1037,7 +1055,13 @@ class TwBasicExecutor:
     def _handle_turtle_right(self, parts):
         """Handle RIGHT turtle graphics command"""
         try:
-            angle = float(parts[1]) if len(parts) > 1 else 90.0
+            if len(parts) > 1:
+                # Try to evaluate as expression (handles variables and math)
+                angle_expr = ' '.join(parts[1:])
+                angle = self.interpreter.evaluate_expression(angle_expr)
+            else:
+                angle = 90.0
+                
             if not self.interpreter.turtle_graphics:
                 self.interpreter.init_turtle_graphics()
             self.interpreter.turtle_turn(angle)  # Positive for right turn

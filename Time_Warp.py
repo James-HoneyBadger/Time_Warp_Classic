@@ -390,13 +390,6 @@ Examples:
             edit_menu.add_command(label="Paste", command=paste_text, accelerator="Ctrl+V")
             edit_menu.add_separator()
             edit_menu.add_command(label="Select All", command=select_all, accelerator="Ctrl+A")
-            edit_menu.add_separator()
-            edit_menu.add_command(label="Clear Editor", command=clear_editor)
-            edit_menu.add_command(label="Clear Output", command=clear_output)
-
-            # Run menu
-            run_menu = tk.Menu(menubar, tearoff=0)
-            menubar.add_cascade(label="Run", menu=run_menu)
 
             def run_code():
                 """Execute the code in the editor."""
@@ -421,10 +414,6 @@ Examples:
                     output_text.insert(tk.END, "\n✅ Program completed.\n")
                 except Exception as e:
                     output_text.insert(tk.END, f"\n❌ Error: {e}\n")
-
-            run_menu.add_command(
-                label="Run Program", command=run_code, accelerator="F5"
-            )
 
             # Examples menu
             examples_menu = tk.Menu(menubar, tearoff=0)
@@ -567,38 +556,57 @@ Examples:
                 label="Show Graphics Panel", command=toggle_graphics
             )
 
-            # Tools menu
-            tools_menu = tk.Menu(menubar, tearoff=0)
-            menubar.add_cascade(label="Tools", menu=tools_menu)
+            # Theme menu
+            theme_menu = tk.Menu(menubar, tearoff=0)
+            menubar.add_cascade(label="Theme", menu=theme_menu)
 
-            def show_variables():
-                """Show current variables."""
-                vars_text = "Current Variables:\n\n"
-                if interpreter.variables:
-                    for name, value in interpreter.variables.items():
-                        vars_text += f"{name} = {value}\n"
-                else:
-                    vars_text += "(none)\n"
-                messagebox.showinfo("Variables", vars_text)
+            def set_theme_light():
+                """Set light theme."""
+                output_text.config(bg="white", fg="black")
+                editor_text.config(bg="white", fg="black")
 
-            def clear_variables():
-                """Clear all variables."""
-                if messagebox.askyesno("Clear Variables", "Clear all variables?"):
-                    interpreter.variables.clear()
-                    output_text.insert(tk.END, "🗑️ All variables cleared\n")
+            def set_theme_dark():
+                """Set dark theme."""
+                output_text.config(bg="#1e1e1e", fg="#d4d4d4")
+                editor_text.config(bg="#1e1e1e", fg="#d4d4d4")
 
-            tools_menu.add_command(label="Show Variables", command=show_variables)
-            tools_menu.add_command(label="Clear Variables", command=clear_variables)
-            tools_menu.add_separator()
+            def set_theme_classic():
+                """Set classic theme."""
+                output_text.config(bg="#f0f0f0", fg="black")
+                editor_text.config(bg="white", fg="black")
 
-            def clear_input_buffer():
-                """Clear the input buffer."""
-                input_buffer.clear()
-                output_text.insert(tk.END, "🗑️ Input buffer cleared\n")
+            theme_menu.add_command(label="Light", command=set_theme_light)
+            theme_menu.add_command(label="Dark", command=set_theme_dark)
+            theme_menu.add_command(label="Classic", command=set_theme_classic)
 
-            tools_menu.add_command(
-                label="Clear Input Buffer", command=clear_input_buffer
-            )
+            # Font menu
+            font_menu = tk.Menu(menubar, tearoff=0)
+            menubar.add_cascade(label="Font", menu=font_menu)
+
+            def set_font_small():
+                """Set small font size."""
+                editor_text.config(font=("Courier", 9))
+                output_text.config(font=("Courier", 9))
+
+            def set_font_medium():
+                """Set medium font size."""
+                editor_text.config(font=("Courier", 11))
+                output_text.config(font=("Courier", 10))
+
+            def set_font_large():
+                """Set large font size."""
+                editor_text.config(font=("Courier", 14))
+                output_text.config(font=("Courier", 13))
+
+            def set_font_xlarge():
+                """Set extra large font size."""
+                editor_text.config(font=("Courier", 16))
+                output_text.config(font=("Courier", 15))
+
+            font_menu.add_command(label="Small", command=set_font_small)
+            font_menu.add_command(label="Medium", command=set_font_medium)
+            font_menu.add_command(label="Large", command=set_font_large)
+            font_menu.add_command(label="Extra Large", command=set_font_xlarge)
 
             # Help menu
             help_menu = tk.Menu(menubar, tearoff=0)
@@ -803,11 +811,15 @@ For more information, visit the Examples menu!"""
             )
 
             tk.Button(
-                button_frame, text="🗑️ Clear Output", command=clear_output, padx=20
+                button_frame, text="🗑️ Clear Editor", command=clear_editor, padx=15
             ).pack(side=tk.LEFT, padx=5)
 
             tk.Button(
-                button_frame, text="📝 Clear Editor", command=clear_editor, padx=20
+                button_frame, text="📄 Clear Output", command=clear_output, padx=15
+            ).pack(side=tk.LEFT, padx=5)
+
+            tk.Button(
+                button_frame, text="🎨 Clear Graphics", command=clear_canvas, padx=15
             ).pack(side=tk.LEFT, padx=5)
 
             # Add welcome message

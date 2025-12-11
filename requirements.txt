@@ -20,5 +20,5 @@ black>=22.0.0           # Code formatting
 flake8>=4.0.0          # Linting
 
 # Runtime dependencies for enhanced features
-PIL>=8.0.0           # Image processing
+Pillow>=8.0.0        # Image processing (PIL)
 numpy>=1.20.0        # Mathematical operations
