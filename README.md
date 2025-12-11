@@ -1,4 +1,4 @@
-# Time Warp Classic IDE
+# Time Warp Classic
 
 > **A Multi-Language Programming Environment for Vintage and Modern Languages**
 
