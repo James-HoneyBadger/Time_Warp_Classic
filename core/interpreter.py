@@ -803,7 +803,7 @@ class Time_WarpInterpreter:  # pylint: disable=too-many-public-methods
 
     def turtle_forward(self, distance):
         """Move turtle forward by distance units
-        
+
         Uses Logo/turtle graphics convention where:
         - 0° = North (up on screen)
         - 90° = East (right)
@@ -822,7 +822,7 @@ class Time_WarpInterpreter:  # pylint: disable=too-many-public-methods
         logo_heading = self.turtle_graphics["heading"]
         math_angle_degrees = 90 - logo_heading
         heading_rad = math.radians(math_angle_degrees)
-        
+
         old_x = self.turtle_graphics["x"]
         old_y = self.turtle_graphics["y"]
 
@@ -925,10 +925,10 @@ class Time_WarpInterpreter:  # pylint: disable=too-many-public-methods
 
     def update_turtle_display(self):
         """Update the turtle display on canvas
-        
+
         Draws turtle as triangle pointing in the Logo heading direction where:
         - 0° = North (up)
-        - 90° = East (right)  
+        - 90° = East (right)
         - 180° = South (down)
         - 270° = West (left)
         """
@@ -947,7 +947,7 @@ class Time_WarpInterpreter:  # pylint: disable=too-many-public-methods
             # Get canvas coordinates (Y flipped from turtle coordinates)
             x = self.turtle_graphics["x"] + self.turtle_graphics["center_x"]
             y = self.turtle_graphics["center_y"] - self.turtle_graphics["y"]
-            
+
             # Convert Logo heading to canvas drawing angle
             # Logo: 0° = North (up), clockwise
             # Canvas/Math: 0° = East (right), counter-clockwise

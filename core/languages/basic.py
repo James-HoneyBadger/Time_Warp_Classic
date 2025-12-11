@@ -1025,7 +1025,7 @@ class TwBasicExecutor:
                 distance = self.interpreter.evaluate_expression(distance_expr)
             else:
                 distance = 50.0
-                
+
             if not self.interpreter.turtle_graphics:
                 self.interpreter.init_turtle_graphics()
             self.interpreter.turtle_forward(-distance)
@@ -1043,7 +1043,7 @@ class TwBasicExecutor:
                 angle = self.interpreter.evaluate_expression(angle_expr)
             else:
                 angle = 90.0
-                
+
             if not self.interpreter.turtle_graphics:
                 self.interpreter.init_turtle_graphics()
             self.interpreter.turtle_turn(-angle)  # Negative for left turn
@@ -1061,7 +1061,7 @@ class TwBasicExecutor:
                 angle = self.interpreter.evaluate_expression(angle_expr)
             else:
                 angle = 90.0
-                
+
             if not self.interpreter.turtle_graphics:
                 self.interpreter.init_turtle_graphics()
             self.interpreter.turtle_turn(angle)  # Positive for right turn

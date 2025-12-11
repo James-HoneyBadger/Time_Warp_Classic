@@ -357,12 +357,12 @@ class TwLogoExecutor:
         """
         if len(parts) < 3:
             return "continue"
-        
+
         var_name = parts[1].strip('"').upper()
         value_expr = ' '.join(parts[2:])
-        
+
         self.interpreter.debug_output(f"MAKE: var={var_name}, expr='{value_expr}'")
-        
+
         try:
             # Evaluate the value expression (handles :VARS, literals, math)
             value = self._eval_argument(value_expr)
@@ -371,7 +371,7 @@ class TwLogoExecutor:
         except Exception as e:
             self.interpreter.debug_output(f"MAKE error: {e}")
             self.interpreter.log_output(f"Error in MAKE: {e}")
-        
+
         return "continue"
 
     def _handle_define(self, command, name):
@@ -759,7 +759,7 @@ class TwLogoExecutor:
         if len(parts) < 2:
             self.interpreter.log_output("Color command requires a color parameter")
             return "continue"
-        
+
         # Check if it's an RGB list [R G B]
         command_str = " ".join(parts[1:])
         if "[" in command_str and "]" in command_str:

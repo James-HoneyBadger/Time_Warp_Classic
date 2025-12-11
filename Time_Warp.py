@@ -256,7 +256,7 @@ Examples:
                             content = f.read()
                         editor_text.delete("1.0", tk.END)
                         editor_text.insert("1.0", content)
-                        
+
                         # Auto-detect language from file extension
                         ext_to_lang = {
                             '.pilot': 'PILOT',
@@ -426,7 +426,7 @@ Examples:
                         content = f.read()
                     editor_text.delete("1.0", tk.END)
                     editor_text.insert("1.0", content)
-                    
+
                     # Auto-detect language from file extension
                     ext_to_lang = {
                         '.pilot': 'PILOT',
@@ -477,7 +477,7 @@ Examples:
                 label="Colorful Spiral",
                 command=lambda: load_example("examples/spiral_logo.logo"),
             )
-            
+
             # Pascal examples submenu
             pascal_menu = tk.Menu(examples_menu, tearoff=0)
             examples_menu.add_cascade(label="Pascal", menu=pascal_menu)
@@ -485,7 +485,7 @@ Examples:
                 label="Hello World + Functions",
                 command=lambda: load_example("examples/hello_pascal.pas"),
             )
-            
+
             # Prolog examples submenu
             prolog_menu = tk.Menu(examples_menu, tearoff=0)
             examples_menu.add_cascade(label="Prolog", menu=prolog_menu)
@@ -493,7 +493,7 @@ Examples:
                 label="Facts & Rules",
                 command=lambda: load_example("examples/facts_prolog.pl"),
             )
-            
+
             # Forth examples submenu
             forth_menu = tk.Menu(examples_menu, tearoff=0)
             examples_menu.add_cascade(label="Forth", menu=forth_menu)
@@ -501,7 +501,7 @@ Examples:
                 label="Stack Operations",
                 command=lambda: load_example("examples/stack_forth.fth"),
             )
-            
+
             # Perl examples submenu
             perl_menu = tk.Menu(examples_menu, tearoff=0)
             examples_menu.add_cascade(label="Perl", menu=perl_menu)
@@ -509,7 +509,7 @@ Examples:
                 label="Patterns & Text Processing",
                 command=lambda: load_example("examples/patterns_perl.pl"),
             )
-            
+
             # Python examples submenu
             python_menu = tk.Menu(examples_menu, tearoff=0)
             examples_menu.add_cascade(label="Python", menu=python_menu)
@@ -517,7 +517,7 @@ Examples:
                 label="Modern Python Features",
                 command=lambda: load_example("examples/modern_python.py"),
             )
-            
+
             # JavaScript examples submenu
             js_menu = tk.Menu(examples_menu, tearoff=0)
             examples_menu.add_cascade(label="JavaScript", menu=js_menu)
@@ -672,7 +672,7 @@ For more information, visit the Examples menu!"""
             root.bind("<Control-s>", lambda e: save_file())
             root.bind("<Control-q>", lambda e: exit_app())
             root.bind("<F1>", lambda e: show_help())
-            
+
             # Edit operation bindings
             root.bind("<Control-z>", lambda e: undo_text())
             root.bind("<Control-y>", lambda e: redo_text())
