@@ -182,6 +182,9 @@ class TwPilotExecutor:
                 return self._handle_problem(command)
             elif cmd_type == "E:":
                 return self._handle_end_subroutine(command)
+            elif cmd_type.startswith("*"):
+                # Comment line - ignore
+                return "continue"
             elif command.strip().upper() == "END":
                 return "end"
 

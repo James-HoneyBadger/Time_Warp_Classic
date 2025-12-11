@@ -98,6 +98,12 @@ class TwForthExecutor:
                 "MOD": lambda: self._mod(),
                 "NEGATE": lambda: self._negate(),
                 "ABS": lambda: self._abs(),
+                "1+": lambda: self._one_plus(),
+                "1-": lambda: self._one_minus(),
+                "2+": lambda: self._two_plus(),
+                "2-": lambda: self._two_minus(),
+                "2*": lambda: self._two_times(),
+                "2/": lambda: self._two_divide(),
                 "MIN": lambda: self._min(),
                 "MAX": lambda: self._max(),
                 # Comparison
@@ -206,6 +212,11 @@ class TwForthExecutor:
                 if not self._execute_word(word):
                     return "continue"
 
+            # If we're compiling and haven't seen the semicolon yet,
+            # return a special value to indicate continuation needed
+            if self.compiling:
+                return "forth_compiling"
+
             return "continue"
 
         except Exception as e:
@@ -215,6 +226,11 @@ class TwForthExecutor:
     def _tokenize(self, command):
         """Tokenize Forth command into words"""
         # Handle comments first
+        # Remove backslash comments (from \ to end of line)
+        if command.strip().startswith("\\"):
+            return []  # Entire line is a comment
+        command = re.sub(r"\\.*$", "", command)
+        # Remove parenthesis comments
         command = re.sub(r"\(.*?\)", "", command)  # Remove ( comments )
 
         # Handle .\" strings specially
@@ -328,12 +344,24 @@ class TwForthExecutor:
             elif word == "ELSE":
                 return self._handle_else()
             elif word == "BEGIN":
+                if self.compiling:
+                    self.word_definition.append(word)
+                    return True
                 return self._handle_begin()
             elif word == "UNTIL":
+                if self.compiling:
+                    self.word_definition.append(word)
+                    return True
                 return self._handle_until()
             elif word == "WHILE":
+                if self.compiling:
+                    self.word_definition.append(word)
+                    return True
                 return self._handle_while()
             elif word == "REPEAT":
+                if self.compiling:
+                    self.word_definition.append(word)
+                    return True
                 return self._handle_repeat()
             elif word == "RECURSE":
                 return self._recurse()
@@ -444,12 +472,14 @@ class TwForthExecutor:
 
                 # Handle DO/LOOP compiled control
                 if word == "DO":
-                    # DO expects start and limit already on data_stack
+                    # DO expects ( limit start -- ) on stack
+                    # Stack is: ... limit start
+                    # start is on top
                     if len(self.data_stack) < 2:
                         self.interpreter.log_output("Stack underflow in DO")
                         return False
-                    limit = self.data_stack.pop()
-                    start = self.data_stack.pop()
+                    start = self.data_stack.pop()  # Top of stack is start index
+                    limit = self.data_stack.pop()  # Next is limit
                     # push a frame with ip position and counters
                     frame = {
                         "type": "DO",
@@ -476,6 +506,61 @@ class TwForthExecutor:
                         continue
                     # else pop frame and continue
                     self.return_stack.pop()
+                    i += 1
+                    continue
+
+                # Handle BEGIN...WHILE...REPEAT
+                if word == "BEGIN":
+                    # Mark the beginning of the loop
+                    self.return_stack.append({"type": "BEGIN", "ip": i})
+                    i += 1
+                    continue
+
+                if word == "WHILE":
+                    # Check condition on stack
+                    if len(self.data_stack) < 1:
+                        self.interpreter.log_output("Stack underflow in WHILE")
+                        return False
+                    condition = self.data_stack.pop()
+                    if condition == 0:  # False - skip to after REPEAT
+                        # Find matching REPEAT
+                        depth = 1
+                        j = i + 1
+                        while j < len(definition) and depth > 0:
+                            if definition[j] == "BEGIN":
+                                depth += 1
+                            elif definition[j] == "REPEAT":
+                                depth -= 1
+                            j += 1
+                        # Pop the BEGIN frame
+                        if self.return_stack and self.return_stack[-1].get("type") == "BEGIN":
+                            self.return_stack.pop()
+                        i = j  # Jump past REPEAT
+                        continue
+                    i += 1
+                    continue
+
+                if word == "REPEAT":
+                    # Jump back to BEGIN
+                    if self.return_stack and self.return_stack[-1].get("type") == "BEGIN":
+                        i = self.return_stack[-1]["ip"]
+                        continue
+                    i += 1
+                    continue
+
+                # Handle UNTIL
+                if word == "UNTIL":
+                    if len(self.data_stack) < 1:
+                        self.interpreter.log_output("Stack underflow in UNTIL")
+                        return False
+                    condition = self.data_stack.pop()
+                    if condition == 0:  # False - loop back to BEGIN
+                        if self.return_stack and self.return_stack[-1].get("type") == "BEGIN":
+                            i = self.return_stack[-1]["ip"]
+                            continue
+                    # True - exit loop
+                    if self.return_stack and self.return_stack[-1].get("type") == "BEGIN":
+                        self.return_stack.pop()
                     i += 1
                     continue
 
@@ -607,6 +692,54 @@ class TwForthExecutor:
             self.interpreter.log_output("Stack underflow in ABS")
             return False
         self.data_stack[-1] = abs(self.data_stack[-1])
+        return True
+
+    def _one_plus(self):
+        """Add 1 to top of stack"""
+        if len(self.data_stack) < 1:
+            self.interpreter.log_output("Stack underflow in 1+")
+            return False
+        self.data_stack[-1] += 1
+        return True
+
+    def _one_minus(self):
+        """Subtract 1 from top of stack"""
+        if len(self.data_stack) < 1:
+            self.interpreter.log_output("Stack underflow in 1-")
+            return False
+        self.data_stack[-1] -= 1
+        return True
+
+    def _two_plus(self):
+        """Add 2 to top of stack"""
+        if len(self.data_stack) < 1:
+            self.interpreter.log_output("Stack underflow in 2+")
+            return False
+        self.data_stack[-1] += 2
+        return True
+
+    def _two_minus(self):
+        """Subtract 2 from top of stack"""
+        if len(self.data_stack) < 1:
+            self.interpreter.log_output("Stack underflow in 2-")
+            return False
+        self.data_stack[-1] -= 2
+        return True
+
+    def _two_times(self):
+        """Multiply top of stack by 2"""
+        if len(self.data_stack) < 1:
+            self.interpreter.log_output("Stack underflow in 2*")
+            return False
+        self.data_stack[-1] *= 2
+        return True
+
+    def _two_divide(self):
+        """Divide top of stack by 2"""
+        if len(self.data_stack) < 1:
+            self.interpreter.log_output("Stack underflow in 2/")
+            return False
+        self.data_stack[-1] //= 2
         return True
 
     def _min(self):
@@ -879,8 +1012,8 @@ class TwForthExecutor:
         if len(self.data_stack) < 2:
             self.interpreter.log_output("Stack underflow in DO")
             return False
-        limit = self.data_stack.pop()
-        start = self.data_stack.pop()
+        start = self.data_stack.pop()  # Top of stack is start index
+        limit = self.data_stack.pop()  # Next is limit
         self.return_stack.append(
             {"type": "DO", "ip": None, "index": start, "limit": limit}
         )

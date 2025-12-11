@@ -25,6 +25,9 @@ import sys
 import argparse
 import subprocess
 import importlib.util
+import json
+import os
+from pathlib import Path
 
 
 class DependencyChecker:
@@ -211,14 +214,42 @@ Examples:
             from tkinter import scrolledtext, messagebox, filedialog
             from core.interpreter import Time_WarpInterpreter
 
+            # Settings file for persistence
+            SETTINGS_FILE = Path.home() / ".timewarp_settings.json"
+
+            def load_settings():
+                """Load user settings from file."""
+                try:
+                    if SETTINGS_FILE.exists():
+                        with open(SETTINGS_FILE, 'r') as f:
+                            return json.load(f)
+                except Exception:
+                    pass
+                return {"theme": "dark", "font_size": "medium", "font_family": "Courier"}
+
+            def save_settings(theme, font_size, font_family):
+                """Save user settings to file."""
+                try:
+                    with open(SETTINGS_FILE, 'w') as f:
+                        json.dump({"theme": theme, "font_size": font_size, "font_family": font_family}, f)
+                except Exception:
+                    pass
+
+            # Load saved settings
+            settings = load_settings()
+            current_theme = settings.get("theme", "dark")
+            current_font = settings.get("font_size", "medium")
+            current_font_family = settings.get("font_family", "Courier")
+
             # Create the main GUI window
             root = tk.Tk()
             root.title("Time_Warp IDE - Multi-Language Programming Environment")
             root.geometry("1200x800")
+            root.config(bg="#252526")
 
             # Create menu bar
             menubar = tk.Menu(root)
-            root.config(menu=menubar)
+            root.config(menu=menubar, bg="#252526")
 
             # File menu
             file_menu = tk.Menu(menubar, tearoff=0)
@@ -257,24 +288,25 @@ Examples:
                         editor_text.delete("1.0", tk.END)
                         editor_text.insert("1.0", content)
 
-                        # Auto-detect language from file extension
+                        # Auto-detect language from file extension only
                         ext_to_lang = {
-                            '.pilot': 'PILOT',
+                            '.pil': 'PILOT',
                             '.bas': 'BASIC',
                             '.logo': 'Logo',
                             '.py': 'Python',
                             '.js': 'JavaScript',
-                            '.pl': 'Perl',
                             '.pas': 'Pascal',
                             '.fth': 'Forth',
-                            '.4th': 'Forth',
-                            '.pro': 'Prolog'
+                            '.pro': 'Prolog',
+                            '.pl': 'Perl'
                         }
                         import os
                         _, ext = os.path.splitext(filename)
-                        if ext.lower() in ext_to_lang:
-                            language_var.set(ext_to_lang[ext.lower()])
-                            output_text.insert(tk.END, f"📂 Loaded: {filename} ({ext_to_lang[ext.lower()]})\n")
+                        detected_lang = ext_to_lang.get(ext.lower())
+                        
+                        if detected_lang:
+                            language_var.set(detected_lang)
+                            output_text.insert(tk.END, f"📂 Loaded: {filename} ({detected_lang})\n")
                         else:
                             output_text.insert(tk.END, f"📂 Loaded: {filename}\n")
                     except Exception as e:
@@ -383,6 +415,11 @@ Examples:
                 """Clear the output window."""
                 output_text.delete("1.0", tk.END)
 
+            def clear_canvas():
+                """Clear the turtle graphics canvas."""
+                turtle_canvas.delete("all")
+                output_text.insert(tk.END, "🎨 Canvas cleared\n")
+
             edit_menu.add_command(label="Undo", command=undo_text, accelerator="Ctrl+Z")
             edit_menu.add_command(label="Redo", command=redo_text, accelerator="Ctrl+Y")
             edit_menu.add_separator()
@@ -442,17 +479,30 @@ Examples:
                         '.logo': 'Logo',
                         '.py': 'Python',
                         '.js': 'JavaScript',
-                        '.pl': 'Perl',
                         '.pas': 'Pascal',
                         '.fth': 'Forth',
                         '.4th': 'Forth',
-                        '.pro': 'Prolog'
+                        '.pro': 'Prolog',
+                        '.prolog': 'Prolog'
                     }
                     import os
                     _, ext = os.path.splitext(filepath)
-                    if ext.lower() in ext_to_lang:
-                        language_var.set(ext_to_lang[ext.lower()])
-                        output_text.insert(tk.END, f"📚 Loaded example: {filepath} ({ext_to_lang[ext.lower()]})\n")
+                    detected_lang = None
+                    
+                    # Handle .pl ambiguity (Perl vs Prolog)
+                    if ext.lower() == '.pl':
+                        # Check file content to distinguish Prolog from Perl
+                        # content is already loaded above
+                        if ':-' in content or '?-' in content or content.count('.') > 3:
+                            detected_lang = 'Prolog'
+                        else:
+                            detected_lang = 'Perl'
+                    elif ext.lower() in ext_to_lang:
+                        detected_lang = ext_to_lang[ext.lower()]
+                    
+                    if detected_lang:
+                        language_var.set(detected_lang)
+                        output_text.insert(tk.END, f"📚 Loaded example: {filepath} ({detected_lang})\n")
                     else:
                         output_text.insert(tk.END, f"📚 Loaded example: {filepath}\n")
                 except Exception as e:
@@ -534,38 +584,6 @@ Examples:
                 command=lambda: load_example("examples/javascript/interactive_javascript.js"),
             )
 
-            # View menu
-            view_menu = tk.Menu(menubar, tearoff=0)
-            menubar.add_cascade(label="View", menu=view_menu)
-
-            def clear_canvas():
-                """Clear the turtle graphics canvas."""
-                turtle_canvas.delete("all")
-                output_text.insert(tk.END, "🎨 Canvas cleared\n")
-
-            def toggle_output():
-                """Toggle output panel visibility."""
-                if output_frame.winfo_viewable():
-                    right_paned.forget(output_frame)
-                else:
-                    right_paned.add(output_frame, before=graphics_frame)
-
-            def toggle_graphics():
-                """Toggle graphics panel visibility."""
-                if graphics_frame.winfo_viewable():
-                    right_paned.forget(graphics_frame)
-                else:
-                    right_paned.add(graphics_frame)
-
-            view_menu.add_checkbutton(label="Output Panel", command=toggle_output)
-            view_menu.add_checkbutton(
-                label="Graphics Panel", command=toggle_graphics
-            )
-            view_menu.add_separator()
-            view_menu.add_command(label="Clear Canvas", command=clear_canvas)
-            view_menu.add_command(label="Clear Output", command=clear_output)
-            view_menu.add_command(label="Clear Editor", command=clear_editor)
-
             # Preferences menu
             preferences_menu = tk.Menu(menubar, tearoff=0)
             menubar.add_cascade(label="Preferences", menu=preferences_menu)
@@ -574,53 +592,224 @@ Examples:
             theme_menu = tk.Menu(preferences_menu, tearoff=0)
             preferences_menu.add_cascade(label="Color Theme", menu=theme_menu)
 
-            def set_theme_light():
-                """Set light theme."""
-                output_text.config(bg="white", fg="black")
-                editor_text.config(bg="white", fg="black")
+            # Define theme configurations
+            THEMES = {
+                "light": {
+                    "name": "Light",
+                    "text_bg": "white", "text_fg": "black",
+                    "canvas_bg": "white", "canvas_border": "#cccccc",
+                    "root_bg": "#f0f0f0", "frame_bg": "#f0f0f0",
+                    "editor_frame_bg": "white", "editor_frame_fg": "black",
+                    "input_bg": "white", "input_fg": "black"
+                },
+                "dark": {
+                    "name": "Dark",
+                    "text_bg": "#1e1e1e", "text_fg": "#d4d4d4",
+                    "canvas_bg": "#2d2d2d", "canvas_border": "#3e3e3e",
+                    "root_bg": "#252526", "frame_bg": "#252526",
+                    "editor_frame_bg": "#252526", "editor_frame_fg": "#d4d4d4",
+                    "input_bg": "#1e1e1e", "input_fg": "#d4d4d4"
+                },
+                "classic": {
+                    "name": "Classic",
+                    "text_bg": "white", "text_fg": "black",
+                    "canvas_bg": "#fffef0", "canvas_border": "#cccccc",
+                    "root_bg": "#e0e0e0", "frame_bg": "#e0e0e0",
+                    "editor_frame_bg": "#e0e0e0", "editor_frame_fg": "black",
+                    "input_bg": "white", "input_fg": "black"
+                },
+                "solarized_dark": {
+                    "name": "Solarized Dark",
+                    "text_bg": "#002b36", "text_fg": "#839496",
+                    "canvas_bg": "#073642", "canvas_border": "#586e75",
+                    "root_bg": "#002b36", "frame_bg": "#002b36",
+                    "editor_frame_bg": "#002b36", "editor_frame_fg": "#839496",
+                    "input_bg": "#073642", "input_fg": "#839496"
+                },
+                "solarized_light": {
+                    "name": "Solarized Light",
+                    "text_bg": "#fdf6e3", "text_fg": "#657b83",
+                    "canvas_bg": "#eee8d5", "canvas_border": "#93a1a1",
+                    "root_bg": "#fdf6e3", "frame_bg": "#fdf6e3",
+                    "editor_frame_bg": "#fdf6e3", "editor_frame_fg": "#657b83",
+                    "input_bg": "#eee8d5", "input_fg": "#657b83"
+                },
+                "monokai": {
+                    "name": "Monokai",
+                    "text_bg": "#272822", "text_fg": "#f8f8f2",
+                    "canvas_bg": "#3e3d32", "canvas_border": "#75715e",
+                    "root_bg": "#272822", "frame_bg": "#272822",
+                    "editor_frame_bg": "#272822", "editor_frame_fg": "#f8f8f2",
+                    "input_bg": "#3e3d32", "input_fg": "#f8f8f2"
+                },
+                "dracula": {
+                    "name": "Dracula",
+                    "text_bg": "#282a36", "text_fg": "#f8f8f2",
+                    "canvas_bg": "#44475a", "canvas_border": "#6272a4",
+                    "root_bg": "#282a36", "frame_bg": "#282a36",
+                    "editor_frame_bg": "#282a36", "editor_frame_fg": "#f8f8f2",
+                    "input_bg": "#44475a", "input_fg": "#f8f8f2"
+                },
+                "nord": {
+                    "name": "Nord",
+                    "text_bg": "#2e3440", "text_fg": "#d8dee9",
+                    "canvas_bg": "#3b4252", "canvas_border": "#4c566a",
+                    "root_bg": "#2e3440", "frame_bg": "#2e3440",
+                    "editor_frame_bg": "#2e3440", "editor_frame_fg": "#d8dee9",
+                    "input_bg": "#3b4252", "input_fg": "#d8dee9"
+                },
+                "high_contrast": {
+                    "name": "High Contrast",
+                    "text_bg": "black", "text_fg": "white",
+                    "canvas_bg": "#0a0a0a", "canvas_border": "white",
+                    "root_bg": "black", "frame_bg": "black",
+                    "editor_frame_bg": "black", "editor_frame_fg": "white",
+                    "input_bg": "#0a0a0a", "input_fg": "white"
+                }
+            }
 
-            def set_theme_dark():
-                """Set dark theme."""
-                output_text.config(bg="#1e1e1e", fg="#d4d4d4")
-                editor_text.config(bg="#1e1e1e", fg="#d4d4d4")
+            def apply_theme(theme_key):
+                """Apply a theme to all UI elements."""
+                nonlocal current_theme
+                theme = THEMES[theme_key]
+                
+                # Text widgets
+                editor_text.config(bg=theme["text_bg"], fg=theme["text_fg"], 
+                                 insertbackground=theme["text_fg"])
+                output_text.config(bg=theme["text_bg"], fg=theme["text_fg"], 
+                                 insertbackground=theme["text_fg"])
+                
+                # Canvas
+                turtle_canvas.config(bg=theme["canvas_bg"], 
+                                   highlightbackground=theme["canvas_border"])
+                
+                # Frames
+                root.config(bg=theme["root_bg"])
+                left_panel.config(bg=theme["frame_bg"])
+                right_panel.config(bg=theme["frame_bg"])
+                editor_frame.config(bg=theme["editor_frame_bg"], fg=theme["editor_frame_fg"])
+                output_frame.config(bg=theme["editor_frame_bg"], fg=theme["editor_frame_fg"])
+                graphics_frame.config(bg=theme["editor_frame_bg"], fg=theme["editor_frame_fg"])
+                input_frame.config(bg=theme["frame_bg"])
+                button_frame.config(bg=theme["frame_bg"])
+                editor_header.config(bg=theme["frame_bg"])
+                
+                # Input widget
+                input_entry.config(bg=theme["input_bg"], fg=theme["input_fg"], 
+                                 insertbackground=theme["input_fg"])
+                
+                # Update labels
+                for widget in editor_header.winfo_children():
+                    if isinstance(widget, tk.Label):
+                        widget.config(bg=theme["frame_bg"], fg=theme["text_fg"])
+                for widget in input_frame.winfo_children():
+                    if isinstance(widget, tk.Label):
+                        widget.config(bg=theme["frame_bg"], fg=theme["text_fg"])
+                
+                # Save setting
+                current_theme = theme_key
+                save_settings(current_theme, current_font, current_font_family)
 
-            def set_theme_classic():
-                """Set classic theme."""
-                output_text.config(bg="#f0f0f0", fg="black")
-                editor_text.config(bg="white", fg="black")
+            # Add theme menu items
+            for theme_key, theme_data in THEMES.items():
+                theme_menu.add_command(
+                    label=theme_data["name"],
+                    command=lambda k=theme_key: apply_theme(k)
+                )
 
-            theme_menu.add_command(label="Light Theme", command=set_theme_light)
-            theme_menu.add_command(label="Dark Theme", command=set_theme_dark)
-            theme_menu.add_command(label="Classic Theme", command=set_theme_classic)
+            # Font family submenu
+            font_family_menu = tk.Menu(preferences_menu, tearoff=0)
+            preferences_menu.add_cascade(label="Font Family", menu=font_family_menu)
 
-            # Font submenu
+            def get_available_fonts():
+                """Get list of available monospace fonts on the system."""
+                import tkinter.font as tkfont
+                
+                # Get all available font families
+                all_fonts = sorted(set(tkfont.families()))
+                
+                # Prioritize common monospace fonts
+                priority_fonts = [
+                    "Courier", "Courier New", "Consolas", "Monaco", "Menlo",
+                    "DejaVu Sans Mono", "Liberation Mono", "Ubuntu Mono",
+                    "Fira Code", "Source Code Pro", "JetBrains Mono",
+                    "Cascadia Code", "SF Mono", "Inconsolata", "Roboto Mono",
+                    "Hack", "Anonymous Pro", "Droid Sans Mono", "PT Mono"
+                ]
+                
+                # Separate priority fonts that exist from the rest
+                priority_available = [f for f in priority_fonts if f in all_fonts]
+                other_fonts = [f for f in all_fonts if f not in priority_fonts]
+                
+                # Return priority fonts first, then others
+                return priority_available + other_fonts
+
+            def apply_font_family(family_name):
+                """Apply a font family to editor and output."""
+                nonlocal current_font_family
+                size = FONT_SIZES[current_font]
+                editor_text.config(font=(family_name, size["editor"]))
+                output_text.config(font=(family_name, size["output"]))
+                
+                # Save setting
+                current_font_family = family_name
+                save_settings(current_theme, current_font, current_font_family)
+
+            # Get available fonts and create menu items
+            available_fonts = get_available_fonts()
+            
+            # Add first 25 fonts directly to menu
+            for i, font_name in enumerate(available_fonts[:25]):
+                font_family_menu.add_command(
+                    label=font_name,
+                    command=lambda f=font_name: apply_font_family(f)
+                )
+            
+            # If there are more fonts, add "More Fonts..." submenu
+            if len(available_fonts) > 25:
+                font_family_menu.add_separator()
+                more_fonts_menu = tk.Menu(font_family_menu, tearoff=0)
+                font_family_menu.add_cascade(label="More Fonts...", menu=more_fonts_menu)
+                
+                # Add remaining fonts to submenu in batches
+                for i, font_name in enumerate(available_fonts[25:]):
+                    more_fonts_menu.add_command(
+                        label=font_name,
+                        command=lambda f=font_name: apply_font_family(f)
+                    )
+
+            # Font size submenu
             font_menu = tk.Menu(preferences_menu, tearoff=0)
             preferences_menu.add_cascade(label="Font Size", menu=font_menu)
 
-            def set_font_small():
-                """Set small font size."""
-                editor_text.config(font=("Courier", 9))
-                output_text.config(font=("Courier", 9))
+            # Define font size configurations
+            FONT_SIZES = {
+                "tiny": {"name": "Tiny (8pt)", "editor": 8, "output": 8},
+                "small": {"name": "Small (10pt)", "editor": 10, "output": 9},
+                "medium": {"name": "Medium (12pt)", "editor": 12, "output": 11},
+                "large": {"name": "Large (14pt)", "editor": 14, "output": 13},
+                "xlarge": {"name": "Extra Large (16pt)", "editor": 16, "output": 15},
+                "xxlarge": {"name": "Huge (18pt)", "editor": 18, "output": 17},
+                "xxxlarge": {"name": "Giant (22pt)", "editor": 22, "output": 20}
+            }
 
-            def set_font_medium():
-                """Set medium font size."""
-                editor_text.config(font=("Courier", 11))
-                output_text.config(font=("Courier", 10))
+            def apply_font_size(size_key):
+                """Apply a font size to editor and output."""
+                nonlocal current_font
+                size = FONT_SIZES[size_key]
+                editor_text.config(font=(current_font_family, size["editor"]))
+                output_text.config(font=(current_font_family, size["output"]))
+                
+                # Save setting
+                current_font = size_key
+                save_settings(current_theme, current_font, current_font_family)
 
-            def set_font_large():
-                """Set large font size."""
-                editor_text.config(font=("Courier", 14))
-                output_text.config(font=("Courier", 13))
-
-            def set_font_xlarge():
-                """Set extra large font size."""
-                editor_text.config(font=("Courier", 16))
-                output_text.config(font=("Courier", 15))
-
-            font_menu.add_command(label="Small (9pt)", command=set_font_small)
-            font_menu.add_command(label="Medium (11pt)", command=set_font_medium)
-            font_menu.add_command(label="Large (14pt)", command=set_font_large)
-            font_menu.add_command(label="Extra Large (16pt)", command=set_font_xlarge)
+            # Add font menu items
+            for size_key, size_data in FONT_SIZES.items():
+                font_menu.add_command(
+                    label=size_data["name"],
+                    command=lambda k=size_key: apply_font_size(k)
+                )
 
             # Help menu
             help_menu = tk.Menu(menubar, tearoff=0)
@@ -740,18 +929,18 @@ Enjoy programming through the ages!"""
             root.bind("<Control-a>", lambda e: select_all())
 
             # Create GUI layout with PanedWindow for resizable sections
-            main_paned = tk.PanedWindow(root, orient=tk.HORIZONTAL, sashwidth=5)
+            main_paned = tk.PanedWindow(root, orient=tk.HORIZONTAL, sashwidth=5, bg="#252526")
             main_paned.pack(fill=tk.BOTH, expand=True, padx=5, pady=5)
 
             # Left panel - Editor
-            left_panel = tk.Frame(main_paned)
+            left_panel = tk.Frame(main_paned, bg="#252526")
             main_paned.add(left_panel, width=400)
 
             # Editor frame with language selector
-            editor_header = tk.Frame(left_panel)
+            editor_header = tk.Frame(left_panel, bg="#252526")
             editor_header.pack(fill=tk.X, pady=(0, 5))
 
-            tk.Label(editor_header, text="Language:", font=("Arial", 9)).pack(
+            tk.Label(editor_header, text="Language:", font=("Arial", 9), bg="#252526", fg="#d4d4d4").pack(
                 side=tk.LEFT, padx=(5, 5)
             )
 
@@ -772,25 +961,26 @@ Enjoy programming through the ages!"""
             language_selector.config(width=10)
             language_selector.pack(side=tk.LEFT)
 
-            editor_frame = tk.LabelFrame(left_panel, text="Code Editor", padx=5, pady=5)
+            editor_frame = tk.LabelFrame(left_panel, text="Code Editor", padx=5, pady=5, bg="#252526", fg="#d4d4d4")
             editor_frame.pack(fill=tk.BOTH, expand=True)
 
             # Editor text widget with undo/redo enabled
             editor_text = scrolledtext.ScrolledText(
-                editor_frame, wrap=tk.WORD, font=("Courier", 11), undo=True, maxundo=-1
+                editor_frame, wrap=tk.WORD, font=("Courier", 11), undo=True, maxundo=-1,
+                bg="#1e1e1e", fg="#d4d4d4", insertbackground="#d4d4d4"
             )
             editor_text.pack(fill=tk.BOTH, expand=True)
 
             # Right panel - Split between output and graphics
-            right_panel = tk.Frame(main_paned)
+            right_panel = tk.Frame(main_paned, bg="#252526")
             main_paned.add(right_panel, width=800)
 
             # Right vertical paned window
-            right_paned = tk.PanedWindow(right_panel, orient=tk.VERTICAL, sashwidth=5)
+            right_paned = tk.PanedWindow(right_panel, orient=tk.VERTICAL, sashwidth=5, bg="#252526")
             right_paned.pack(fill=tk.BOTH, expand=True)
 
             # Output frame (top of right panel)
-            output_frame = tk.LabelFrame(right_paned, text="Output", padx=5, pady=5)
+            output_frame = tk.LabelFrame(right_paned, text="Output", padx=5, pady=5, bg="#252526", fg="#d4d4d4")
             right_paned.add(output_frame, height=300)
 
             # Output text widget
@@ -800,12 +990,14 @@ Enjoy programming through the ages!"""
                 font=("Courier", 10),
                 bg="#1e1e1e",
                 fg="#d4d4d4",
+                insertbackground="#d4d4d4",
             )
             output_text.pack(fill=tk.BOTH, expand=True)
 
             # Graphics canvas frame (bottom of right panel)
             graphics_frame = tk.LabelFrame(
-                right_paned, text="Turtle Graphics", padx=5, pady=5
+                right_paned, text="Turtle Graphics", padx=5, pady=5,
+                bg="#252526", fg="#d4d4d4"
             )
             right_paned.add(graphics_frame, height=300)
 
@@ -814,20 +1006,20 @@ Enjoy programming through the ages!"""
                 graphics_frame,
                 width=600,
                 height=400,
-                bg="white",
+                bg="#2d2d2d",
                 highlightthickness=1,
-                highlightbackground="#cccccc",
+                highlightbackground="#3e3e3e",
             )
             turtle_canvas.pack(fill=tk.BOTH, expand=True)
 
             # Input frame at the bottom
-            input_frame = tk.Frame(root)
+            input_frame = tk.Frame(root, bg="#252526")
             input_frame.pack(fill=tk.X, padx=10, pady=(0, 10))
 
-            tk.Label(input_frame, text="Input:", font=("Arial", 10)).pack(
+            tk.Label(input_frame, text="Input:", font=("Arial", 10), bg="#252526", fg="#d4d4d4").pack(
                 side=tk.LEFT, padx=(0, 5)
             )
-            input_entry = tk.Entry(input_frame, font=("Courier", 10))
+            input_entry = tk.Entry(input_frame, font=("Courier", 10), bg="#1e1e1e", fg="#d4d4d4", insertbackground="#d4d4d4")
             input_entry.pack(side=tk.LEFT, fill=tk.X, expand=True, padx=(0, 5))
 
             input_buffer = []
@@ -840,7 +1032,7 @@ Enjoy programming through the ages!"""
                 input_entry.delete(0, tk.END)
 
             input_entry.bind("<Return>", lambda e: submit_input())
-            tk.Button(input_frame, text="Submit", command=submit_input).pack(
+            tk.Button(input_frame, text="Submit", command=submit_input, bg="#3e3e3e", fg="#d4d4d4").pack(
                 side=tk.LEFT
             )
 
@@ -849,7 +1041,7 @@ Enjoy programming through the ages!"""
             interpreter.ide_turtle_canvas = turtle_canvas
 
             # Control buttons frame
-            button_frame = tk.Frame(root)
+            button_frame = tk.Frame(root, bg="#252526")
             button_frame.pack(fill=tk.X, padx=10, pady=(0, 10))
 
             # Create buttons
@@ -863,24 +1055,24 @@ Enjoy programming through the ages!"""
                 padx=20,
             ).pack(side=tk.LEFT, padx=5)
 
-            tk.Button(button_frame, text="📂 Open", command=load_file, padx=20).pack(
+            tk.Button(button_frame, text="📂 Open", command=load_file, padx=20, bg="#3e3e3e", fg="#d4d4d4").pack(
                 side=tk.LEFT, padx=5
             )
 
-            tk.Button(button_frame, text="💾 Save", command=save_file, padx=20).pack(
+            tk.Button(button_frame, text="💾 Save", command=save_file, padx=20, bg="#3e3e3e", fg="#d4d4d4").pack(
                 side=tk.LEFT, padx=5
             )
 
             tk.Button(
-                button_frame, text="🗑️ Clear Editor", command=clear_editor, padx=15
+                button_frame, text="🗑️ Clear Editor", command=clear_editor, padx=15, bg="#3e3e3e", fg="#d4d4d4"
             ).pack(side=tk.LEFT, padx=5)
 
             tk.Button(
-                button_frame, text="📄 Clear Output", command=clear_output, padx=15
+                button_frame, text="📄 Clear Output", command=clear_output, padx=15, bg="#3e3e3e", fg="#d4d4d4"
             ).pack(side=tk.LEFT, padx=5)
 
             tk.Button(
-                button_frame, text="🎨 Clear Graphics", command=clear_canvas, padx=15
+                button_frame, text="🎨 Clear Graphics", command=clear_canvas, padx=15, bg="#3e3e3e", fg="#d4d4d4"
             ).pack(side=tk.LEFT, padx=5)
 
             # Add welcome message
@@ -900,6 +1092,10 @@ Supported Languages:
 Enter your code in the left panel and click Run to execute!
 """
             output_text.insert("1.0", welcome_msg)
+
+            # Apply saved theme and font settings
+            apply_theme(current_theme)
+            apply_font_size(current_font)
 
             # Start the GUI event loop
             root.mainloop()

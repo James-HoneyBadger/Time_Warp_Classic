@@ -1,0 +1,99 @@
+*====================================
+*     PILOT Quiz Demo
+*     Interactive Educational Quiz
+*====================================
+
+T:Welcome to the Time Warp Programming Quiz!
+T:
+T:Let's test your knowledge of classic programming languages.
+T:
+
+*====================================
+* Question 1: BASIC
+*====================================
+L:Q1
+T:
+T:Question 1: What does BASIC stand for?
+T:
+A:
+M:BASIC
+J(Y):CORRECT1
+J(N):WRONG1
+
+L:CORRECT1
+T:✓ Correct! BASIC = Beginner's All-purpose Symbolic Instruction Code
+T:
+J:Q2
+
+L:WRONG1
+T:✗ Not quite. BASIC stands for Beginner's All-purpose Symbolic Instruction Code.
+T:
+
+*====================================
+* Question 2: Logo
+*====================================
+L:Q2
+T:Question 2: What is Logo famous for?
+T:(Answer: turtle graphics, programming, or education)
+T:
+A:
+M:turtle
+J(Y):CORRECT2
+M:graphics
+J(Y):CORRECT2
+M:programming
+J(Y):CORRECT2
+M:education
+J(Y):CORRECT2
+J:WRONG2
+
+L:CORRECT2
+T:✓ Great! Logo is famous for turtle graphics and educational programming.
+T:
+J:Q3
+
+L:WRONG2
+T:✗ Logo is best known for turtle graphics and teaching programming to students.
+T:
+
+*====================================
+* Question 3: Forth
+*====================================
+L:Q3
+T:Question 3: What notation does Forth use?
+T:(Hint: RPN, postfix, or reverse)
+T:
+A:
+M:RPN
+J(Y):CORRECT3
+M:postfix
+J(Y):CORRECT3
+M:reverse
+J(Y):CORRECT3
+J:WRONG3
+
+L:CORRECT3
+T:✓ Excellent! Forth uses Reverse Polish Notation (RPN).
+T:
+J:FINISH
+
+L:WRONG3
+T:✗ Forth uses Reverse Polish Notation (RPN) or postfix notation.
+T:
+
+*====================================
+* Finish
+*====================================
+L:FINISH
+T:
+T:════════════════════════════════════
+T:  Quiz Complete! Thanks for playing!
+T:════════════════════════════════════
+T:
+T:You've learned about:
+T:  • BASIC - Beginner friendly language
+T:  • Logo - Turtle graphics for education
+T:  • Forth - Stack-based RPN programming
+T:
+E:
+

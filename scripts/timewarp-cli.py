@@ -150,24 +150,18 @@ class TimeWarpCLI:
         }
 
     def _detect_language(self, file_path):
-        """Guess language from file extension."""
+        """Detect language from file extension only."""
         ext = Path(file_path).suffix.lower()
         mapping = {
-            ".pilot": "pilot",
+            ".pil": "pilot",
             ".bas": "basic",
-            ".basic": "basic",
             ".logo": "logo",
             ".py": "python",
             ".js": "javascript",
-            ".perl": "perl",
-            ".pl": "perl",
             ".pas": "pascal",
-            ".pp": "pascal",
-            ".fs": "forth",
-            ".forth": "forth",
-            ".4th": "forth",
-            ".prolog": "prolog",
+            ".fth": "forth",
             ".pro": "prolog",
+            ".pl": "perl",
         }
         return mapping.get(ext)
 

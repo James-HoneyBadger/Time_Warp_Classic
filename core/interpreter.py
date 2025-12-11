@@ -1431,6 +1431,13 @@ class Time_WarpInterpreter:  # pylint: disable=too-many-public-methods
                 return "basic"
             elif language_mode_lower == "logo":
                 return "logo"
+            elif language_mode_lower == "pilot":
+                # In PILOT mode, handle comments and commands
+                if command.startswith("*"):
+                    return "pilot"  # Comment line
+                elif len(command) > 1 and command[1] == ":":
+                    return "pilot"  # PILOT command
+                # Fall through to other checks
 
         # PILOT commands start with a letter followed by colon
         if len(command) > 1 and command[1] == ":":
@@ -1670,8 +1677,11 @@ class Time_WarpInterpreter:  # pylint: disable=too-many-public-methods
         # Skip whole-line comments that start with comment markers commonly used
         # across example files (e.g., ';' used in PILOT/Logo, '#' used in some scripts)
         stripped = command.lstrip()
-        if stripped.startswith(";") or stripped.startswith("#"):
-            return "continue"
+        # Treat ';' or '#' as whole-line comments for non-Forth languages.
+        # In Forth, ';' is the end-of-definition word, so it must be executed.
+        if self.current_language_mode != "forth":
+            if stripped.startswith(";") or stripped.startswith("#"):
+                return "continue"
 
         # Determine command type and execute
         cmd_type = self.determine_command_type(command, self.current_language_mode)
@@ -1722,13 +1732,19 @@ class Time_WarpInterpreter:  # pylint: disable=too-many-public-methods
         # Parse lines and collect labels
         self.program_lines = []
         for i, line in enumerate(lines):
-            line_num, command = self.parse_line(line)
-            self.program_lines.append((line_num, command))
+            # For Forth (and other non-BASIC languages), keep the line intact so
+            # leading numbers aren't misinterpreted as line labels.
+            if self.current_language_mode and self.current_language_mode != "basic":
+                command = line.strip()
+                self.program_lines.append((None, command))
+            else:
+                line_num, command = self.parse_line(line)
+                self.program_lines.append((line_num, command))
 
-            # Collect PILOT labels
-            if command.startswith("L:"):
-                label = command[2:].strip()
-                self.labels[label] = i
+                # Collect PILOT labels
+                if command.startswith("L:"):
+                    label = command[2:].strip()
+                    self.labels[label] = i
 
         return True
 
