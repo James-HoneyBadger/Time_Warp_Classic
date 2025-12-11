@@ -1,7 +1,15 @@
 [flake8]
-max-line-length = 99
-extend-ignore = E501, W503, E701, E203
-exclude = .git,__pycache__,build,dist,.venv,tests
+max-line-length = 88
+extend-ignore = E203, W503, E501
+exclude =
+    .git,
+    __pycache__,
+    .venv,
+    node_modules,
+    build,
+    dist,
+    .pytest_cache,
+    .mypy_cache
+max-complexity = 20
 per-file-ignores =
-    src/timewarp/main.py: E501
-    Time_Warp.py: E501
+    __init__.py: F401

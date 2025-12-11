@@ -1,4 +1,4 @@
-# pylint: disable=C0415,W0718
+# pylint: disable=C0415,W0718,R0801
 """
 TW JavaScript Language Executor
 ===============================
@@ -51,7 +51,10 @@ class JavaScriptExecutor:
             try:
                 # Check if node is available
                 result = subprocess.run(
-                    [node_name, "--version"], capture_output=True, text=True, timeout=5
+                    [node_name, "--version"],
+                    capture_output=True,
+                    text=True,
+                    timeout=5,
                 )
                 if result.returncode == 0:
                     return node_name

@@ -37,7 +37,7 @@ them using the main interpreter's facilities for output, input, variables, and g
 import re
 import random
 
-# pylint: disable=too-many-lines
+# pylint: disable=C0302,R0903,R0914,R1702
 
 
 class TwPilotExecutor:
@@ -132,6 +132,15 @@ class TwPilotExecutor:
             elif cmd_type == "W:":
                 return self._handle_web_command(command)
             elif cmd_type == "D:":
+                # D: is overloaded for
+                # both database operations (D:OPEN/QUERY/INSERT)
+                # and array dimensioning syntax
+                # (e.g. ARR(3)). Prefer array handling
+                # if the payload looks like a
+                # dimension spec (has parentheses at end).
+                payload = command[2:].strip()
+                if payload and "(" in payload and payload.endswith(")"):
+                    return self._handle_dimension_array(command)
                 return self._handle_database_command(command)
             elif cmd_type == "S:":
                 return self._handle_string_command(command)
@@ -152,8 +161,7 @@ class TwPilotExecutor:
                 return "continue"
             elif cmd_type == "U:":
                 return self._handle_use_subroutine(command)
-            elif cmd_type == "D:":
-                return self._handle_dimension_array(command)
+            # Dimension arrays handled above as part of D:.
             elif cmd_type == "PA:":
                 return self._handle_pause(command)
             elif cmd_type == "CH:":
@@ -213,7 +221,7 @@ class TwPilotExecutor:
 
         # Log the input prompt to user output
         self.interpreter.log_output(f"Awaiting input: {prompt}")
-        
+
         value = self.interpreter.get_user_input(prompt)
 
         # Store in system variables if it's a % variable
@@ -256,7 +264,8 @@ class TwPilotExecutor:
             self.interpreter.match_flag = bool(result)
         except Exception:
             self.interpreter.match_flag = False
-        # mark that the last command set the match flag so a following T: can be conditional
+        # mark that the last command set the match
+        # flag so a following T: can be conditional
         self.interpreter._last_match_set = True
         return "continue"
 
@@ -265,12 +274,14 @@ class TwPilotExecutor:
         condition = command[2:].strip()
         try:
             result = self.interpreter.evaluate_expression(condition)
-            # N: treat like a plain conditional (match when the condition is TRUE).
+            # N: treat like a plain conditional
+            # (match when the condition is TRUE).
             self.interpreter.match_flag = bool(result)
         except Exception:
             # On error, default to no match
             self.interpreter.match_flag = False
-        # mark that the last command set the match flag so a following T: can be conditional
+        # mark that the last command set the match
+        # flag so a following T: can be conditional
         self.interpreter._last_match_set = True
         return "continue"
 
@@ -485,19 +496,22 @@ class TwPilotExecutor:
 
     def _handle_runtime_command(self, command):
         """Handle R: runtime commands - placeholder for now"""
-        # This would contain the full implementation from the original interpreter
+        # This would contain the full
+        # implementation from the original interpreter
         self.interpreter.log_output(f"Runtime command: {command[2:].strip()}")
         return "continue"
 
     def _handle_game_command(self, command):
         """Handle GAME: game development commands - placeholder for now"""
-        # This would contain the full implementation from the original interpreter
+        # This would contain the full
+        # implementation from the original interpreter
         self.interpreter.log_output(f"Game command: {command[5:].strip()}")
         return "continue"
 
     def _handle_audio_command(self, command):
         """Handle AUDIO: audio system commands - placeholder for now"""
-        # This would contain the full implementation from the original interpreter
+        # This would contain the full
+        # implementation from the original interpreter
         self.interpreter.log_output(f"Audio command: {command[6:].strip()}")
         return "continue"
 
@@ -859,16 +873,16 @@ class TwPilotExecutor:
         """Handle G: graphics commands for turtle graphics"""
         cmd = command[2:].strip()  # Skip "G:"
         parts = cmd.split(",")
-        
+
         if not parts:
             return "continue"
-        
+
         # Ensure turtle graphics system is initialized
         if not self.interpreter.turtle_graphics:
             self.interpreter.init_turtle_graphics()
-        
+
         operation = parts[0].upper()
-        
+
         try:
             if operation == "LINE" and len(parts) >= 5:
                 # G:LINE,x1,y1,x2,y2 - draw a line
@@ -876,35 +890,35 @@ class TwPilotExecutor:
                 y1 = float(parts[2])
                 x2 = float(parts[3])
                 y2 = float(parts[4])
-                
+
                 # Move to start position without drawing
                 self.interpreter.turtle_setxy(x1, y1)
                 self.interpreter.turtle_graphics["pen_down"] = True
-                
+
                 # Draw line to end position
                 self.interpreter.turtle_setxy(x2, y2)
                 self.interpreter.log_output(f"G:LINE from ({x1},{y1}) to ({x2},{y2})")
-                
+
             elif operation == "CIRCLE" and len(parts) >= 4:
                 # G:CIRCLE,x,y,radius
                 x = float(parts[1])
                 y = float(parts[2])
                 radius = float(parts[3])
-                
+
                 # Move to center, then draw circle
                 self.interpreter.turtle_setxy(x, y)
                 self.interpreter.turtle_circle(radius)
                 self.interpreter.log_output(f"G:CIRCLE at ({x},{y}) radius {radius}")
-                
+
             elif operation == "RECT" and len(parts) >= 5:
                 # G:RECT,x,y,width,height
                 x = float(parts[1])
                 y = float(parts[2])
                 width = float(parts[3])
                 height = float(parts[4])
-                
+
                 self.interpreter.log_output(f"G:RECT at ({x},{y}) {width}x{height}")
-                
+
                 # Draw rectangle
                 self.interpreter.turtle_setxy(x, y)
                 self.interpreter.turtle_graphics["pen_down"] = True
@@ -913,34 +927,34 @@ class TwPilotExecutor:
                     self.interpreter.turtle_right(90)
                     self.interpreter.turtle_forward(height)
                     self.interpreter.turtle_right(90)
-                
+
             elif operation == "CLEAR":
                 # G:CLEAR - clear graphics screen
                 self.interpreter.clear_turtle_screen()
                 self.interpreter.log_output("Graphics screen cleared")
-                
+
             elif operation == "PENUP":
                 # G:PENUP - lift pen
                 self.interpreter.turtle_graphics["pen_down"] = False
                 self.interpreter.log_output("Pen up")
-                
+
             elif operation == "PENDOWN":
                 # G:PENDOWN - lower pen
                 self.interpreter.turtle_graphics["pen_down"] = True
                 self.interpreter.log_output("Pen down")
-                
+
             elif operation == "COLOR" and len(parts) >= 2:
                 # G:COLOR,color_name
                 color = parts[1].strip()
                 self.interpreter.turtle_graphics["pen_color"] = color
                 self.interpreter.log_output(f"Pen color set to {color}")
-            
+
             else:
                 self.interpreter.log_output(f"Unknown graphics command: {operation}")
-                
+
         except Exception as e:
             self.interpreter.debug_output(f"Graphics command error: {e}")
-        
+
         return "continue"
 
     def _handle_math_command(self, command):
@@ -1301,7 +1315,8 @@ class TwPilotExecutor:
 
                     try:
                         with open(filename, "w", encoding="utf-8") as f:
-                            # Create a copy without internal interpreter variables
+                            # Create a copy
+                            # without internal interpreter variables
                             save_vars = {
                                 k: v
                                 for k, v in self.interpreter.variables.items()
@@ -1427,7 +1442,8 @@ class TwPilotExecutor:
                     return "continue"
 
                 array_name = name_part.strip()
-                # Initialize array with None values (PILOT 73 arrays are 1-indexed)
+                # Initialize array with None values
+                # (PILOT 73 arrays are 1-indexed)
                 self.arrays[array_name] = [None] * (size + 1)
 
                 self.interpreter.debug_output(
@@ -1546,7 +1562,11 @@ class TwPilotExecutor:
                 import subprocess
 
                 result = subprocess.run(
-                    cmd, shell=True, capture_output=True, text=True, check=False
+                    cmd,
+                    shell=True,
+                    capture_output=True,
+                    text=True,
+                    check=False,
                 )
                 self.system_vars["status"] = result.returncode
                 if result.stdout:

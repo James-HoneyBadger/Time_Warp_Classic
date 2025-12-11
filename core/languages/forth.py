@@ -1,4 +1,4 @@
-# pylint: disable=W0108,R0902,R0913,R0914
+# pylint: disable=W0108,R0902,R0913,R0914,too-many-lines,too-many-statements,too-many-nested-blocks
 """
 TW Forth Language Executor
 ==========================
@@ -69,6 +69,11 @@ class TwForthExecutor:
         self.exception_handlers = []  # Exception handling stack
         self.next_file_id = 0  # For file handle management
         self.next_memory_id = 0  # For memory block management
+        # Temporary flags when following tokens act as names
+        self.expecting_variable_name = False
+        self.pending_variable_name = None
+        self.expecting_constant_name = False
+        self.pending_constant_value = None
 
         # Initialize built-in words
         self._init_builtin_words()
@@ -150,6 +155,8 @@ class TwForthExecutor:
                 "D.": lambda: self._d_dot(),
                 "D@": lambda: self._d_fetch(),
                 "D!": lambda: self._d_store(),
+                # Loop index
+                "I": lambda: self._i(),
                 # Memory allocation
                 "ALLOCATE": lambda: self._allocate(),
                 "FREE": lambda: self._free(),
@@ -242,6 +249,32 @@ class TwForthExecutor:
     def _execute_word(self, word):
         """Execute a single Forth word"""
         try:
+            # Handle tokens that are expected to be names for VARIABLE/CONSTANT
+            if self.expecting_variable_name:
+                name = word
+                # Create variable storage with default 0
+                self.variables[name] = 0
+                # Add execution hook so using variable pushes reference
+                self.dictionary[name] = lambda n=name: self.data_stack.append(
+                    {"type": "var", "name": n}
+                )
+                self.expecting_variable_name = False
+                self.pending_variable_name = None
+                self.interpreter.log_output(f"Variable declared: {name}")
+                return True
+
+            if self.expecting_constant_name:
+                name = word
+                self.constants[name] = self.pending_constant_value
+                # Add a word so constant name pushes constant value
+                self.dictionary[name] = (
+                    lambda v=self.pending_constant_value: self.data_stack.append(v)
+                )
+                self.expecting_constant_name = False
+                self.pending_constant_value = None
+                self.interpreter.log_output(f"Constant declared: {name}")
+                return True
+
             # Handle numbers (including floating point)
             if self._is_number(word):
                 if self.compiling:
@@ -304,9 +337,21 @@ class TwForthExecutor:
                 return self._handle_repeat()
             elif word == "RECURSE":
                 return self._recurse()
+            elif word == "DO":
+                # If compiling, keep as token to be handled in compiled execution
+                if self.compiling:
+                    self.word_definition.append(word)
+                    return True
+                return self._handle_do()
+            elif word == "LOOP":
+                if self.compiling:
+                    self.word_definition.append(word)
+                    return True
+                return self._handle_loop()
 
             # Handle variable operations
             if word == "VARIABLE":
+                # Next token must be the variable name
                 return self._handle_variable()
             elif word == "CONSTANT":
                 return self._handle_constant()
@@ -316,6 +361,33 @@ class TwForthExecutor:
                 return self._fetch()
 
             # Execute built-in or user-defined word
+            # Handle ."string" inline printing tokens
+            if word.startswith('."') and word.endswith('"'):
+                # print inner content
+                inner = word[2:-1]
+                if self.compiling:
+                    self.word_definition.append(word)
+                else:
+                    self.interpreter.log_output(inner)
+                return True
+
+            # Handle variable and constant names when they appear as words
+            if word in self.variables:
+                # pushing a variable reference (use name token)
+                if self.compiling:
+                    self.word_definition.append(word)
+                else:
+                    # push a simple reference (name) to the stack
+                    self.data_stack.append({"type": "var", "name": word})
+                return True
+
+            if word in self.constants:
+                if self.compiling:
+                    self.word_definition.append(word)
+                else:
+                    self.data_stack.append(self.constants[word])
+                return True
+
             if word in self.dictionary:
                 if self.compiling:
                     self.word_definition.append(word)
@@ -365,9 +437,53 @@ class TwForthExecutor:
         """Create a function from word definition"""
 
         def word_func():
-            for word in definition:
+            i = 0
+            # execute with instruction pointer so DO/LOOP can jump
+            while i < len(definition):
+                word = definition[i]
+
+                # Handle DO/LOOP compiled control
+                if word == "DO":
+                    # DO expects start and limit already on data_stack
+                    if len(self.data_stack) < 2:
+                        self.interpreter.log_output("Stack underflow in DO")
+                        return False
+                    limit = self.data_stack.pop()
+                    start = self.data_stack.pop()
+                    # push a frame with ip position and counters
+                    frame = {
+                        "type": "DO",
+                        "ip": i,
+                        "index": start,
+                        "limit": limit,
+                    }
+                    self.return_stack.append(frame)
+                    i += 1
+                    continue
+
+                if word == "LOOP":
+                    if (
+                        not self.return_stack
+                        or self.return_stack[-1].get("type") != "DO"
+                    ):
+                        self.interpreter.log_output("LOOP without matching DO")
+                        return False
+                    frame = self.return_stack[-1]
+                    frame["index"] += 1
+                    # if still less than limit, jump back to after DO
+                    if frame["index"] < frame["limit"]:
+                        i = frame["ip"] + 1
+                        continue
+                    # else pop frame and continue
+                    self.return_stack.pop()
+                    i += 1
+                    continue
+
+                # normal execution
                 if not self._execute_word(word):
                     return False
+                i += 1
+
             return True
 
         return word_func
@@ -758,6 +874,29 @@ class TwForthExecutor:
         self.return_stack.append("BEGIN")
         return True
 
+    def _handle_do(self):
+        """Handle DO in interactive mode (push loop frame)"""
+        if len(self.data_stack) < 2:
+            self.interpreter.log_output("Stack underflow in DO")
+            return False
+        limit = self.data_stack.pop()
+        start = self.data_stack.pop()
+        self.return_stack.append(
+            {"type": "DO", "ip": None, "index": start, "limit": limit}
+        )
+        return True
+
+    def _handle_loop(self):
+        """Handle LOOP in interactive mode"""
+        if not self.return_stack or self.return_stack[-1].get("type") != "DO":
+            self.interpreter.log_output("LOOP without matching DO")
+            return False
+        frame = self.return_stack[-1]
+        frame["index"] += 1
+        if frame["index"] >= frame["limit"]:
+            self.return_stack.pop()
+        return True
+
     def _handle_until(self):
         """Handle UNTIL"""
         if len(self.data_stack) < 1:
@@ -811,9 +950,9 @@ class TwForthExecutor:
     # Variables and constants
     def _handle_variable(self):
         """Handle VARIABLE declaration"""
-        # In a real Forth, this would allocate memory
-        # For simplicity, we'll just create a named storage location
-        self.interpreter.log_output("VARIABLE not fully implemented")
+        # Mark that the next token is the variable name to create.
+        # Allow variable declaration both in interactive mode and inside definitions.
+        self.expecting_variable_name = True
         return True
 
     def _handle_constant(self):
@@ -821,19 +960,56 @@ class TwForthExecutor:
         if len(self.data_stack) < 1:
             self.interpreter.log_output("Stack underflow in CONSTANT")
             return False
-        # Would need to get constant name - simplified
-        self.interpreter.log_output("CONSTANT not fully implemented")
+
+        # Pop the value and wait for the next token to be the name
+        value = self.data_stack.pop()
+        self.pending_constant_value = value
+        self.expecting_constant_name = True
         return True
 
     def _store(self):
         """Store value (!)"""
-        self.interpreter.log_output("! (store) not implemented")
-        return True
+        # Expect: value address (address represented by {'type':'var','name':name}) OR name value
+        if len(self.data_stack) < 2:
+            self.interpreter.log_output("Stack underflow in ! (store)")
+            return False
+
+        addr = self.data_stack.pop()
+        value = self.data_stack.pop()
+
+        # If addr is a variable ref dict
+        if isinstance(addr, dict) and addr.get("type") == "var":
+            varname = addr.get("name")
+            self.variables[varname] = value
+            return True
+
+        # If addr is a string name
+        if isinstance(addr, str) and addr in self.variables:
+            self.variables[addr] = value
+            return True
+
+        # Unknown address
+        self.interpreter.log_output("Invalid address for ! (store)")
+        return False
 
     def _fetch(self):
         """Fetch value (@)"""
-        self.interpreter.log_output("@ (fetch) not implemented")
-        return True
+        if len(self.data_stack) < 1:
+            self.interpreter.log_output("Stack underflow in @ (fetch)")
+            return False
+
+        addr = self.data_stack.pop()
+        if isinstance(addr, dict) and addr.get("type") == "var":
+            varname = addr.get("name")
+            self.data_stack.append(self.variables.get(varname, 0))
+            return True
+
+        if isinstance(addr, str) and addr in self.variables:
+            self.data_stack.append(self.variables[addr])
+            return True
+
+        self.interpreter.log_output("Invalid address for @ (fetch)")
+        return False
 
     # Gforth extension methods
 
@@ -907,14 +1083,60 @@ class TwForthExecutor:
         return True
 
     def _f_fetch(self):
-        """Fetch floating point value"""
-        self.interpreter.log_output("F@ (float fetch) not fully implemented")
-        return True
+        """Fetch floating point value from a variable/address onto float_stack"""
+        if len(self.data_stack) < 1:
+            self.interpreter.log_output("Stack underflow in F@")
+            return False
+
+        addr = self.data_stack.pop()
+        if isinstance(addr, dict) and addr.get("type") == "var":
+            name = addr.get("name")
+            value = self.variables.get(name, 0.0)
+            try:
+                self.float_stack.append(float(value))
+                return True
+            except (ValueError, TypeError):
+                self.interpreter.log_output("Invalid float stored at variable")
+                return False
+
+        if isinstance(addr, str) and addr in self.variables:
+            try:
+                self.float_stack.append(float(self.variables[addr]))
+                return True
+            except (ValueError, TypeError):
+                self.interpreter.log_output("Invalid float stored at variable")
+                return False
+
+        self.interpreter.log_output("Invalid address for F@")
+        return False
 
     def _f_store(self):
-        """Store floating point value"""
-        self.interpreter.log_output("F! (float store) not fully implemented")
-        return True
+        """Store floating value from float_stack or data_stack into variable/address"""
+        # Prefer float stack, else use data_stack value
+        if len(self.data_stack) < 1 and not self.float_stack:
+            self.interpreter.log_output("Stack underflow in F! (store)")
+            return False
+
+        # Determine value
+        if self.float_stack:
+            value = self.float_stack.pop()
+        else:
+            value = self.data_stack.pop()
+
+        if len(self.data_stack) < 1:
+            self.interpreter.log_output("Stack underflow in F! (no address)")
+            return False
+
+        addr = self.data_stack.pop()
+        if isinstance(addr, dict) and addr.get("type") == "var":
+            self.variables[addr.get("name")] = float(value)
+            return True
+        if isinstance(addr, str) and addr in self.variables:
+            self.variables[addr] = float(value)
+            return True
+
+        self.interpreter.log_output("Invalid address for F! (float store)")
+        return False
 
     def _f_dup(self):
         """Duplicate top of float stack"""
@@ -1024,13 +1246,82 @@ class TwForthExecutor:
         return True
 
     def _d_fetch(self):
-        """Fetch double precision value"""
-        self.interpreter.log_output("D@ (double fetch) not fully implemented")
-        return True
+        """Fetch double precision value from a variable/address.
+
+        Pushes low, high components to stack.
+        """
+        if len(self.data_stack) < 1:
+            self.interpreter.log_output("Stack underflow in D@")
+            return False
+
+        addr = self.data_stack.pop()
+        if isinstance(addr, dict) and addr.get("type") == "var":
+            entry = self.variables.get(addr.get("name"))
+            if isinstance(entry, (tuple, list)) and len(entry) == 2:
+                low, high = entry
+                self.data_stack.append(low)
+                self.data_stack.append(high)
+                return True
+            self.interpreter.log_output("Invalid double value at variable")
+            return False
+
+        if isinstance(addr, str) and addr in self.variables:
+            entry = self.variables[addr]
+            if isinstance(entry, (tuple, list)) and len(entry) == 2:
+                low, high = entry
+                self.data_stack.append(low)
+                self.data_stack.append(high)
+                return True
+            self.interpreter.log_output("Invalid double value at variable")
+            return False
+
+        self.interpreter.log_output("Invalid address for D@")
+        return False
 
     def _d_store(self):
-        """Store double precision value"""
-        self.interpreter.log_output("D! (double store) not fully implemented")
+        """Store double precision value from stack into a variable/address as (low, high) tuple"""
+        # Expect low high addr on stack or low, high, addr
+        if len(self.data_stack) < 3:
+            self.interpreter.log_output("Stack underflow in D! (store)")
+            return False
+
+        # Support two stack orders: (low high addr) or (addr high low)
+        top = self.data_stack[-1]
+        if isinstance(top, (dict, str)):
+            # addr is on top
+            addr = self.data_stack.pop()
+            # then high then low
+            if len(self.data_stack) < 2:
+                self.interpreter.log_output("Stack underflow in D! (store)")
+                return False
+            high = self.data_stack.pop()
+            low = self.data_stack.pop()
+        else:
+            # assume low high addr ordering
+            low = self.data_stack.pop()
+            high = self.data_stack.pop()
+            addr = self.data_stack.pop()
+
+        if isinstance(addr, dict) and addr.get("type") == "var":
+            self.variables[addr.get("name")] = (low, high)
+            return True
+        if isinstance(addr, str):
+            self.variables[addr] = (low, high)
+            return True
+
+        self.interpreter.log_output("Invalid address for D! (double store)")
+        return False
+
+    def _i(self):
+        """Push current loop index (I)"""
+        if not self.return_stack:
+            self.interpreter.log_output("I used outside of DO/LOOP")
+            return False
+        frame = self.return_stack[-1]
+        if frame.get("type") != "DO":
+            self.interpreter.log_output("I used outside of DO/LOOP")
+            return False
+        self.data_stack.append(frame.get("index", 0))
         return True
 
     # Memory allocation
@@ -1097,7 +1388,11 @@ class TwForthExecutor:
             f"OPEN-FILE simulated for address {addr} (educational mode)"
         )
         file_id = self.next_file_id
-        self.files[file_id] = {"name": f"file_{file_id}", "mode": fam, "address": addr}
+        self.files[file_id] = {
+            "name": f"file_{file_id}",
+            "mode": fam,
+            "address": addr,
+        }
         self.next_file_id += 1
         self.data_stack.append(file_id)  # fileid
         self.data_stack.append(0)  # ior

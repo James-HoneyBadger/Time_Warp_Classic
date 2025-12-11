@@ -138,7 +138,22 @@ class TwPrologExecutor:
                     head_args = self._parse_arguments(head_match.group(2))
 
                     # Parse body (can be multiple goals separated by commas)
-                    goals = [goal.strip() for goal in body_part.split(",")]
+                    # Must not split commas that occur inside parentheses
+                    goals = []
+                    buf = []
+                    depth = 0
+                    for ch in body_part:
+                        if ch == "(":
+                            depth += 1
+                        elif ch == ")" and depth > 0:
+                            depth -= 1
+                        if ch == "," and depth == 0:
+                            goals.append("".join(buf).strip())
+                            buf = []
+                        else:
+                            buf.append(ch)
+                    if buf:
+                        goals.append("".join(buf).strip())
 
                     # Store rule
                     if predicate not in self.database:
@@ -462,11 +477,16 @@ class TwPrologExecutor:
 
     def _prove_goal(self, goal, bindings):
         """Prove a single goal"""
+        # First try built-in predicates (these can include parenthesized forms)
+        builtin_res = self._prove_builtin(goal, bindings)
+        if builtin_res:
+            return builtin_res
+
         # Parse goal
         match = re.match(r"(\w+)\s*\((.*?)\)", goal)
         if not match:
-            # Built-in predicates
-            return self._prove_builtin(goal, bindings)
+            # Nothing matched and not a built-in
+            return []
 
         predicate = match.group(1)
         args_str = match.group(2)
@@ -552,6 +572,10 @@ class TwPrologExecutor:
             return []
         elif goal == "true":
             return [bindings]
+        elif goal == "!":
+            # Cut operator - prune alternatives by setting the flag
+            self.cut_flag = True
+            return [bindings]
         elif goal.startswith("not(") and goal.endswith(")"):
             return self._prove_not(goal, bindings)
         elif goal.startswith("repeat"):
@@ -597,12 +621,13 @@ class TwPrologExecutor:
             if len(args) == 2:
                 element = self._apply_bindings_to_term(args[0], bindings)
                 list_term = self._apply_bindings_to_term(args[1], bindings)
-
+                solutions = []
                 if list_term["type"] == "list":
                     for item in list_term["elements"]:
                         unification = self._unify_terms(element, item, bindings.copy())
                         if unification is not None:
-                            return [unification]
+                            solutions.append(unification)
+                return solutions
         except (ValueError, TypeError, IndexError):
             pass
         return []
@@ -834,7 +859,10 @@ class TwPrologExecutor:
                         self.database[pred_name] = []
 
                     self.database[pred_name].append(
-                        {"type": "predicate_declaration", "arg_types": arg_types}
+                        {
+                            "type": "predicate_declaration",
+                            "arg_types": arg_types,
+                        }
                     )
 
                     self.interpreter.log_output(

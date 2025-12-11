@@ -7,6 +7,8 @@ Python is a high-level, general-purpose programming language.
 This module handles Python script execution for the Time_Warp IDE.
 """
 
+# pylint: disable=duplicate-code,R0801
+
 import subprocess
 import sys
 import os

@@ -1,4 +1,4 @@
-# pylint: disable=W1510,W0718,R1705,C0415
+# pylint: disable=W1510,W0718,R1705,C0415,R0801
 """
 JavaScript Language Executor for Time_Warp IDE
 ==============================================
@@ -31,7 +31,10 @@ class JavaScriptExecutor:
             try:
                 # Check if node is available
                 result = subprocess.run(
-                    [node_name, "--version"], capture_output=True, text=True, timeout=5
+                    [node_name, "--version"],
+                    capture_output=True,
+                    text=True,
+                    timeout=5,
                 )
                 if result.returncode == 0:
                     return node_name

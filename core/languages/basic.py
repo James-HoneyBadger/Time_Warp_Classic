@@ -24,7 +24,7 @@ modern structured BASIC code. It integrates with pygame for graphics when availa
 falling back to text-based output otherwise.
 """
 
-# pylint: disable=C0302,R1705,R1702,W0718,R0912,W0613,R0911,W0612,R0915,R0914,R1714,W1514
+# pylint: disable=C0302,R1705,R1702,W0718,R0912,W0613,R0911,W0612,R0915,R0914,R1714,W1514,R0903
 
 import re
 import time
@@ -174,6 +174,20 @@ class TwBasicExecutor:
             elif cmd == "DEFFN":
                 return self._handle_deffn(command)
 
+            # Turtle Graphics Commands (must be checked before string functions)
+            elif cmd in ["FORWARD", "FD"] and len(parts) >= 2:
+                return self._handle_turtle_forward(parts)
+            elif cmd in ["BACK", "BACKWARD", "BK"] and len(parts) >= 2:
+                return self._handle_turtle_backward(parts)
+            elif cmd == "LEFT" and len(parts) >= 2:
+                return self._handle_turtle_left(parts)
+            elif cmd == "RIGHT" and len(parts) >= 2:
+                return self._handle_turtle_right(parts)
+            elif cmd in ["PENUP", "PU"]:
+                return self._handle_turtle_penup()
+            elif cmd in ["PENDOWN", "PD"]:
+                return self._handle_turtle_pendown()
+
             # Turbo BASIC Enhanced Functions
             elif cmd in [
                 "SIN",
@@ -222,7 +236,16 @@ class TwBasicExecutor:
                 return self._handle_call(command)
 
             # File I/O Commands (enhanced for Turbo BASIC)
-            elif cmd in ["OPEN", "CLOSE", "READ", "WRITE", "EOF", "SEEK", "GET", "PUT"]:
+            elif cmd in [
+                "OPEN",
+                "CLOSE",
+                "READ",
+                "WRITE",
+                "EOF",
+                "SEEK",
+                "GET",
+                "PUT",
+            ]:
                 return self._handle_file_commands(cmd, parts)
 
             # Enhanced Graphics Commands
@@ -329,7 +352,8 @@ class TwBasicExecutor:
                 except Exception:  # pylint: disable=broad-except
                     cond_val = False
                 if cond_val:
-                    # Execute the THEN command using the general line executor so
+                    # Execute the THEN command using
+                    # the general line executor so
                     # it can be a BASIC, PILOT or LOGO command fragment.
                     return self.interpreter.execute_line(then_cmd)
         except Exception as e:  # pylint: disable=broad-except
@@ -436,7 +460,8 @@ class TwBasicExecutor:
                         result_parts.append(str(evaluated))
                 except Exception as e:
                     self.interpreter.debug_output(f"Expression error: {e}")
-                    # For variables that failed evaluation, check if they exist directly
+                    # For variables that failed evaluation,
+                    # check if they exist directly
                     var_name = part.strip().upper()
                     if var_name in self.interpreter.variables:
                         result_parts.append(str(self.interpreter.variables[var_name]))
@@ -454,10 +479,43 @@ class TwBasicExecutor:
         return "continue"
 
     def _handle_input(self, command, parts):
-        """Handle INPUT statement"""
-        var_name = parts[1] if len(parts) > 1 else "INPUT"
-        prompt = f"Enter value for {var_name}: " if len(parts) == 2 else "Enter value: "
-        value = self.interpreter.get_user_input(prompt)
+        """Handle INPUT statement with optional prompt"""
+        # INPUT can have two formats:
+        # 1. INPUT var_name
+        # 2. INPUT "prompt"; var_name
+        text = command[5:].strip()  # Remove "INPUT" prefix
+
+        # Check if there's a prompt (starts with quote)
+        prompt = ""
+        var_name = ""
+
+        if text.startswith('"'):
+            # Format: INPUT "prompt"; var_name
+            # Find the closing quote
+            end_quote = text.find('"', 1)
+            if end_quote != -1:
+                prompt = text[1:end_quote]  # Extract prompt without quotes
+                # Find variable name after semicolon
+                after_quote = text[end_quote + 1 :].strip()
+                if after_quote.startswith(";"):
+                    var_name = after_quote[1:].strip()
+
+        if not var_name:
+            # Format: INPUT var_name (no prompt)
+            var_name = text.strip()
+            prompt = f"Enter value for {var_name}: "
+        else:
+            # Add space to prompt if it doesn't end with one
+            if prompt and not prompt.endswith(" ") and not prompt.endswith("?"):
+                prompt = prompt + " "
+
+        # Display the prompt
+        if prompt:
+            self.interpreter.log_output(prompt, end="")
+
+        # Get user input
+        value = self.interpreter.get_user_input("")
+
         try:
             if "." in value:
                 self.interpreter.variables[var_name] = float(value)
@@ -882,13 +940,15 @@ class TwBasicExecutor:
 
     def _handle_sub(self, command):
         """Handle SUB procedure definition (Turbo BASIC)"""
-        # For now, treat as comment - full implementation would need parser changes
+        # For now, treat as comment -
+        # full implementation would need parser changes
         self.interpreter.log_output(f"📝 SUB procedure: {command}")
         return "continue"
 
     def _handle_deffn(self, command):
         """Handle DEF FN function definition (Turbo BASIC)"""
-        # For now, treat as comment - full implementation would need parser changes
+        # For now, treat as comment -
+        # full implementation would need parser changes
         self.interpreter.log_output(f"📝 DEF FN function: {command}")
         return "continue"
 
@@ -936,6 +996,76 @@ class TwBasicExecutor:
                     time.sleep(seconds)
         except Exception as e:
             self.interpreter.debug_output(f"Enhanced command error: {e}")
+        return "continue"
+
+    def _handle_turtle_forward(self, parts):
+        """Handle FORWARD/FD turtle graphics command"""
+        try:
+            distance = float(parts[1]) if len(parts) > 1 else 50.0
+            if not self.interpreter.turtle_graphics:
+                self.interpreter.init_turtle_graphics()
+            self.interpreter.turtle_forward(distance)
+            self.interpreter.log_output(f"Turtle moved forward {distance} units")
+        except Exception as e:
+            self.interpreter.debug_output(f"FORWARD error: {e}")
+        return "continue"
+
+    def _handle_turtle_backward(self, parts):
+        """Handle BACK/BACKWARD/BK turtle graphics command"""
+        try:
+            distance = float(parts[1]) if len(parts) > 1 else 50.0
+            if not self.interpreter.turtle_graphics:
+                self.interpreter.init_turtle_graphics()
+            self.interpreter.turtle_forward(-distance)
+            self.interpreter.log_output(f"Turtle moved backward {distance} units")
+        except Exception as e:
+            self.interpreter.debug_output(f"BACKWARD error: {e}")
+        return "continue"
+
+    def _handle_turtle_left(self, parts):
+        """Handle LEFT turtle graphics command"""
+        try:
+            angle = float(parts[1]) if len(parts) > 1 else 90.0
+            if not self.interpreter.turtle_graphics:
+                self.interpreter.init_turtle_graphics()
+            self.interpreter.turtle_turn(-angle)  # Negative for left turn
+            self.interpreter.log_output(f"Turtle turned left {angle} degrees")
+        except Exception as e:
+            self.interpreter.debug_output(f"LEFT error: {e}")
+        return "continue"
+
+    def _handle_turtle_right(self, parts):
+        """Handle RIGHT turtle graphics command"""
+        try:
+            angle = float(parts[1]) if len(parts) > 1 else 90.0
+            if not self.interpreter.turtle_graphics:
+                self.interpreter.init_turtle_graphics()
+            self.interpreter.turtle_turn(angle)  # Positive for right turn
+            self.interpreter.log_output(f"Turtle turned right {angle} degrees")
+        except Exception as e:
+            self.interpreter.debug_output(f"RIGHT error: {e}")
+        return "continue"
+
+    def _handle_turtle_penup(self):
+        """Handle PENUP/PU turtle graphics command"""
+        try:
+            if not self.interpreter.turtle_graphics:
+                self.interpreter.init_turtle_graphics()
+            self.interpreter.turtle_graphics["pen_down"] = False
+            self.interpreter.log_output("Pen up - turtle will move without drawing")
+        except Exception as e:
+            self.interpreter.debug_output(f"PENUP error: {e}")
+        return "continue"
+
+    def _handle_turtle_pendown(self):
+        """Handle PENDOWN/PD turtle graphics command"""
+        try:
+            if not self.interpreter.turtle_graphics:
+                self.interpreter.init_turtle_graphics()
+            self.interpreter.turtle_graphics["pen_down"] = True
+            self.interpreter.log_output("Pen down - turtle will draw when moving")
+        except Exception as e:
+            self.interpreter.debug_output(f"PENDOWN error: {e}")
         return "continue"
 
     def _handle_draw(self, command):
@@ -1053,7 +1183,8 @@ class TwBasicExecutor:
                 else:
                     self.interpreter.log_output("CEIL requires a value parameter")
             elif cmd == "FIX":
-                # FIX(value) - truncate to integer (like INT but always truncates)
+                # FIX(value) - truncate to integer
+                # (like INT but always truncates)
                 if len(parts) >= 2:
                     value = float(self.interpreter.evaluate_expression(parts[1]))
                     result = math.trunc(value)
@@ -1342,7 +1473,8 @@ class TwBasicExecutor:
                                 self.interpreter.open_files[handle].readline().strip()
                             )
                             if line:
-                                # Try to parse as number, otherwise keep as string
+                                # Try to parse as
+                                # number, otherwise keep as string
                                 try:
                                     self.interpreter.variables[var_name] = float(line)
                                 except ValueError:
@@ -1529,11 +1661,16 @@ class TwBasicExecutor:
                             rect = pygame.Rect(x, y, width, height)
                             if filled:
                                 pygame.draw.rect(
-                                    self.pygame_screen, self.current_color, rect
+                                    self.pygame_screen,
+                                    self.current_color,
+                                    rect,
                                 )
                             else:
                                 pygame.draw.rect(
-                                    self.pygame_screen, self.current_color, rect, 2
+                                    self.pygame_screen,
+                                    self.current_color,
+                                    rect,
+                                    2,
                                 )
                             self.interpreter.log_output(
                                 f"Drew {'filled ' if filled else ''}box at "
@@ -1580,7 +1717,9 @@ class TwBasicExecutor:
                                 canvas = self.interpreter.ide_turtle_canvas
                                 if filled:
                                     canvas.create_polygon(
-                                        points, fill="black", tags="game_objects"
+                                        points,
+                                        fill="black",
+                                        tags="game_objects",
                                     )
                                 else:
                                     canvas.create_polygon(
@@ -1671,11 +1810,16 @@ class TwBasicExecutor:
                             rect = pygame.Rect(x, y, width, height)
                             if filled:
                                 pygame.draw.ellipse(
-                                    self.pygame_screen, self.current_color, rect
+                                    self.pygame_screen,
+                                    self.current_color,
+                                    rect,
                                 )
                             else:
                                 pygame.draw.ellipse(
-                                    self.pygame_screen, self.current_color, rect, 2
+                                    self.pygame_screen,
+                                    self.current_color,
+                                    rect,
+                                    2,
                                 )
                             self.interpreter.log_output(
                                 f"Drew {'filled ' if filled else ''}ellipse at "
@@ -1700,7 +1844,8 @@ class TwBasicExecutor:
                         x = float(coord_parts[0])
                         y = float(coord_parts[1])
 
-                        # Flood fill is complex - for now just draw a small filled circle
+                        # Flood fill is complex - for
+                        # now just draw a small filled circle
                         if (
                             hasattr(self.interpreter, "ide_turtle_canvas")
                             and self.interpreter.ide_turtle_canvas
@@ -1721,7 +1866,10 @@ class TwBasicExecutor:
                             import pygame
 
                             pygame.draw.circle(
-                                self.pygame_screen, self.current_color, (x, y), 5
+                                self.pygame_screen,
+                                self.current_color,
+                                (x, y),
+                                5,
                             )
                             self.interpreter.log_output(
                                 f"Flood fill at ({x},{y}) with {color}"
@@ -1968,7 +2116,8 @@ class TwBasicExecutor:
                         f"🎮 Game screen initialized: {width}x{height} - {title}"
                     )
 
-                    # Initialize graphics - either IDE canvas or standalone pygame
+                    # Initialize graphics - either
+                    # IDE canvas or standalone pygame
                     if (
                         hasattr(self.interpreter, "ide_turtle_canvas")
                         and self.interpreter.ide_turtle_canvas
@@ -1980,7 +2129,11 @@ class TwBasicExecutor:
                             width=min(width, 600), height=min(height, 400)
                         )  # Limit size
                         canvas.create_text(
-                            width // 2, 20, text=title, font=("Arial", 16), fill="white"
+                            width // 2,
+                            20,
+                            text=title,
+                            font=("Arial", 16),
+                            fill="white",
                         )
                         self.interpreter.log_output(
                             "🎨 Graphics canvas initialized for game"
@@ -2187,7 +2340,8 @@ class TwBasicExecutor:
                 except ValueError:
                     self.interpreter.log_output("Error: Invalid GAMEDELAY parameter")
         elif cmd == "GAMECIRCLE":
-            # GAMECIRCLE x, y, radius, filled (for 2-param version, assume filled=0)
+            # GAMECIRCLE x, y, radius, filled
+            # (for 2-param version, assume filled=0)
             if len(parts) >= 4:
                 try:
                     x = int(parts[1].rstrip(","))
@@ -2227,7 +2381,10 @@ class TwBasicExecutor:
 
                         if filled:
                             pygame.draw.circle(
-                                self.pygame_screen, self.current_color, (x, y), radius
+                                self.pygame_screen,
+                                self.current_color,
+                                (x, y),
+                                radius,
                             )
                         else:
                             pygame.draw.circle(
@@ -2240,7 +2397,8 @@ class TwBasicExecutor:
                 except ValueError:
                     self.interpreter.log_output("Error: Invalid GAMECIRCLE parameters")
         elif cmd == "GAMEKEY":
-            # GAMEKEY() - get pressed key (placeholder - would need real input handling)
+            # GAMEKEY() - get pressed key (placeholder
+            # - would need real input handling)
             self.interpreter.variables["LAST_KEY"] = ""  # Placeholder
             self.interpreter.log_output("🎮 Key input checked")
         else:

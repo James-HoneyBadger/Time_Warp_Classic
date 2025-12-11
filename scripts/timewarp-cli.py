@@ -91,13 +91,21 @@ class TimeWarpCLI:
                 "name": "Python",
                 "description": "Modern high-level scripting language",
                 "extensions": [".py"],
-                "features": ["Clean syntax", "Extensive libraries", "General-purpose"],
+                "features": [
+                    "Clean syntax",
+                    "Extensive libraries",
+                    "General-purpose",
+                ],
             },
             "javascript": {
                 "name": "JavaScript",
                 "description": "Web scripting language with modern features",
                 "extensions": [".js"],
-                "features": ["Async programming", "Object-oriented", "Web development"],
+                "features": [
+                    "Async programming",
+                    "Object-oriented",
+                    "Web development",
+                ],
             },
             "perl": {
                 "name": "Perl",
@@ -113,21 +121,55 @@ class TimeWarpCLI:
                 "name": "Pascal",
                 "description": "Structured programming language emphasizing readability",
                 "extensions": [".pas", ".pp"],
-                "features": ["Strong typing", "Structured programming", "Educational"],
+                "features": [
+                    "Strong typing",
+                    "Structured programming",
+                    "Educational",
+                ],
             },
             "forth": {
                 "name": "Forth",
                 "description": "Stack-based programming language",
                 "extensions": [".fs", ".forth"],
-                "features": ["Stack manipulation", "Low-level control", "Efficiency"],
+                "features": [
+                    "Stack manipulation",
+                    "Low-level control",
+                    "Efficiency",
+                ],
             },
             "prolog": {
                 "name": "Prolog",
                 "description": "Logic programming language based on formal logic",
                 "extensions": [".pl", ".prolog"],
-                "features": ["Pattern matching", "Logical queries", "AI applications"],
+                "features": [
+                    "Pattern matching",
+                    "Logical queries",
+                    "AI applications",
+                ],
             },
         }
+
+    def _detect_language(self, file_path):
+        """Guess language from file extension."""
+        ext = Path(file_path).suffix.lower()
+        mapping = {
+            ".pilot": "pilot",
+            ".bas": "basic",
+            ".basic": "basic",
+            ".logo": "logo",
+            ".py": "python",
+            ".js": "javascript",
+            ".perl": "perl",
+            ".pl": "perl",
+            ".pas": "pascal",
+            ".pp": "pascal",
+            ".fs": "forth",
+            ".forth": "forth",
+            ".4th": "forth",
+            ".prolog": "prolog",
+            ".pro": "prolog",
+        }
+        return mapping.get(ext)
 
     def run_program(self, file_path):
         """Run a program from a file"""
@@ -145,11 +187,15 @@ class TimeWarpCLI:
                 print(f"❌ Error: File '{file_path}' is empty")
                 return 1
 
+            language = self._detect_language(file_path)
+
             print(f"🚀 Running: {file_path}")
+            if language:
+                print(f"🌐 Detected language: {language}")
             print("=" * 50)
 
-            # Run the program
-            self.interpreter.run_program(program_code)
+            # Run the program with an explicit language when we can
+            self.interpreter.run_program(program_code, language=language)
 
             print("=" * 50)
             print("✅ Program execution completed")

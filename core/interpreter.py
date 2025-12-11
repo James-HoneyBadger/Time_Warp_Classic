@@ -62,8 +62,8 @@ except ImportError:
         def PhotoImage(image=None, file=None):
             return None
 
-    Image = _DummyImage
-    ImageTk = _DummyImageTk
+    Image = _DummyImage  # type: ignore[assignment]
+    ImageTk = _DummyImageTk  # type: ignore[assignment]
     print("ℹ️  PIL/Pillow not available - image features disabled")
 
 # Import language executors
@@ -111,55 +111,39 @@ except ImportError:
 # Import supporting classes (will need to be extracted to their own modules later)
 try:
     # Try to import from actual modules first
-    from games.engine import GameManager as _GameManager  # type: ignore[attr-defined]
-    from .audio import AudioEngine as _AudioEngine  # type: ignore[attr-defined]
+    from games.engine import GameManager  # type: ignore[attr-defined]
+    from .audio import AudioEngine  # type: ignore[attr-defined]
     from .hardware import (  # type: ignore[attr-defined]
-        RPiController as _RPiController,
-        RobotInterface as _RobotInterface,
-        GameController as _GameController,
-        SensorVisualizer as _SensorVisualizer,
+        RPiController,
+        RobotInterface,
+        GameController,
+        SensorVisualizer,
     )
     from .iot import (  # type: ignore[attr-defined]
-        IoTDeviceManager as _IoTDeviceManager,
-        SmartHomeHub as _SmartHomeHub,
-        SensorNetwork as _SensorNetwork,
+        IoTDeviceManager,
+        SmartHomeHub,
+        SensorNetwork,
     )
     from .utilities import (  # type: ignore[attr-defined]
-        Mixer as _Mixer,
-        Tween as _Tween,
-        Timer as _Timer,
-        Particle as _Particle,
+        Mixer,
+        Tween,
+        Timer,
+        Particle,
     )
-    from .networking import CollaborationManager as _CollaborationManager  # type: ignore[attr-defined]
-
-    GameManager = _GameManager
-    AudioEngine = _AudioEngine
-    RPiController = _RPiController
-    RobotInterface = _RobotInterface
-    GameController = _GameController
-    SensorVisualizer = _SensorVisualizer
-    IoTDeviceManager = _IoTDeviceManager
-    SmartHomeHub = _SmartHomeHub
-    SensorNetwork = _SensorNetwork
-    Mixer = _Mixer
-    Tween = _Tween
-    Timer = _Timer
-    Particle = _Particle
-    CollaborationManager = _CollaborationManager
+    from .networking import CollaborationManager  # type: ignore[attr-defined]
 
     ArduinoController = None  # Not implemented yet
     AdvancedRobotInterface = None  # Not implemented yet
 
     # Create MultiplayerGameManager as subclass of GameManager
-    class _MultiplayerGameManager(_GameManager):  # type: ignore[misc]
+    class MultiplayerGameManager(GameManager):  # type: ignore[misc,valid-type]
         def __init__(self, *args, **kwargs):
             super().__init__()
 
-    MultiplayerGameManager = _MultiplayerGameManager
-
 except ImportError:
-    # Placeholder imports until we extract these modules
-    class _AudioEngine2:  # type: ignore[no-redef]
+    # Fallback class definitions for missing modules
+
+    class AudioEngine:  # type: ignore[no-redef]
         def __init__(self):
             pass
 
@@ -202,7 +186,7 @@ except ImportError:
         sound_library: dict = {}
         spatial_audio = type("", (), {"set_listener_position": lambda *args: None})()
 
-    class _GameManager2:  # type: ignore[no-redef]
+    class GameManager:  # type: ignore[no-redef]
         def __init__(self):
             pass
 
@@ -267,11 +251,12 @@ except ImportError:
         is_server = False
         game_state = "waiting"
 
-    class _MultiplayerGameManager2(_GameManager2):  # type: ignore[misc]
+    # In except block, define fallback MultiplayerGameManager
+    class MultiplayerGameManager(GameManager):  # type: ignore[misc,no-redef]
         def __init__(self, *args, **kwargs):
             super().__init__()
 
-    class _CollaborationManager:  # type: ignore[no-redef]
+    class CollaborationManager:  # type: ignore[no-redef]
         def __init__(self):
             self.network_manager = type(
                 "",
@@ -287,7 +272,7 @@ except ImportError:
                 },
             )()
 
-    class _ArduinoController:  # type: ignore[no-redef]
+    class ArduinoController:  # type: ignore[no-redef]
         def connect(self, *args):
             return False
 
@@ -297,7 +282,7 @@ except ImportError:
         def read_sensor(self):
             return None
 
-    class _RPiController:  # type: ignore[no-redef]
+    class RPiController:  # type: ignore[no-redef]
         def set_pin_mode(self, *args):
             return False
 
@@ -307,7 +292,7 @@ except ImportError:
         def digital_read(self, *args):
             return False
 
-    class _RobotInterface:  # type: ignore[no-redef]
+    class RobotInterface:  # type: ignore[no-redef]
         def move_forward(self, *args):
             pass
 
@@ -329,7 +314,7 @@ except ImportError:
         def read_light_sensor(self):
             return 50.0
 
-    class _GameController:  # type: ignore[no-redef]
+    class GameController:  # type: ignore[no-redef]
         def update(self):
             return False
 
@@ -339,7 +324,7 @@ except ImportError:
         def get_axis(self, *args):
             return 0.0
 
-    class _SensorVisualizer:  # type: ignore[no-redef]
+    class SensorVisualizer:  # type: ignore[no-redef]
         def __init__(self, canvas):
             pass
 
@@ -349,7 +334,7 @@ except ImportError:
         def add_data_point(self, *args):
             pass
 
-    class _IoTDeviceManager:  # type: ignore[no-redef]
+    class IoTDeviceManager:  # type: ignore[no-redef]
         def __init__(self):
             self.simulation_mode = True
 
@@ -374,7 +359,7 @@ except ImportError:
         def control_group(self, *args):
             return "Not implemented"
 
-    class _SmartHomeHub:  # type: ignore[no-redef]
+    class SmartHomeHub:  # type: ignore[no-redef]
         def __init__(self):
             self.simulation_mode = True
 
@@ -393,7 +378,7 @@ except ImportError:
         def monitor_environment(self):
             return []
 
-    class _SensorNetwork:  # type: ignore[no-redef]
+    class SensorNetwork:  # type: ignore[no-redef]
         def __init__(self):
             self.simulation_mode = True
 
@@ -409,7 +394,7 @@ except ImportError:
         def predict_values(self, *args):
             return None
 
-    class _AdvancedRobotInterface:  # type: ignore[no-redef]
+    class AdvancedRobotInterface:  # type: ignore[no-redef]
         def __init__(self):
             self.simulation_mode = True
             self.mission_status = "idle"
@@ -432,7 +417,7 @@ except ImportError:
         def move_to_position(self, *args):
             pass
 
-    class _Mixer:  # type: ignore[no-redef]
+    class Mixer:  # type: ignore[no-redef]
         def __init__(self):
             self.registry = {}
 
@@ -442,7 +427,7 @@ except ImportError:
         def play_snd(self, name):
             print(f"Playing sound: {name}")
 
-    class _Tween:  # type: ignore[no-redef]
+    class Tween:  # type: ignore[no-redef]
         def __init__(self, store, key, a, b, dur_ms, ease="linear"):
             self.store = store
             self.key = key
@@ -462,14 +447,14 @@ except ImportError:
                 self.store[self.key] = self.b
                 self.done = True
 
-    class _Timer:  # type: ignore[no-redef]
+    class Timer:  # type: ignore[no-redef]
         def __init__(self, delay_ms, label):
             self.delay = max(0, int(delay_ms))
             self.label = label
             self.t = 0
             self.done = False
 
-    class _Particle:  # type: ignore[no-redef]
+    class Particle:  # type: ignore[no-redef]
         def __init__(self, x, y, vx, vy, life):
             self.x = x
             self.y = y
@@ -485,25 +470,6 @@ except ImportError:
             self.x += self.vx * dt / 1000.0
             self.y += self.vy * dt / 1000.0
             self.life -= dt
-
-    # Assign fallback classes to expected names
-    GameManager = _GameManager2  # type: ignore[misc]
-    AudioEngine = _AudioEngine2  # type: ignore[misc]
-    RPiController = _RPiController  # type: ignore[misc]
-    RobotInterface = _RobotInterface  # type: ignore[misc]
-    GameController = _GameController  # type: ignore[misc]
-    SensorVisualizer = _SensorVisualizer  # type: ignore[misc]
-    IoTDeviceManager = _IoTDeviceManager  # type: ignore[misc]
-    SmartHomeHub = _SmartHomeHub  # type: ignore[misc]
-    SensorNetwork = _SensorNetwork  # type: ignore[misc]
-    Mixer = _Mixer  # type: ignore[misc]
-    Tween = _Tween  # type: ignore[misc]
-    Timer = _Timer  # type: ignore[misc]
-    Particle = _Particle  # type: ignore[misc]
-    CollaborationManager = _CollaborationManager  # type: ignore[misc]
-    MultiplayerGameManager = _MultiplayerGameManager2  # type: ignore[misc,assignment]
-    ArduinoController = _ArduinoController  # type: ignore[misc]
-    AdvancedRobotInterface = _AdvancedRobotInterface  # type: ignore[misc]
 
 
 class Vector2D:

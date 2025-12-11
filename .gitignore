@@ -103,3 +103,5 @@ release/**/*.zip
 # Scripts (development only - don't ignore)
 # scripts/
 
+
+.fake

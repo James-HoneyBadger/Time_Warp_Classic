@@ -1,0 +1,42 @@
+; ====================================
+; Logo Demo - Clear Spiral (visible)
+; ====================================
+
+CLEARSCREEN
+PENDOWN
+SETPENCOLOR [0 0 255]
+SETPENSIZE 2
+
+; Archimedean-style spiral: grow distance each step, moderate turn
+; Starts small, quickly expands outward so it does NOT look like a circle
+MAKE "DIST 6
+
+REPEAT 90 [
+  FORWARD :DIST
+  RIGHT 12
+  MAKE "DIST :DIST + 4
+]
+
+; Square
+PENUP
+HOME
+PENDOWN
+SETPENCOLOR [255 0 0]
+REPEAT 4 [
+  FORWARD 50
+  RIGHT 90
+]
+
+; Triangle
+PENUP
+SETXY -100 100
+PENDOWN
+SETPENCOLOR [255 0 255]
+REPEAT 3 [
+  FORWARD 80
+  RIGHT 120
+]
+
+PENUP
+HOME
+PRINT [Spiral complete!]

@@ -72,9 +72,9 @@ class TwPascalExecutor:
             match = re.match(r"(\w+)", command)
             if not match:
                 return "continue"
-            
+
             cmd = match.group(1).upper()
-            
+
             # Check command type with case-insensitive prefix matching
             command_upper = command.upper()
 
@@ -511,7 +511,9 @@ class TwPascalExecutor:
         try:
             # IF condition THEN statement [ELSE statement]
             match = re.match(
-                r"IF\s+(.+?)\s+THEN\s+(.+?)(?:\s+ELSE\s+(.+))?$", command, re.IGNORECASE
+                r"IF\s+(.+?)\s+THEN\s+(.+?)(?:\s+ELSE\s+(.+))?$",
+                command,
+                re.IGNORECASE,
             )
             if match:
                 condition = match.group(1).strip()
@@ -664,7 +666,9 @@ class TwPascalExecutor:
         try:
             # FUNCTION name(parameters): return_type; [VAR declarations;] BEGIN statements END;
             match = re.match(
-                r"FUNCTION\s+(\w+)\s*\((.*?)\)\s*:\s*(\w+)", command, re.IGNORECASE
+                r"FUNCTION\s+(\w+)\s*\((.*?)\)\s*:\s*(\w+)",
+                command,
+                re.IGNORECASE,
             )
             if match:
                 func_name = match.group(1).upper()
@@ -850,8 +854,8 @@ class TwPascalExecutor:
                 "COPY": lambda s, start, count: (
                     s[start - 1 : start - 1 + count] if s else ""
                 ),
-                "pos": lambda substr, s: s.find(substr) + 1 if substr in s else 0,
-                "POS": lambda substr, s: s.find(substr) + 1 if substr in s else 0,
+                "pos": lambda substr, s: (s.find(substr) + 1 if substr in s else 0),
+                "POS": lambda substr, s: (s.find(substr) + 1 if substr in s else 0),
                 "concat": lambda *args: "".join(str(arg) for arg in args),
                 "CONCAT": lambda *args: "".join(str(arg) for arg in args),
                 "upcase": lambda s: str(s).upper(),

@@ -49,7 +49,10 @@ class PerlExecutor:
             try:
                 # Check if perl is available
                 result = subprocess.run(
-                    [perl_name, "--version"], capture_output=True, text=True, timeout=5
+                    [perl_name, "--version"],
+                    capture_output=True,
+                    text=True,
+                    timeout=5,
                 )
                 if result.returncode == 0:
                     return perl_name

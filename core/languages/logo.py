@@ -27,7 +27,7 @@ import re
 import math
 import time
 
-# pylint: disable=C0302,C0301,C0115,C0116,W0613,R0903,C0413,W0718,R0902,R0915,C0415,W0404,W0621,R0913,R0917,R0914,W0612,W0108,W0123,R0911,R0912,R1705,W0611
+# pylint: disable=C0302,C0301,C0115,C0116,W0613,R0903,C0413,W0718,R0902,R0915,C0415,W0404,W0621,R0913,R0917,R0914,W0612,W0108,W0123,R0911,R0912,R1705,W0611,too-many-nested-blocks
 
 
 class TwLogoExecutor:
@@ -43,12 +43,12 @@ class TwLogoExecutor:
             prof_start = (
                 time.perf_counter() if self.interpreter.profile_enabled else None
             )
-            
+
             # Filter out comments (lines starting with semicolon)
             command = command.strip()
-            if command.startswith(';'):
+            if command.startswith(";"):
                 return "continue"
-            
+
             parts = command.split()
             if not parts:
                 return "continue"
@@ -65,6 +65,10 @@ class TwLogoExecutor:
             # Macro CALL
             if cmd == "CALL" and len(parts) >= 2:
                 return self._handle_call(parts[1])
+
+            # Variable assignment (MAKE)
+            if cmd == "MAKE" and len(parts) >= 3:
+                return self._handle_make(parts)
 
             # DEFINE macro
             if cmd == "DEFINE" and len(parts) >= 2:
@@ -105,7 +109,7 @@ class TwLogoExecutor:
                 return self._handle_setxy(parts)
 
             # Color and appearance commands
-            elif cmd in ["SETCOLOR", "SETCOLOUR", "COLOR"]:
+            elif cmd in ["SETCOLOR", "SETCOLOUR", "COLOR", "SETPENCOLOR", "SETPC"]:
                 return self._handle_setcolor(parts)
             elif cmd == "SETPENSIZE":
                 return self._handle_setpensize(parts)
@@ -127,6 +131,8 @@ class TwLogoExecutor:
                 return self._handle_hideturtle()
             elif cmd == "PRINT":
                 return self._handle_print(parts)
+            elif cmd == "STOP":
+                return "stop"
             elif cmd == "HEADING":
                 return self._handle_heading()
             elif cmd == "POSITION":
@@ -159,7 +165,7 @@ class TwLogoExecutor:
                 return self._handle_enhanced_turtle(cmd, parts)
             elif cmd in ["SIN", "COS", "TAN", "SQRT", "POWER", "LOG"]:
                 return self._handle_math_functions(cmd, parts)
-            elif cmd in ["LIST", "ITEM", "FIRST", "LAST", "BUTFIRST", "BUTLAST"]:
+            elif cmd in ["LIST", "FIRST", "LAST", "BUTFIRST", "BUTLAST"]:
                 return self._handle_list_operations(cmd, parts)
             elif cmd in ["SAVE", "LOAD", "EXPORT"]:
                 return self._handle_file_operations(cmd, parts)
@@ -229,7 +235,14 @@ class TwLogoExecutor:
                 return self._handle_error(parts)
 
             # UCBLogo Advanced Arithmetic
-            elif cmd in ["BITAND", "BITOR", "BITXOR", "BITNOT", "ASHIFT", "LSHIFT"]:
+            elif cmd in [
+                "BITAND",
+                "BITOR",
+                "BITXOR",
+                "BITNOT",
+                "ASHIFT",
+                "LSHIFT",
+            ]:
                 return self._handle_bitwise(cmd, parts)
 
             # UCBLogo Macros
@@ -243,18 +256,25 @@ class TwLogoExecutor:
                 self.interpreter.debug_output(f"Calling procedure: {cmd}")
                 # Get number of parameters
                 params, _ = self.interpreter.logo_procedures[cmd]
-                # Collect arguments: each param gets tokens until we have enough params
+                # Collect arguments: one per param
                 args = []
                 idx = 1
                 for _ in range(len(params)):
                     arg_tokens = []
-                    while idx < len(parts) and len(args) < len(params):
-                        # Collect tokens for this argument
-                        arg_tokens.append(parts[idx])
-                        idx += 1
-                        # Check if next token looks like it starts a new argument
-                        if idx < len(parts) and parts[idx].startswith(":") and arg_tokens:
+                    # Collect tokens for this argument until
+                    # we hit the next parameter-looking argument
+                    while idx < len(parts):
+                        token = parts[idx]
+                        # Stop if we see something that
+                        # looks like start of next arg
+                        # (either starts with : or looks like
+                        # a number/word when we already have tokens)
+                        if arg_tokens and (
+                            token.startswith(":") or not token[0].isalpha()
+                        ):
                             break
+                        arg_tokens.append(token)
+                        idx += 1
                     if arg_tokens:
                         args.append(" ".join(arg_tokens))
                 return self._call_logo_procedure(cmd, args)
@@ -266,17 +286,22 @@ class TwLogoExecutor:
                     self.interpreter.debug_output(f"Calling procedure: {cmd_upper}")
                     # Get number of parameters
                     params, _ = self.interpreter.logo_procedures[cmd_upper]
-                    # Collect arguments: each param gets tokens until we have enough params
+                    # Collect arguments: one per param
                     args = []
                     idx = 1
                     for _ in range(len(params)):
                         arg_tokens = []
-                        while idx < len(parts) and len(args) < len(params):
-                            arg_tokens.append(parts[idx])
-                            idx += 1
-                            # Check if next token looks like it starts a new argument
-                            if idx < len(parts) and parts[idx].startswith(":") and arg_tokens:
+                        # Collect tokens for this argument
+                        while idx < len(parts):
+                            token = parts[idx]
+                            # Stop if we see something that
+                            # looks like start of next arg
+                            if arg_tokens and (
+                                token.startswith(":") or not token[0].isalpha()
+                            ):
                                 break
+                            arg_tokens.append(token)
+                            idx += 1
                         if arg_tokens:
                             args.append(" ".join(arg_tokens))
                     return self._call_logo_procedure(cmd_upper, args)
@@ -324,6 +349,26 @@ class TwLogoExecutor:
                 self.execute_command(mline)
         finally:
             self.interpreter._macro_call_stack.pop()
+        return "continue"
+
+    def _handle_make(self, parts):
+        """Handle MAKE command for variable assignment
+        MAKE "VARNAME value or MAKE "VARNAME :expression
+        """
+        if len(parts) < 3:
+            return "continue"
+        
+        var_name = parts[1].strip('"').upper()
+        value_expr = ' '.join(parts[2:])
+        
+        try:
+            # Evaluate the value expression (handles :VARS, literals, math)
+            value = self._eval_argument(value_expr)
+            self.interpreter.variables[var_name] = value
+            self.interpreter.debug_output(f"MAKE {var_name} = {value}")
+        except Exception as e:
+            self.interpreter.debug_output(f"MAKE error: {e}")
+        
         return "continue"
 
     def _handle_define(self, command, name):
@@ -386,7 +431,9 @@ class TwLogoExecutor:
                 if guard > 5000:
                     self.interpreter.log_output("REPEAT aborted: expansion too large")
                     return "continue"
-                self.execute_command(sub)
+                result = self.execute_command(sub)
+                if result == "stop":
+                    return "stop"
         return "continue"
 
     def _handle_if(self, command):
@@ -422,7 +469,9 @@ class TwLogoExecutor:
                 for cmd_line in commands_str.strip().split("\n"):
                     cmd_line = cmd_line.strip()
                     if cmd_line and not cmd_line.startswith(";"):
-                        self.execute_command(cmd_line)
+                        result_cmd = self.execute_command(cmd_line)
+                        if result_cmd == "stop":
+                            return "stop"
 
         except Exception as e:
             self.interpreter.log_output(f"IF condition error: {e}")
@@ -438,12 +487,40 @@ class TwLogoExecutor:
 
         for token in block_str.split():
             # Recognize command keywords to know when a new command starts
-            if token.upper() in ["FORWARD", "FD", "BACK", "BK", "BACKWARD",
-                                 "LEFT", "LT", "RIGHT", "RT", "REPEAT", "IF",
-                                 "PENUP", "PU", "PENDOWN", "PD", "SETPENCOLOR",
-                                 "SETCOLOR", "SETXY", "CIRCLE", "ARC", "SQUARE",
-                                 "CLEARSCREEN", "CS", "HOME", "SHOWTURTLE",
-                                 "HIDETURTLE", "SETHEADING", "SETH"] and current_cmd:
+            if (
+                token.upper()
+                in [
+                    "FORWARD",
+                    "FD",
+                    "BACK",
+                    "BK",
+                    "BACKWARD",
+                    "LEFT",
+                    "LT",
+                    "RIGHT",
+                    "RT",
+                    "REPEAT",
+                    "IF",
+                    "PENUP",
+                    "PU",
+                    "PENDOWN",
+                    "PD",
+                    "SETPENCOLOR",
+                    "SETCOLOR",
+                    "SETXY",
+                    "CIRCLE",
+                    "ARC",
+                    "SQUARE",
+                    "CLEARSCREEN",
+                    "CS",
+                    "HOME",
+                    "SHOWTURTLE",
+                    "HIDETURTLE",
+                    "SETHEADING",
+                    "SETH",
+                ]
+                and current_cmd
+            ):
                 # New command starts, save previous one
                 commands.append(" ".join(current_cmd))
                 current_cmd = [token]
@@ -457,11 +534,14 @@ class TwLogoExecutor:
         # Execute each command
         for cmd in commands:
             if cmd.strip():
-                self.execute_command(cmd.strip())
+                result = self.execute_command(cmd.strip())
+                if result == "stop":
+                    return "stop"
 
     def _eval_argument(self, arg):
         """Evaluate an argument which could be a variable, number, or expression"""
         import re
+
         arg = str(arg).strip()
 
         # If it starts with :, it's a variable reference
@@ -597,7 +677,8 @@ class TwLogoExecutor:
         """Handle PENDOWN command"""
         prev_state = self.interpreter.turtle_graphics["pen_down"]
         self.interpreter.turtle_graphics["pen_down"] = True
-        # If transitioning from up to down, advance color for new shape for visibility
+        # If transitioning from up to down,
+        # advance color for new shape for visibility
         if not prev_state:
             self.interpreter._turtle_color_index = (
                 self.interpreter._turtle_color_index + 1
@@ -623,9 +704,12 @@ class TwLogoExecutor:
     def _handle_cleartext(self):
         """Handle CLEARTEXT command - clears text output area"""
         # Clear the output widget
-        if hasattr(self.interpreter, 'output_widget') and self.interpreter.output_widget:
+        if (
+            hasattr(self.interpreter, "output_widget")
+            and self.interpreter.output_widget
+        ):
             try:
-                self.interpreter.output_widget.delete('1.0', 'end')
+                self.interpreter.output_widget.delete("1.0", "end")
             except Exception:
                 pass
         self.interpreter.log_output("Text output cleared")
@@ -649,9 +733,7 @@ class TwLogoExecutor:
             x = float(parts[1])
             y = float(parts[2])
             self.interpreter.turtle_setxy(x, y)
-            self.interpreter.log_output(
-                f"SETXY -> Turtle moved to position ({x}, {y})"
-            )
+            self.interpreter.log_output(f"SETXY -> Turtle moved to position ({x}, {y})")
         else:
             self.interpreter.log_output("SETXY requires X and Y coordinates")
         # Set turtle position variables for testing
@@ -663,10 +745,34 @@ class TwLogoExecutor:
         return "continue"
 
     def _handle_setcolor(self, parts):
-        """Handle SETCOLOR/COLOR command"""
-        color = parts[1].lower() if len(parts) > 1 else "black"
-        self.interpreter.turtle_set_color(color)
-        self.interpreter.log_output(f"Pen color set to {color}")
+        """Handle SETCOLOR/COLOR/SETPENCOLOR command"""
+        if len(parts) < 2:
+            self.interpreter.log_output("Color command requires a color parameter")
+            return "continue"
+        
+        # Check if it's an RGB list [R G B]
+        command_str = " ".join(parts[1:])
+        if "[" in command_str and "]" in command_str:
+            # Parse RGB list
+            try:
+                import re
+                match = re.search(r'\[\s*(\d+)\s+(\d+)\s+(\d+)\s*\]', command_str)
+                if match:
+                    r, g, b = int(match.group(1)), int(match.group(2)), int(match.group(3))
+                    # Convert to hex color
+                    color = f"#{r:02x}{g:02x}{b:02x}"
+                    self.interpreter.turtle_set_color(color)
+                    self.interpreter.log_output(f"Pen color set to RGB({r}, {g}, {b})")
+                else:
+                    self.interpreter.log_output("Invalid RGB format. Use [R G B]")
+            except Exception as e:
+                self.interpreter.debug_output(f"Color parsing error: {e}")
+                self.interpreter.log_output("Invalid color format")
+        else:
+            # Named color or hex
+            color = parts[1].lower()
+            self.interpreter.turtle_set_color(color)
+            self.interpreter.log_output(f"Pen color set to {color}")
         return "continue"
 
     def _handle_setpensize(self, parts):
@@ -733,14 +839,14 @@ class TwLogoExecutor:
         if len(parts) < 2:
             self.interpreter.log_output("PRINT requires text to output")
             return "continue"
-        
+
         # Join all parts after PRINT, handle [brackets] for word lists
         text = " ".join(parts[1:])
-        
+
         # Remove brackets if present
-        if text.startswith('[') and text.endswith(']'):
+        if text.startswith("[") and text.endswith("]"):
             text = text[1:-1]
-        
+
         self.interpreter.log_output(text)
         return "continue"
 
@@ -869,7 +975,8 @@ class TwLogoExecutor:
 
             elif cmd == "FILL":
                 # FILL - flood fill current area with current color
-                # This is a simplified implementation - just draw a filled circle at current position
+                # This is a simplified implementation - just
+                # draw a filled circle at current position
                 current_color = self.interpreter.turtle_graphics.get(
                     "pen_color", "black"
                 )
@@ -1049,7 +1156,8 @@ class TwLogoExecutor:
                     self.interpreter.variables["LAST_LIST"] = list_name
 
             elif cmd in ["ITEM", "FIRST", "LAST", "BUTFIRST", "BUTLAST"]:
-                # These operations work on the last created list or a specified list
+                # These operations work on the last
+                # created list or a specified list
                 list_name = (
                     parts[1]
                     if len(parts) > 1
@@ -1358,7 +1466,8 @@ class TwLogoExecutor:
                         )
 
             elif cmd == "SPHERE":
-                # SPHERE radius - draw a sphere (simplified as circle with shading)
+                # SPHERE radius - draw a
+                # sphere (simplified as circle with shading)
                 if len(parts) >= 2:
                     radius = float(parts[1])
 
@@ -1767,6 +1876,8 @@ class TwLogoExecutor:
                 # Check if it's an array
                 if source in self.interpreter.logo_arrays:
                     array = self.interpreter.logo_arrays[source]
+                    # Use 1-based indexing for ITEM to match Logo semantics
+                    index = index - 1
                     if isinstance(array, list) and 0 <= index < len(array):
                         result = array[index]
                         self.interpreter.variables["ARRAY_RESULT"] = result
@@ -1778,9 +1889,11 @@ class TwLogoExecutor:
                 # Check if it's a list variable
                 elif source in self.interpreter.variables:
                     lst = self.interpreter.variables[source]
+                    # Use 1-based indexing for lists as well
+                    index = index - 1
                     if isinstance(lst, list) and 0 <= index < len(lst):
                         result = lst[index]
-                        self.interpreter.variables["ARRAY_RESULT"] = result
+                        self.interpreter.variables["LIST_RESULT"] = result
                         self.interpreter.log_output(
                             f"ITEM {index} of {source} = {result}"
                         )
@@ -1915,7 +2028,8 @@ class TwLogoExecutor:
                 proc_name = parts[1]
                 args = parts[2:]
 
-                # This is a simplified implementation - in real UCBLogo, APPLY would
+                # This is a simplified implementation
+                # - in real UCBLogo, APPLY would
                 # dynamically call procedures with argument lists
                 self.interpreter.log_output(
                     f"APPLY {proc_name} to {args} (simplified implementation)"
@@ -1960,7 +2074,8 @@ class TwLogoExecutor:
                         for item in lst:
                             self.interpreter.variables[var_name] = item
                             self.interpreter.log_output(f"FOREACH: {var_name} = {item}")
-                            # In real implementation, would execute a block here
+                            # In real implementation, would
+                            # execute a block here
                     else:
                         self.interpreter.log_output(f"'{list_name}' is not a list")
                 else:
@@ -1977,7 +2092,8 @@ class TwLogoExecutor:
         """Handle CASCADE command - cascade operations"""
         try:
             if len(parts) >= 2:
-                # Simplified implementation - would execute operations in sequence
+                # Simplified implementation - would
+                # execute operations in sequence
                 operations = parts[1:]
                 self.interpreter.log_output(
                     f"CASCADE operations: {operations} (simplified implementation)"
@@ -2025,7 +2141,8 @@ class TwLogoExecutor:
         try:
             if len(parts) >= 2:
                 condition = " ".join(parts[1:])
-                # Simplified while loop - would evaluate condition and execute block
+                # Simplified while loop - would
+                # evaluate condition and execute block
                 self.interpreter.log_output(
                     f"WHILE {condition} (simplified implementation)"
                 )
@@ -2149,7 +2266,8 @@ class TwLogoExecutor:
                 x_scale = float(parts[1])
                 y_scale = float(parts[2])
 
-                # Simplified scrunch implementation - would adjust coordinate scaling
+                # Simplified scrunch implementation -
+                # would adjust coordinate scaling
                 self.interpreter.log_output(
                     f"SCRUNCH coordinate system: x_scale={x_scale}, y_scale={y_scale} (simplified implementation)"
                 )
@@ -2293,7 +2411,9 @@ class TwLogoExecutor:
 
         # Execute procedure body
         for line in body:
-            self.execute_command(line)
+            result = self.execute_command(line)
+            if result == "stop":
+                return "stop"
 
         # Restore saved variables
         for var_name in params:
@@ -2328,7 +2448,3 @@ class TwLogoExecutor:
                 return float(expr)
             except (ValueError, TypeError):
                 return expr
-
-        except Exception as e:
-            self.interpreter.debug_output(f".DEFMACRO error: {e}")
-        return "continue"

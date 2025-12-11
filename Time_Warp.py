@@ -256,7 +256,27 @@ Examples:
                             content = f.read()
                         editor_text.delete("1.0", tk.END)
                         editor_text.insert("1.0", content)
-                        output_text.insert(tk.END, f"📂 Loaded: {filename}\n")
+                        
+                        # Auto-detect language from file extension
+                        ext_to_lang = {
+                            '.pilot': 'PILOT',
+                            '.bas': 'BASIC',
+                            '.logo': 'Logo',
+                            '.py': 'Python',
+                            '.js': 'JavaScript',
+                            '.pl': 'Perl',
+                            '.pas': 'Pascal',
+                            '.fth': 'Forth',
+                            '.4th': 'Forth',
+                            '.pro': 'Prolog'
+                        }
+                        import os
+                        _, ext = os.path.splitext(filename)
+                        if ext.lower() in ext_to_lang:
+                            language_var.set(ext_to_lang[ext.lower()])
+                            output_text.insert(tk.END, f"📂 Loaded: {filename} ({ext_to_lang[ext.lower()]})\n")
+                        else:
+                            output_text.insert(tk.END, f"📂 Loaded: {filename}\n")
                     except Exception as e:
                         messagebox.showerror("Error", f"Failed to load file:\n{e}")
 
@@ -312,6 +332,48 @@ Examples:
             edit_menu = tk.Menu(menubar, tearoff=0)
             menubar.add_cascade(label="Edit", menu=edit_menu)
 
+            def cut_text():
+                """Cut selected text to clipboard."""
+                try:
+                    editor_text.event_generate("<<Cut>>")
+                except Exception:
+                    pass
+
+            def copy_text():
+                """Copy selected text to clipboard."""
+                try:
+                    editor_text.event_generate("<<Copy>>")
+                except Exception:
+                    pass
+
+            def paste_text():
+                """Paste text from clipboard."""
+                try:
+                    editor_text.event_generate("<<Paste>>")
+                except Exception:
+                    pass
+
+            def undo_text():
+                """Undo last edit."""
+                try:
+                    editor_text.edit_undo()
+                except Exception:
+                    pass
+
+            def redo_text():
+                """Redo last undone edit."""
+                try:
+                    editor_text.edit_redo()
+                except Exception:
+                    pass
+
+            def select_all():
+                """Select all text in editor."""
+                editor_text.tag_add("sel", "1.0", tk.END)
+                editor_text.mark_set("insert", "1.0")
+                editor_text.see("insert")
+                return "break"
+
             def clear_editor():
                 """Clear the editor."""
                 editor_text.delete("1.0", tk.END)
@@ -320,6 +382,15 @@ Examples:
                 """Clear the output window."""
                 output_text.delete("1.0", tk.END)
 
+            edit_menu.add_command(label="Undo", command=undo_text, accelerator="Ctrl+Z")
+            edit_menu.add_command(label="Redo", command=redo_text, accelerator="Ctrl+Y")
+            edit_menu.add_separator()
+            edit_menu.add_command(label="Cut", command=cut_text, accelerator="Ctrl+X")
+            edit_menu.add_command(label="Copy", command=copy_text, accelerator="Ctrl+C")
+            edit_menu.add_command(label="Paste", command=paste_text, accelerator="Ctrl+V")
+            edit_menu.add_separator()
+            edit_menu.add_command(label="Select All", command=select_all, accelerator="Ctrl+A")
+            edit_menu.add_separator()
             edit_menu.add_command(label="Clear Editor", command=clear_editor)
             edit_menu.add_command(label="Clear Output", command=clear_output)
 
@@ -337,9 +408,14 @@ Examples:
                     # Keep turtle canvas wired before execution
                     interpreter.ide_turtle_canvas = turtle_canvas
 
-                    # If Logo is selected, clear the canvas to avoid stale drawings
-                    if selected_language == "logo" and turtle_canvas is not None:
-                        turtle_canvas.delete("all")
+                    # If Logo is selected, fully reset turtle state and canvas before run
+                    if selected_language == "logo":
+                        if turtle_canvas is not None:
+                            turtle_canvas.delete("all")
+                        # Reinitialize turtle graphics to ensure a fresh origin and pen state
+                        interpreter.turtle_graphics = None
+                        interpreter.init_turtle_graphics()
+                        interpreter.clear_turtle_screen()
 
                     interpreter.run_program(code, language=selected_language)
                     output_text.insert(tk.END, "\n✅ Program completed.\n")
@@ -361,7 +437,27 @@ Examples:
                         content = f.read()
                     editor_text.delete("1.0", tk.END)
                     editor_text.insert("1.0", content)
-                    output_text.insert(tk.END, f"📚 Loaded example: {filepath}\n")
+                    
+                    # Auto-detect language from file extension
+                    ext_to_lang = {
+                        '.pilot': 'PILOT',
+                        '.bas': 'BASIC',
+                        '.logo': 'Logo',
+                        '.py': 'Python',
+                        '.js': 'JavaScript',
+                        '.pl': 'Perl',
+                        '.pas': 'Pascal',
+                        '.fth': 'Forth',
+                        '.4th': 'Forth',
+                        '.pro': 'Prolog'
+                    }
+                    import os
+                    _, ext = os.path.splitext(filepath)
+                    if ext.lower() in ext_to_lang:
+                        language_var.set(ext_to_lang[ext.lower()])
+                        output_text.insert(tk.END, f"📚 Loaded example: {filepath} ({ext_to_lang[ext.lower()]})\n")
+                    else:
+                        output_text.insert(tk.END, f"📚 Loaded example: {filepath}\n")
                 except Exception as e:
                     messagebox.showerror("Error", f"Failed to load example:\n{e}")
 
@@ -369,40 +465,76 @@ Examples:
             pilot_menu = tk.Menu(examples_menu, tearoff=0)
             examples_menu.add_cascade(label="PILOT", menu=pilot_menu)
             pilot_menu.add_command(
-                label="Hello World",
-                command=lambda: load_example("examples/pilot/hello_world.pilot"),
-            )
-            pilot_menu.add_command(
-                label="Math Quiz",
-                command=lambda: load_example("examples/pilot_math_quiz.pilot"),
+                label="Quiz Demo",
+                command=lambda: load_example("examples/quiz_pilot.pilot"),
             )
 
             # BASIC examples submenu
             basic_menu = tk.Menu(examples_menu, tearoff=0)
             examples_menu.add_cascade(label="BASIC", menu=basic_menu)
             basic_menu.add_command(
-                label="Hello World",
-                command=lambda: load_example("examples/basic/hello.bas"),
+                label="Hello World + Turtle Graphics",
+                command=lambda: load_example("examples/hello_basic.bas"),
             )
             basic_menu.add_command(
-                label="Arrays",
-                command=lambda: load_example("examples/basic/arrays.bas"),
-            )
-            basic_menu.add_command(
-                label="Functions",
-                command=lambda: load_example("examples/basic/functions.bas"),
+                label="Index Menu",
+                command=lambda: load_example("examples/INDEX.bas"),
             )
 
             # Logo examples submenu
             logo_menu = tk.Menu(examples_menu, tearoff=0)
             examples_menu.add_cascade(label="Logo", menu=logo_menu)
             logo_menu.add_command(
-                label="Square",
-                command=lambda: load_example("examples/logo/square.logo"),
+                label="Colorful Spiral",
+                command=lambda: load_example("examples/spiral_logo.logo"),
             )
-            logo_menu.add_command(
-                label="Spiral",
-                command=lambda: load_example("examples/logo/spiral.logo"),
+            
+            # Pascal examples submenu
+            pascal_menu = tk.Menu(examples_menu, tearoff=0)
+            examples_menu.add_cascade(label="Pascal", menu=pascal_menu)
+            pascal_menu.add_command(
+                label="Hello World + Functions",
+                command=lambda: load_example("examples/hello_pascal.pas"),
+            )
+            
+            # Prolog examples submenu
+            prolog_menu = tk.Menu(examples_menu, tearoff=0)
+            examples_menu.add_cascade(label="Prolog", menu=prolog_menu)
+            prolog_menu.add_command(
+                label="Facts & Rules",
+                command=lambda: load_example("examples/facts_prolog.pl"),
+            )
+            
+            # Forth examples submenu
+            forth_menu = tk.Menu(examples_menu, tearoff=0)
+            examples_menu.add_cascade(label="Forth", menu=forth_menu)
+            forth_menu.add_command(
+                label="Stack Operations",
+                command=lambda: load_example("examples/stack_forth.fth"),
+            )
+            
+            # Perl examples submenu
+            perl_menu = tk.Menu(examples_menu, tearoff=0)
+            examples_menu.add_cascade(label="Perl", menu=perl_menu)
+            perl_menu.add_command(
+                label="Patterns & Text Processing",
+                command=lambda: load_example("examples/patterns_perl.pl"),
+            )
+            
+            # Python examples submenu
+            python_menu = tk.Menu(examples_menu, tearoff=0)
+            examples_menu.add_cascade(label="Python", menu=python_menu)
+            python_menu.add_command(
+                label="Modern Python Features",
+                command=lambda: load_example("examples/modern_python.py"),
+            )
+            
+            # JavaScript examples submenu
+            js_menu = tk.Menu(examples_menu, tearoff=0)
+            examples_menu.add_cascade(label="JavaScript", menu=js_menu)
+            js_menu.add_command(
+                label="Modern JavaScript (ES6+)",
+                command=lambda: load_example("examples/interactive_javascript.js"),
             )
 
             # View menu
@@ -500,6 +632,12 @@ Keyboard Shortcuts:
 • Ctrl+O - Open File
 • Ctrl+S - Save File
 • Ctrl+Q - Exit
+• Ctrl+Z - Undo
+• Ctrl+Y - Redo
+• Ctrl+X - Cut
+• Ctrl+C - Copy
+• Ctrl+V - Paste
+• Ctrl+A - Select All
 
 Supported Languages:
 • PILOT - Educational (T:, A:, J:, Y:, N:)
@@ -526,6 +664,11 @@ For more information, visit the Examples menu!"""
             root.bind("<Control-s>", lambda e: save_file())
             root.bind("<Control-q>", lambda e: exit_app())
             root.bind("<F1>", lambda e: show_help())
+            
+            # Edit operation bindings
+            root.bind("<Control-z>", lambda e: undo_text())
+            root.bind("<Control-y>", lambda e: redo_text())
+            root.bind("<Control-a>", lambda e: select_all())
 
             # Create GUI layout with PanedWindow for resizable sections
             main_paned = tk.PanedWindow(root, orient=tk.HORIZONTAL, sashwidth=5)
@@ -563,9 +706,9 @@ For more information, visit the Examples menu!"""
             editor_frame = tk.LabelFrame(left_panel, text="Code Editor", padx=5, pady=5)
             editor_frame.pack(fill=tk.BOTH, expand=True)
 
-            # Editor text widget
+            # Editor text widget with undo/redo enabled
             editor_text = scrolledtext.ScrolledText(
-                editor_frame, wrap=tk.WORD, font=("Courier", 11)
+                editor_frame, wrap=tk.WORD, font=("Courier", 11), undo=True, maxundo=-1
             )
             editor_text.pack(fill=tk.BOTH, expand=True)
 
