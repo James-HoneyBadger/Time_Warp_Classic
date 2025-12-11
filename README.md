@@ -1,6 +1,7 @@
 # Time Warp Classic
 
 > **A Multi-Language Programming Environment for Vintage and Modern Languages**
+> **Geared to get back to the basics of Time Warp.**
 
 Time_Warp Classic is a sophisticated educational IDE that bridges the past and present of programming, supporting 9 programming languages through an elegant graphical interface with integrated turtle graphics, inspired by the golden age of computing.
 
