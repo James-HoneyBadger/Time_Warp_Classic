@@ -318,12 +318,13 @@ Examples:
                 if messagebox.askyesno("Exit", "Are you sure you want to exit?"):
                     root.quit()
 
-            file_menu.add_command(label="New", command=new_file, accelerator="Ctrl+N")
+            file_menu.add_command(label="New File", command=new_file, accelerator="Ctrl+N")
             file_menu.add_command(
-                label="Open...", command=load_file, accelerator="Ctrl+O"
+                label="Open File...", command=load_file, accelerator="Ctrl+O"
             )
+            file_menu.add_separator()
             file_menu.add_command(
-                label="Save...", command=save_file, accelerator="Ctrl+S"
+                label="Save File...", command=save_file, accelerator="Ctrl+S"
             )
             file_menu.add_separator()
             file_menu.add_command(label="Exit", command=exit_app, accelerator="Ctrl+Q")
@@ -415,9 +416,16 @@ Examples:
                 except Exception as e:
                     output_text.insert(tk.END, f"\n❌ Error: {e}\n")
 
-            # Examples menu
-            examples_menu = tk.Menu(menubar, tearoff=0)
-            menubar.add_cascade(label="Examples", menu=examples_menu)
+            # Program menu
+            program_menu = tk.Menu(menubar, tearoff=0)
+            menubar.add_cascade(label="Program", menu=program_menu)
+
+            program_menu.add_command(label="Run Program", command=run_code, accelerator="F5")
+            program_menu.add_separator()
+
+            # Examples submenu under Program
+            examples_menu = tk.Menu(program_menu, tearoff=0)
+            program_menu.add_cascade(label="Load Example", menu=examples_menu)
 
             def load_example(filepath):
                 """Load an example program."""
@@ -549,16 +557,22 @@ Examples:
                 else:
                     right_paned.add(graphics_frame)
 
-            view_menu.add_command(label="Clear Canvas", command=clear_canvas)
-            view_menu.add_separator()
-            view_menu.add_checkbutton(label="Show Output Panel", command=toggle_output)
+            view_menu.add_checkbutton(label="Output Panel", command=toggle_output)
             view_menu.add_checkbutton(
-                label="Show Graphics Panel", command=toggle_graphics
+                label="Graphics Panel", command=toggle_graphics
             )
+            view_menu.add_separator()
+            view_menu.add_command(label="Clear Canvas", command=clear_canvas)
+            view_menu.add_command(label="Clear Output", command=clear_output)
+            view_menu.add_command(label="Clear Editor", command=clear_editor)
 
-            # Theme menu
-            theme_menu = tk.Menu(menubar, tearoff=0)
-            menubar.add_cascade(label="Theme", menu=theme_menu)
+            # Preferences menu
+            preferences_menu = tk.Menu(menubar, tearoff=0)
+            menubar.add_cascade(label="Preferences", menu=preferences_menu)
+
+            # Theme submenu
+            theme_menu = tk.Menu(preferences_menu, tearoff=0)
+            preferences_menu.add_cascade(label="Color Theme", menu=theme_menu)
 
             def set_theme_light():
                 """Set light theme."""
@@ -575,13 +589,13 @@ Examples:
                 output_text.config(bg="#f0f0f0", fg="black")
                 editor_text.config(bg="white", fg="black")
 
-            theme_menu.add_command(label="Light", command=set_theme_light)
-            theme_menu.add_command(label="Dark", command=set_theme_dark)
-            theme_menu.add_command(label="Classic", command=set_theme_classic)
+            theme_menu.add_command(label="Light Theme", command=set_theme_light)
+            theme_menu.add_command(label="Dark Theme", command=set_theme_dark)
+            theme_menu.add_command(label="Classic Theme", command=set_theme_classic)
 
-            # Font menu
-            font_menu = tk.Menu(menubar, tearoff=0)
-            menubar.add_cascade(label="Font", menu=font_menu)
+            # Font submenu
+            font_menu = tk.Menu(preferences_menu, tearoff=0)
+            preferences_menu.add_cascade(label="Font Size", menu=font_menu)
 
             def set_font_small():
                 """Set small font size."""
@@ -603,10 +617,10 @@ Examples:
                 editor_text.config(font=("Courier", 16))
                 output_text.config(font=("Courier", 15))
 
-            font_menu.add_command(label="Small", command=set_font_small)
-            font_menu.add_command(label="Medium", command=set_font_medium)
-            font_menu.add_command(label="Large", command=set_font_large)
-            font_menu.add_command(label="Extra Large", command=set_font_xlarge)
+            font_menu.add_command(label="Small (9pt)", command=set_font_small)
+            font_menu.add_command(label="Medium (11pt)", command=set_font_medium)
+            font_menu.add_command(label="Large (14pt)", command=set_font_large)
+            font_menu.add_command(label="Extra Large (16pt)", command=set_font_xlarge)
 
             # Help menu
             help_menu = tk.Menu(menubar, tearoff=0)
@@ -616,54 +630,101 @@ Examples:
                 """Show about dialog."""
                 messagebox.showinfo(
                     "About Time_Warp IDE",
-                    "Time_Warp IDE v1.3.0\n\n"
-                    "Multi-Language Programming Environment\n\n"
+                    "Time_Warp IDE\n"
+                    "Version 1.3.0\n\n"
+                    "A Multi-Language Programming Environment\n"
+                    "for Vintage and Modern Languages\n\n"
+                    "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n\n"
                     "Supported Languages:\n"
-                    "• PILOT • BASIC • Logo\n"
-                    "• Pascal • Prolog • Forth\n"
-                    "• Perl • Python • JavaScript\n\n"
-                    "© 2025 Time_Warp Project",
+                    "  PILOT  •  BASIC  •  Logo\n"
+                    "  Pascal  •  Prolog  •  Forth\n"
+                    "  Perl  •  Python  •  JavaScript\n\n"
+                    "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n\n"
+                    "© 2025 Time_Warp Project\n"
+                    "Educational Software",
                 )
 
             def show_help():
                 """Show help information."""
-                help_text = """Time_Warp IDE Help
+                help_text = """━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+    Time_Warp IDE - Getting Started
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
-Getting Started:
-1. Write your code in the left editor panel
-2. Click Run (or press F5) to execute
-3. View output in the right panel
+QUICK START:
+  1. Select your programming language
+  2. Write code in the editor panel
+  3. Press F5 or use Program → Run
+  4. View output and graphics
 
-Keyboard Shortcuts:
-• F5 - Run Program
-• Ctrl+N - New File
-• Ctrl+O - Open File
-• Ctrl+S - Save File
-• Ctrl+Q - Exit
-• Ctrl+Z - Undo
-• Ctrl+Y - Redo
-• Ctrl+X - Cut
-• Ctrl+C - Copy
-• Ctrl+V - Paste
-• Ctrl+A - Select All
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
-Supported Languages:
-• PILOT - Educational (T:, A:, J:, Y:, N:)
-• BASIC - Line-numbered programming
-• Logo - Turtle graphics
-• Pascal - Structured programming
-• Prolog - Logic programming
-• Forth - Stack-based programming
-• Perl - Scripting language
-• Python - Modern programming
-• JavaScript - Web scripting
+KEYBOARD SHORTCUTS:
+  F5             Run Program
+  F1             Show Help
+  
+  Ctrl+N         New File
+  Ctrl+O         Open File
+  Ctrl+S         Save File
+  Ctrl+Q         Exit
+  
+  Ctrl+Z         Undo
+  Ctrl+Y         Redo
+  Ctrl+X         Cut
+  Ctrl+C         Copy
+  Ctrl+V         Paste
+  Ctrl+A         Select All
 
-For more information, visit the Examples menu!"""
-                messagebox.showinfo("Time_Warp IDE Help", help_text)
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
-            help_menu.add_command(label="Help", command=show_help, accelerator="F1")
+SUPPORTED LANGUAGES:
+  PILOT      Educational language with
+             interactive prompts
+  
+  BASIC      Classic line-numbered
+             programming with graphics
+  
+  Logo       Turtle graphics for
+             creative visual programs
+  
+  Pascal     Structured programming
+             with strong typing
+  
+  Prolog     Logic programming with
+             facts and rules
+  
+  Forth      Stack-based language
+             with RPN notation
+  
+  Perl       Text processing and
+             pattern matching
+  
+  Python     Modern, general-purpose
+             programming
+  
+  JavaScript Modern web scripting
+             with ES6+ features
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+MENU GUIDE:
+  File         Create, open, save files
+  Edit         Standard text operations
+  Program      Run code & load examples
+  View         Toggle panels, clear displays
+  Preferences  Customize theme & fonts
+  Help         Documentation & about
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+For example programs, visit:
+  Program → Load Example
+
+Enjoy programming through the ages!"""
+                messagebox.showinfo("Getting Started - Time_Warp IDE", help_text)
+
+            help_menu.add_command(label="Getting Started", command=show_help, accelerator="F1")
             help_menu.add_separator()
-            help_menu.add_command(label="About", command=show_about)
+            help_menu.add_command(label="About Time_Warp IDE", command=show_about)
 
             # Keyboard bindings
             root.bind("<F5>", lambda e: run_code())
