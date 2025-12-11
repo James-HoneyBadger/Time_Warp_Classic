@@ -1,6 +1,7 @@
 #!/bin/bash
-# Time Warp - Run with Virtual Environment
-# This script activates the virtual environment and runs Time_Warp
+# Time Warp Classic - Run with Virtual Environment
+# This script activates the virtual environment and runs Time Warp Classic
+# Copyright © 2025 Honey Badger Universe
 
 cd "$(dirname "$0")"
 
@@ -14,5 +15,5 @@ fi
 # Activate virtual environment
 source venv/bin/activate
 
-# Run Time_Warp
+# Run Time Warp Classic
 python Time_Warp.py "$@"

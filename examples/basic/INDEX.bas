@@ -40,8 +40,8 @@
 400 PRINT "To load an example:"
 410 PRINT "  File → Open → examples → [choose file]"
 420 PRINT ""
-430 PRINT "Or use CLI:"
-440 PRINT "  python scripts/timewarp-cli.py run examples/[file]"
+430 PRINT "Or use Program menu:"
+440 PRINT "  Program → Load Example → [choose language]"
 450 PRINT ""
 460 PRINT "See examples/README.md for full documentation"
 470 END

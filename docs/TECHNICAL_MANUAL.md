@@ -87,7 +87,7 @@ Time_Warp_Classic/
 │       └── __init__.py
 ├── examples/                    # Organized by language
 ├── docs/                       # Documentation
-└── scripts/                    # CLI and utilities
+└── scripts/                    # Launcher utilities
 ```
 
 ---
@@ -153,7 +153,7 @@ class Time_WarpInterpreter:
         """Send text to output display"""
         
     def get_input(self, prompt: str = "") -> str:
-        """Get input from user (GUI or CLI)"""
+        """Get input from user via GUI"""
         
     def evaluate_expression(self, expr: str) -> float:
         """Evaluate mathematical expressions safely"""

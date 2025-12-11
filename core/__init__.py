@@ -1,8 +1,10 @@
 """
-Time_Warp Core Module
-=====================
+Time Warp Classic Core Module
+==============================
 
-Core functionality for the Time_Warp IDE, providing the main interpreter engine
+Copyright © 2025 Honey Badger Universe. All rights reserved.
+
+Core functionality for Time Warp Classic, providing the main interpreter engine
 and language execution capabilities.
 
 This module serves as the central hub for:
@@ -31,7 +33,7 @@ Usage:
 """
 
 __version__ = "1.3.0"
-__author__ = "Time_Warp Development Team"
+__author__ = "Honey Badger Universe"
 
 from .interpreter import Time_WarpInterpreter
 from . import languages

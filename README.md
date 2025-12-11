@@ -269,9 +269,10 @@ Time_Warp_Classic/
 │   ├── LANGUAGE_REFERENCE.md # All language syntax
 │   └── ... (see docs/README.md for full list)
 │
-└── scripts/                # Utility scripts
-    ├── timewarp-cli.py     # Command-line interface
-    └── launch.py           # Alternative launcher
+└── scripts/                # Launcher scripts
+    ├── launch.py           # Python launcher
+    ├── launch_Time_Warp.sh # Shell launcher
+    └── start.sh            # Simple launcher
 ```
 
 ---

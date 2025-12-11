@@ -1,7 +1,9 @@
 #!/usr/bin/env python3
 """
-Time_Warp IDE Python Launcher
-Alternative launcher that can be run directly with Python
+Time Warp Classic Launcher
+Simple launcher script for Time Warp Classic
+
+Copyright © 2025 Honey Badger Universe
 """
 
 import os
@@ -10,42 +12,30 @@ import subprocess
 
 
 def main():
-    """Launch Time_Warp IDE"""
-    print("🚀 Time_Warp IDE 1.1 Python Launcher")
+    """Launch Time Warp Classic GUI"""
+    print("🚀 Time Warp Classic Launcher")
     print("=" * 50)
 
     # Get the directory where this launcher is located
     launcher_dir = os.path.dirname(os.path.abspath(__file__))
-
-    # Path to the main Time_Warp application
-    timewarp_path = os.path.join(launcher_dir, "Time_Warp.py")
-
-    if not os.path.exists(timewarp_path):
-        print(f"❌ Time_Warp.py not found at: {timewarp_path}")
-        print("Please make sure you're running this from the Time_Warp directory")
-        return 1
-
-    print(f"📁 Time_Warp directory: {launcher_dir}")
-    print(f"🐍 Python version: {sys.version}")
-    print(f"▶️ Launching: {timewarp_path}")
-    print()
-
+    # Go up one level to the project root
+    project_root = os.path.dirname(launcher_dir)
+    
+    # Path to main Time_Warp.py
+    main_script = os.path.join(project_root, "Time_Warp.py")
+    
+    if not os.path.exists(main_script):
+        print(f"❌ Error: Cannot find Time_Warp.py at {main_script}")
+        sys.exit(1)
+    
+    # Launch the GUI
     try:
-        # Launch Time_Warp IDE
-        result = subprocess.run(
-            [sys.executable, timewarp_path], cwd=launcher_dir, check=False
-        )
-        print("\n👋 Time_Warp IDE session ended.")
-        return result.returncode
-
-    except KeyboardInterrupt:
-        print("\n⚡ Launch interrupted by user")
-        return 130
-    except (OSError, subprocess.SubprocessError) as e:
-        print(f"\n💥 Launch error: {e}")
-        return 1
+        os.chdir(project_root)
+        subprocess.run([sys.executable, "Time_Warp.py"])
+    except Exception as e:
+        print(f"❌ Failed to launch Time Warp Classic: {e}")
+        sys.exit(1)
 
 
 if __name__ == "__main__":
-    exit_code = main()
-    sys.exit(exit_code)
+    main()
