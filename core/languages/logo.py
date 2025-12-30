@@ -2095,7 +2095,7 @@ class TwLogoExecutor:
                         for item in lst:
                             self.interpreter.variables[var_name] = item
                             self.interpreter.debug_output(f"FOREACH: {var_name} = {item}")
-                            
+
                             # Execute the block for each item if provided
                             if block_commands:
                                 # Parse and execute block commands

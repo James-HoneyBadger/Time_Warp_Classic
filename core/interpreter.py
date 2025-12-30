@@ -100,7 +100,7 @@ except ImportError:
         def get_performance_stats(self):
             return {}
 
-    OptimizedInterpreterMixin = _OptimizedInterpreterMixin
+    OptimizedInterpreterMixin: type = _OptimizedInterpreterMixin
 
     def optimize_for_production():
         return {}
@@ -136,7 +136,7 @@ try:
         """Arduino support not available - stub for future implementation"""
         def __init__(self, *args, **kwargs):
             raise NotImplementedError("Arduino support not available in this version")
-    
+
     class AdvancedRobotInterface:  # type: ignore[no-redef]
         """Advanced robotics not available - stub for future implementation"""
         def __init__(self, *args, **kwargs):
@@ -263,6 +263,18 @@ except ImportError:
         def __init__(self, *args, **kwargs):
             super().__init__()
 
+        def add_player(self, *args):
+            raise NotImplementedError("Multiplayer mode not available in this version")
+
+        def remove_player(self, *args):
+            raise NotImplementedError("Multiplayer mode not available in this version")
+
+        def start_multiplayer_game(self):
+            raise NotImplementedError("Multiplayer mode not available in this version")
+
+        def end_multiplayer_game(self, *args):
+            raise NotImplementedError("Multiplayer mode not available in this version")
+
     class CollaborationManager:  # type: ignore[no-redef]
         def __init__(self):
             self.network_manager = _NetworkManager()
@@ -272,16 +284,16 @@ except ImportError:
             self.is_server = False
             self.is_client = False
             self.running = False
-        
+
         def start_server(self, *args):
             raise NotImplementedError("Networking features not available in this version")
-        
+
         def connect_to_server(self, *args):
             raise NotImplementedError("Networking features not available in this version")
-        
+
         def send_message(self, *args):
             raise NotImplementedError("Networking features not available in this version")
-        
+
         def disconnect(self, *args):
             raise NotImplementedError("Networking features not available in this version")
 
@@ -628,14 +640,14 @@ class Time_WarpInterpreter:  # pylint: disable=too-many-public-methods
         self.last_ms = None
 
         # Hardware integration (simulation mode)
-        self.arduino = ArduinoController() if ArduinoController else None
-        self.rpi = RPiController() if RPiController else None
-        self.robot = RobotInterface() if RobotInterface else None
-        self.controller = GameController() if GameController else None
+        self.arduino = ArduinoController() if isinstance(ArduinoController, type) else None
+        self.rpi = RPiController() if isinstance(RPiController, type) else None
+        self.robot = RobotInterface() if isinstance(RobotInterface, type) else None
+        self.controller = GameController() if isinstance(GameController, type) else None
         self.sensor_viz = None  # Initialized with turtle graphics
 
         # IoT and robotics systems (simulation mode)
-        self.iot_manager = IoTDeviceManager() if IoTDeviceManager else None
+        self.iot_manager = IoTDeviceManager() if isinstance(IoTDeviceManager, type) else None
         self.iot_devices = self.iot_manager
         if self.iot_devices:
             self.iot_devices.simulation_mode = True
@@ -649,7 +661,7 @@ class Time_WarpInterpreter:  # pylint: disable=too-many-public-methods
             self.sensor_network.simulation_mode = True
 
         self.advanced_robot = (
-            AdvancedRobotInterface() if AdvancedRobotInterface else None
+            AdvancedRobotInterface() if isinstance(AdvancedRobotInterface, type) else None
         )
         if self.advanced_robot:
             self.advanced_robot.simulation_mode = True
@@ -1094,7 +1106,7 @@ class Time_WarpInterpreter:  # pylint: disable=too-many-public-methods
             formatted_error = f"❌ ERROR (Line {line_num}): {error_msg}"
         else:
             formatted_error = f"❌ ERROR: {error_msg}"
-        
+
         # Add error to error history for debugging
         if not hasattr(self, 'error_history'):
             self.error_history = []
@@ -1103,7 +1115,7 @@ class Time_WarpInterpreter:  # pylint: disable=too-many-public-methods
             'line': line_num,
             'timestamp': self.get_current_time() if hasattr(self, 'get_current_time') else None
         })
-        
+
         self.log_output(formatted_error)
 
     def debug_output(self, text):
@@ -1192,7 +1204,7 @@ class Time_WarpInterpreter:  # pylint: disable=too-many-public-methods
         """Safely evaluate mathematical expressions with variables"""
         # Use optimized evaluation if available and enabled
         if (hasattr(self, 'optimized_evaluate_expression') and
-            hasattr(self, 'enable_caching') and self.enable_caching):
+                hasattr(self, 'enable_caching') and self.enable_caching):
             return self.optimized_evaluate_expression(expr)
 
         # Call original implementation
@@ -1808,7 +1820,7 @@ class Time_WarpInterpreter:  # pylint: disable=too-many-public-methods
                 return "error"
 
             return "continue"
-            
+
         except Exception as e:
             error_msg = f"Execution error in line {line_num or self.current_line}: {str(e)}"
             self.log_error(error_msg, line_num)

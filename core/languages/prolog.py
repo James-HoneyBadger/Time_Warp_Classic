@@ -643,7 +643,7 @@ class TwPrologExecutor:
                 # Fallback to simulating input
                 self.interpreter.log_output("💬 readln/1: No input available (simulated)")
                 user_input = "simulated_input"
-            
+
             # Unify with the variable
             if var_name.startswith(':'):
                 var_name = var_name[1:]
@@ -664,7 +664,7 @@ class TwPrologExecutor:
             else:
                 self.interpreter.log_output("💬 readchar/1: No input available (simulated)")
                 user_input = "A"
-            
+
             if var_name.startswith(':'):
                 var_name = var_name[1:]
             new_bindings = self._unify(var_name, user_input, bindings.copy())
@@ -684,7 +684,7 @@ class TwPrologExecutor:
             else:
                 self.interpreter.log_output("💬 readint/1: No input available (simulated)")
                 value = 42
-            
+
             if var_name.startswith(':'):
                 var_name = var_name[1:]
             new_bindings = self._unify(var_name, value, bindings.copy())
@@ -704,7 +704,7 @@ class TwPrologExecutor:
             else:
                 self.interpreter.log_output("💬 readreal/1: No input available (simulated)")
                 value = 3.14
-            
+
             if var_name.startswith(':'):
                 var_name = var_name[1:]
             new_bindings = self._unify(var_name, value, bindings.copy())
@@ -729,12 +729,12 @@ class TwPrologExecutor:
         """Prove retract/1 predicate - remove fact from database"""
         try:
             fact_str = goal[8:-1].strip()  # Remove retract(
-            
+
             # Find and remove matching facts
             found = False
             facts_to_remove = []
-            
-            for fact in self.facts:
+
+            for fact in self.database:
                 # Simple pattern matching
                 if fact.startswith(fact_str.split('(')[0]):
                     # Try to unify to check if it matches
@@ -743,11 +743,11 @@ class TwPrologExecutor:
                         facts_to_remove.append(fact)
                         found = True
                         break  # retract only removes first match
-            
+
             # Remove the matched fact
             for fact in facts_to_remove:
-                self.facts.remove(fact)
-            
+                self.database.remove(fact)
+
             if found:
                 self.interpreter.log_output(f"🔄 Retracted: {fact_str}")
                 return [bindings]
@@ -759,19 +759,19 @@ class TwPrologExecutor:
         """Prove consult/1 predicate - load file"""
         try:
             filename = goal[8:-1].strip().strip('"').strip("'")
-            
+
             # Try to load and parse the file
             try:
                 with open(filename, 'r', encoding='utf-8') as f:
                     content = f.read()
-                
+
                 # Parse facts from file
                 for line in content.split('\n'):
                     line = line.strip()
                     if line and not line.startswith('%'):  # Skip comments
                         if line.endswith('.'):
                             self._handle_fact(line[:-1])  # Remove trailing period
-                
+
                 self.interpreter.log_output(f"📂 Consulted file: {filename}")
                 return [bindings]
             except FileNotFoundError:

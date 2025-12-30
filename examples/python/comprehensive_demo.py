@@ -82,15 +82,15 @@ print()
 # --- TUPLES ---
 print("=== TUPLES ===")
 coordinates = (10, 20, 30)
-print(f"Tuple: {coordinates}")
+print("Tuple: " + str(coordinates))
 print(f"First element: {coordinates[0]}")
 print(f"Length: {len(coordinates)}")
-print(f"Is immutable (cannot modify)")
+print("Is immutable (cannot modify)")
 print()
 
 # --- SETS ---
 print("=== SETS ===")
-colors = {"red", "green", "blue", "red"}
+colors = {"red", "green", "blue"}
 print(f"Set (duplicates removed): {colors}")
 print(f"'red' in set: {'red' in colors}")
 colors.add("yellow")
@@ -144,6 +144,7 @@ print()
 # --- FUNCTIONS ---
 print("=== FUNCTIONS ===")
 
+
 def greet(name):
     """Simple greeting function"""
     return f"Hello, {name}!"
@@ -165,10 +166,12 @@ print()
 
 # --- LAMBDA FUNCTIONS ---
 print("=== LAMBDA FUNCTIONS ===")
-square = lambda x: x ** 2
-add = lambda x, y: x + y
-print(f"Square of 5: {square(5)}")
-print(f"Add 3 + 7: {add(3, 7)}")
+def square_val(x):
+    return x ** 2
+def add_vals(x, y):
+    return x + y
+print(f"Square of 5: {square_val(5)}")
+print(f"Add 3 + 7: {add_vals(3, 7)}")
 print()
 
 # --- LIST COMPREHENSION ---
@@ -215,12 +218,12 @@ print()
 # --- COMPARISON OPERATORS ---
 print("=== COMPARISON OPERATORS ===")
 x = 5
-if x > 3: print("5 > 3: True")
-if x == 5: print("5 == 5: True")
-if x < 10: print("5 < 10: True")
-if x >= 5: print("5 >= 5: True")
-if x <= 10: print("5 <= 10: True")
-if x != 3: print("5 != 3: True")
+print(f"5 > 3: {x > 3}")
+print(f"5 == 5: {x == 5}")
+print(f"5 < 10: {x < 10}")
+print(f"5 >= 5: {x >= 5}")
+print(f"5 <= 10: {x <= 10}")
+print(f"5 != 3: {x != 3}")
 print()
 
 # --- LOGICAL OPERATORS ---
@@ -229,7 +232,7 @@ if 5 > 3 and 10 > 5:
     print("AND: True")
 if 5 > 3 or 10 < 5:
     print("OR: True")
-if not (5 < 3):
+if 5 >= 3:
     print("NOT: True")
 print()
 
