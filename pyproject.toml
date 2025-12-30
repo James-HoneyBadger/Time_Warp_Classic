@@ -9,7 +9,16 @@ description = "Multi-language interpreter with turtle graphics support"
 requires-python = ">=3.9"
 dependencies = [
     "pygame>=2.0.0",
-    "Pillow>=8.0.0"
+    "Pillow>=8.0.0",
+    "pygments>=2.10.0"
+]
+
+[project.optional-dependencies]
+test = [
+    "pytest>=7.0.0",
+    "pytest-cov>=4.0.0",
+    "pytest-mock>=3.10.0",
+    "pytest-xdist>=3.0.0"
 ]
 
 [tool.black]
@@ -90,3 +99,25 @@ module = [
     "pygments.formatters",
 ]
 ignore_errors = true
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+python_files = ["test_*.py", "*_test.py"]
+python_classes = ["Test*"]
+python_functions = ["test_*"]
+addopts = [
+    "--verbose",
+    "--tb=short",
+    "--strict-markers",
+    "--disable-warnings",
+    "--cov=.",
+    "--cov-report=term-missing",
+    "--cov-report=html:htmlcov",
+    "--cov-fail-under=80"
+]
+markers = [
+    "unit: Unit tests",
+    "integration: Integration tests",
+    "slow: Slow running tests",
+    "language: Language-specific tests"
+]

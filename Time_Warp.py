@@ -34,6 +34,22 @@ def main():
             import tkinter as tk
             from tkinter import scrolledtext, messagebox, filedialog
             from core.interpreter import Time_WarpInterpreter
+            from core.features.syntax_highlighting import SyntaxHighlightingText, LineNumberedText
+
+            # Import GUI optimizer
+            try:
+                from core.optimizations.gui_optimizer import initialize_gui_optimizer
+                GUI_OPTIMIZATIONS_AVAILABLE = True
+            except ImportError:
+                GUI_OPTIMIZATIONS_AVAILABLE = False
+                initialize_gui_optimizer = None
+
+            # Check if pygments is available
+            try:
+                import pygments
+                PYGMENTS_AVAILABLE = True
+            except ImportError:
+                PYGMENTS_AVAILABLE = False
 
             # Settings file for persistence
             SETTINGS_FILE = Path.home() / ".timewarp_settings.json"
@@ -67,6 +83,14 @@ def main():
             root.title("Time Warp Classic - Multi-Language Programming Environment")
             root.geometry("1200x800")
             root.config(bg="#252526")
+
+            # Initialize GUI optimizer for performance improvements
+            if GUI_OPTIMIZATIONS_AVAILABLE and initialize_gui_optimizer:
+                gui_optimizer = initialize_gui_optimizer(root)
+                print("🚀 GUI optimizations enabled")
+            else:
+                gui_optimizer = None
+                print("ℹ️  GUI optimizations not available")
 
             # Create menu bar
             menubar = tk.Menu(root)
@@ -249,6 +273,170 @@ def main():
             edit_menu.add_command(label="Paste", command=paste_text, accelerator="Ctrl+V")
             edit_menu.add_separator()
             edit_menu.add_command(label="Select All", command=select_all, accelerator="Ctrl+A")
+            edit_menu.add_separator()
+
+            def find_text():
+                """Open find dialog."""
+                find_dialog = tk.Toplevel(root)
+                find_dialog.title("Find")
+                find_dialog.geometry("400x150")
+                find_dialog.resizable(False, False)
+                
+                # Center the dialog
+                find_dialog.transient(root)
+                find_dialog.grab_set()
+                
+                # Search term
+                tk.Label(find_dialog, text="Find:").grid(row=0, column=0, padx=5, pady=5, sticky="e")
+                search_var = tk.StringVar()
+                search_entry = tk.Entry(find_dialog, textvariable=search_var, width=30)
+                search_entry.grid(row=0, column=1, padx=5, pady=5)
+                search_entry.focus()
+                
+                # Options
+                options_frame = tk.Frame(find_dialog)
+                options_frame.grid(row=1, column=0, columnspan=2, pady=5)
+                
+                case_var = tk.BooleanVar()
+                whole_var = tk.BooleanVar()
+                regex_var = tk.BooleanVar()
+                
+                tk.Checkbutton(options_frame, text="Case sensitive", variable=case_var).pack(side=tk.LEFT, padx=5)
+                tk.Checkbutton(options_frame, text="Whole word", variable=whole_var).pack(side=tk.LEFT, padx=5)
+                tk.Checkbutton(options_frame, text="Regex", variable=regex_var).pack(side=tk.LEFT, padx=5)
+                
+                # Buttons
+                button_frame = tk.Frame(find_dialog)
+                button_frame.grid(row=2, column=0, columnspan=2, pady=10)
+                
+                def do_find():
+                    search_term = search_var.get()
+                    if search_term:
+                        editor_text.clear_search_highlights()
+                        match = editor_text.find_text(
+                            search_term, 
+                            start_pos=editor_text.index(tk.INSERT),
+                            case_sensitive=case_var.get(),
+                            whole_word=whole_var.get(),
+                            regex=regex_var.get()
+                        )
+                        if match:
+                            start_idx, end_idx = match
+                            editor_text.tag_remove("sel", "1.0", tk.END)
+                            editor_text.tag_add("sel", start_idx, end_idx)
+                            editor_text.mark_set(tk.INSERT, end_idx)
+                            editor_text.see(start_idx)
+                            editor_text.highlight_search_results(
+                                search_term,
+                                case_sensitive=case_var.get(),
+                                whole_word=whole_var.get(),
+                                regex=regex_var.get()
+                            )
+                            output_text.insert(tk.END, f"Found '{search_term}' at {start_idx}\n")
+                        else:
+                            output_text.insert(tk.END, f"'{search_term}' not found\n")
+                
+                def find_next():
+                    current_pos = editor_text.index(tk.INSERT)
+                    do_find()
+                
+                tk.Button(button_frame, text="Find", command=do_find, width=10).pack(side=tk.LEFT, padx=5)
+                tk.Button(button_frame, text="Find Next", command=find_next, width=10).pack(side=tk.LEFT, padx=5)
+                tk.Button(button_frame, text="Close", command=find_dialog.destroy, width=10).pack(side=tk.LEFT, padx=5)
+                
+                # Bind Enter key
+                search_entry.bind('<Return>', lambda e: do_find())
+                
+                # Bind Escape to close
+                find_dialog.bind('<Escape>', lambda e: find_dialog.destroy())
+
+            def replace_text():
+                """Open replace dialog."""
+                replace_dialog = tk.Toplevel(root)
+                replace_dialog.title("Replace")
+                replace_dialog.geometry("400x180")
+                replace_dialog.resizable(False, False)
+                
+                # Center the dialog
+                replace_dialog.transient(root)
+                replace_dialog.grab_set()
+                
+                # Search term
+                tk.Label(replace_dialog, text="Find:").grid(row=0, column=0, padx=5, pady=5, sticky="e")
+                search_var = tk.StringVar()
+                search_entry = tk.Entry(replace_dialog, textvariable=search_var, width=30)
+                search_entry.grid(row=0, column=1, padx=5, pady=5)
+                
+                # Replace term
+                tk.Label(replace_dialog, text="Replace:").grid(row=1, column=0, padx=5, pady=5, sticky="e")
+                replace_var = tk.StringVar()
+                replace_entry = tk.Entry(replace_dialog, textvariable=replace_var, width=30)
+                replace_entry.grid(row=1, column=1, padx=5, pady=5)
+                
+                # Options
+                options_frame = tk.Frame(replace_dialog)
+                options_frame.grid(row=2, column=0, columnspan=2, pady=5)
+                
+                case_var = tk.BooleanVar()
+                whole_var = tk.BooleanVar()
+                regex_var = tk.BooleanVar()
+                
+                tk.Checkbutton(options_frame, text="Case sensitive", variable=case_var).pack(side=tk.LEFT, padx=5)
+                tk.Checkbutton(options_frame, text="Whole word", variable=whole_var).pack(side=tk.LEFT, padx=5)
+                tk.Checkbutton(options_frame, text="Regex", variable=regex_var).pack(side=tk.LEFT, padx=5)
+                
+                # Buttons
+                button_frame = tk.Frame(replace_dialog)
+                button_frame.grid(row=3, column=0, columnspan=2, pady=10)
+                
+                def do_replace():
+                    search_term = search_var.get()
+                    replace_term = replace_var.get()
+                    if search_term:
+                        replaced = editor_text.replace_text(
+                            search_term, replace_term,
+                            start_pos=editor_text.index(tk.INSERT),
+                            case_sensitive=case_var.get(),
+                            whole_word=whole_var.get(),
+                            regex=regex_var.get()
+                        )
+                        if replaced:
+                            output_text.insert(tk.END, f"Replaced '{search_term}' with '{replace_term}'\n")
+                            # Re-highlight search results
+                            editor_text.highlight_search_results(
+                                search_term,
+                                case_sensitive=case_var.get(),
+                                whole_word=whole_var.get(),
+                                regex=regex_var.get()
+                            )
+                        else:
+                            output_text.insert(tk.END, f"'{search_term}' not found\n")
+                
+                def replace_all():
+                    search_term = search_var.get()
+                    replace_term = replace_var.get()
+                    if search_term:
+                        count = editor_text.replace_all(
+                            search_term, replace_term,
+                            case_sensitive=case_var.get(),
+                            whole_word=whole_var.get(),
+                            regex=regex_var.get()
+                        )
+                        output_text.insert(tk.END, f"Replaced {count} occurrence(s) of '{search_term}' with '{replace_term}'\n")
+                        editor_text.clear_search_highlights()
+                
+                tk.Button(button_frame, text="Replace", command=do_replace, width=10).pack(side=tk.LEFT, padx=5)
+                tk.Button(button_frame, text="Replace All", command=replace_all, width=10).pack(side=tk.LEFT, padx=5)
+                tk.Button(button_frame, text="Close", command=replace_dialog.destroy, width=10).pack(side=tk.LEFT, padx=5)
+                
+                # Focus on search entry
+                search_entry.focus()
+                
+                # Bind Escape to close
+                replace_dialog.bind('<Escape>', lambda e: replace_dialog.destroy())
+
+            edit_menu.add_command(label="Find...", command=find_text, accelerator="Ctrl+F")
+            edit_menu.add_command(label="Replace...", command=replace_text, accelerator="Ctrl+H")
 
             def run_code():
                 """Execute the code in the editor."""
@@ -405,6 +593,223 @@ def main():
                 command=lambda: load_example("examples/javascript/interactive_javascript.js"),
             )
 
+            def show_error_history():
+                """Show the error history in a dialog."""
+                if not hasattr(interpreter, 'error_history') or not interpreter.error_history:
+                    messagebox.showinfo("Error History", "No errors recorded.")
+                    return
+                
+                history_text = "Recent Errors:\n\n"
+                for i, error in enumerate(interpreter.error_history[-10:], 1):  # Show last 10 errors
+                    history_text += f"{i}. Line {error.get('line', 'N/A')}: {error['message']}\n"
+                
+                # Create a scrollable dialog for error history
+                history_window = tk.Toplevel(root)
+                history_window.title("Error History")
+                history_window.geometry("600x400")
+                
+                text_widget = scrolledtext.ScrolledText(history_window, wrap=tk.WORD)
+                text_widget.pack(fill=tk.BOTH, expand=True, padx=10, pady=10)
+                text_widget.insert(tk.END, history_text)
+                text_widget.config(state=tk.DISABLED)
+
+            # Debug menu
+            debug_menu = tk.Menu(menubar, tearoff=0)
+            menubar.add_cascade(label="Debug", menu=debug_menu)
+
+            # Debug mode toggle
+            debug_enabled = tk.BooleanVar(value=False)
+            debug_menu.add_checkbutton(label="Enable Debug Mode", variable=debug_enabled, 
+                                     command=lambda: interpreter.set_debug_mode(debug_enabled.get()))
+            debug_menu.add_separator()
+
+            # Breakpoint management
+            debug_menu.add_command(label="Clear All Breakpoints", 
+                                 command=lambda: interpreter.breakpoints.clear())
+            debug_menu.add_separator()
+
+            # Error history
+            debug_menu.add_command(label="Show Error History", command=show_error_history)
+            debug_menu.add_command(label="Clear Error History", 
+                                 command=lambda: setattr(interpreter, 'error_history', []))
+
+            # Test menu
+            test_menu = tk.Menu(menubar, tearoff=0)
+            menubar.add_cascade(label="Test", menu=test_menu)
+
+            def run_smoke_test():
+                """Run a quick smoke test."""
+                output_text.delete("1.0", tk.END)
+                output_text.insert(tk.END, "🧪 Running smoke test...\n")
+
+                try:
+                    # Test basic interpreter functionality
+                    test_result = interpreter.evaluate_expression("2 + 3")
+                    if test_result == 5:
+                        output_text.insert(tk.END, "✅ Basic evaluation: PASS\n")
+                    else:
+                        output_text.insert(tk.END, f"❌ Basic evaluation: FAIL (got {test_result})\n")
+
+                    # Test variable assignment
+                    interpreter.variables['TEST_VAR'] = 42
+                    if interpreter.variables.get('TEST_VAR') == 42:
+                        output_text.insert(tk.END, "✅ Variable assignment: PASS\n")
+                    else:
+                        output_text.insert(tk.END, "❌ Variable assignment: FAIL\n")
+
+                    # Test program loading
+                    test_program = 'PRINT "Test passed!"'
+                    if interpreter.load_program(test_program):
+                        output_text.insert(tk.END, "✅ Program loading: PASS\n")
+                    else:
+                        output_text.insert(tk.END, "❌ Program loading: FAIL\n")
+
+                    output_text.insert(tk.END, "\n🎉 Smoke test completed!\n")
+
+                except Exception as e:
+                    output_text.insert(tk.END, f"\n❌ Smoke test failed: {e}\n")
+
+            def run_full_test_suite():
+                """Run the full test suite."""
+                import subprocess
+                import sys
+
+                output_text.delete("1.0", tk.END)
+                output_text.insert(tk.END, "🧪 Running full test suite...\n")
+
+                try:
+                    # Run tests using the test script
+                    result = subprocess.run(
+                        [sys.executable, "scripts/run_tests.py", "all", "-v"],
+                        capture_output=True,
+                        text=True,
+                        cwd="."
+                    )
+
+                    output_text.insert(tk.END, result.stdout)
+                    if result.stderr:
+                        output_text.insert(tk.END, "\nErrors:\n" + result.stderr)
+
+                    if result.returncode == 0:
+                        output_text.insert(tk.END, "\n✅ All tests passed!\n")
+                    else:
+                        output_text.insert(tk.END, f"\n❌ Tests failed with code {result.returncode}\n")
+
+                except Exception as e:
+                    output_text.insert(tk.END, f"\n❌ Failed to run tests: {e}\n")
+
+            test_menu.add_command(label="Run Smoke Test", command=run_smoke_test)
+            test_menu.add_command(label="Run Full Test Suite", command=run_full_test_suite)
+            test_menu.add_separator()
+            test_menu.add_command(label="Open Test Directory", 
+                                command=lambda: subprocess.run(["xdg-open", "tests"]))
+
+            # Performance menu
+            performance_menu = tk.Menu(menubar, tearoff=0)
+            menubar.add_cascade(label="Performance", menu=performance_menu)
+
+            def show_performance_stats():
+                """Show performance statistics."""
+                output_text.delete("1.0", tk.END)
+                output_text.insert(tk.END, "📊 Performance Statistics\n")
+                output_text.insert(tk.END, "=" * 50 + "\n\n")
+
+                try:
+                    # Interpreter performance stats
+                    if hasattr(interpreter, 'get_performance_stats'):
+                        interp_stats = interpreter.get_performance_stats()
+                        output_text.insert(tk.END, "Interpreter Performance:\n")
+                        output_text.insert(tk.END, f"  Expression Cache: {interp_stats.get('expression_cache', {}).get('hit_rate', 0):.2%} hit rate\n")
+                        output_text.insert(tk.END, f"  Profiling: {interp_stats.get('profiler', {})}\n")
+                        output_text.insert(tk.END, f"  Memory: {interp_stats.get('memory', {}).get('gc_objects', 0)} objects\n")
+                        output_text.insert(tk.END, f"  Lazy Modules: {len(interp_stats.get('lazy_loaded_modules', []))} loaded\n\n")
+
+                    # GUI performance stats
+                    if gui_optimizer:
+                        gui_stats = gui_optimizer.get_performance_stats()
+                        output_text.insert(tk.END, "GUI Performance:\n")
+                        output_text.insert(tk.END, f"  Updates/sec: {gui_stats.get('updates_per_second', 0):.1f}\n")
+                        output_text.insert(tk.END, f"  Async Text Widgets: {gui_stats.get('async_text_widgets', 0)}\n")
+                        output_text.insert(tk.END, f"  Optimized Canvases: {gui_stats.get('optimized_canvases', 0)}\n")
+                        output_text.insert(tk.END, f"  Pending Tasks: {gui_stats.get('pending_ui_tasks', 0)}\n\n")
+
+                    # Memory usage
+                    try:
+                        import psutil
+                        import os
+                        process = psutil.Process(os.getpid())
+                        memory_info = process.memory_info()
+                        output_text.insert(tk.END, "Memory Usage:\n")
+                        output_text.insert(tk.END, f"  RSS: {memory_info.rss / 1024 / 1024:.1f} MB\n")
+                        output_text.insert(tk.END, f"  VMS: {memory_info.vms / 1024 / 1024:.1f} MB\n")
+                        output_text.insert(tk.END, f"  GC Objects: {len(__import__('gc').get_objects())}\n\n")
+                    except ImportError:
+                        output_text.insert(tk.END, "Memory Usage: psutil not available\n\n")
+
+                    output_text.insert(tk.END, "💡 Performance Tips:\n")
+                    output_text.insert(tk.END, "  • Expression caching reduces evaluation time\n")
+                    output_text.insert(tk.END, "  • Lazy loading improves startup time\n")
+                    output_text.insert(tk.END, "  • GUI optimizations reduce UI lag\n")
+                    output_text.insert(tk.END, "  • Memory pools reduce allocation overhead\n")
+
+                except Exception as e:
+                    output_text.insert(tk.END, f"❌ Error getting performance stats: {e}\n")
+
+            def optimize_performance():
+                """Apply performance optimizations."""
+                output_text.delete("1.0", tk.END)
+                output_text.insert(tk.END, "⚡ Applying Performance Optimizations...\n\n")
+
+                try:
+                    # Interpreter optimizations
+                    if hasattr(interpreter, 'optimize_for_production'):
+                        interp_result = interpreter.optimize_for_production()
+                        output_text.insert(tk.END, "Interpreter Optimizations:\n")
+                        output_text.insert(tk.END, f"  Cache cleared: {interp_result.get('cache_cleared', False)}\n")
+                        output_text.insert(tk.END, f"  Objects collected: {interp_result.get('objects_collected', 0)}\n")
+                        output_text.insert(tk.END, f"  Variables optimized: {interp_result.get('variables_optimized', False)}\n\n")
+
+                    # GUI optimizations
+                    if gui_optimizer and hasattr(gui_optimizer, 'optimize_for_performance'):
+                        gui_result = gui_optimizer.optimize_for_performance()
+                        output_text.insert(tk.END, "GUI Optimizations:\n")
+                        output_text.insert(tk.END, f"  Canvases flushed: {gui_result.get('canvases_flushed', 0)}\n")
+                        output_text.insert(tk.END, f"  Text widgets synced: {gui_result.get('text_widgets_synced', 0)}\n")
+                        output_text.insert(tk.END, f"  Tasks remaining: {gui_result.get('ui_tasks_remaining', 0)}\n\n")
+
+                    # Global optimizations
+                    try:
+                        from core.optimizations import cleanup_all_resources
+                        cleanup_result = cleanup_all_resources()
+                        output_text.insert(tk.END, "Global Cleanup:\n")
+                        output_text.insert(tk.END, f"  Cache cleared: {cleanup_result.get('cache_cleared', False)}\n")
+                        output_text.insert(tk.END, f"  Dead references cleaned: {cleanup_result.get('dead_references_cleaned', 0)}\n")
+                        output_text.insert(tk.END, f"  Garbage collected: {cleanup_result.get('garbage_collected', 0)}\n")
+                        output_text.insert(tk.END, f"  Callbacks executed: {cleanup_result.get('callbacks_executed', 0)}\n\n")
+                    except ImportError:
+                        output_text.insert(tk.END, "Global cleanup: optimizations not available\n\n")
+
+                    output_text.insert(tk.END, "✅ Performance optimizations applied!\n")
+
+                except Exception as e:
+                    output_text.insert(tk.END, f"❌ Error applying optimizations: {e}\n")
+
+            def toggle_profiling():
+                """Toggle performance profiling."""
+                if hasattr(interpreter, 'enable_profiling'):
+                    interpreter.enable_profiling = not interpreter.enable_profiling
+                    state = "enabled" if interpreter.enable_profiling else "disabled"
+                    output_text.insert(tk.END, f"🔍 Performance profiling {state}\n")
+                else:
+                    output_text.insert(tk.END, "ℹ️  Profiling not available\n")
+
+            performance_menu.add_command(label="Show Statistics", command=show_performance_stats)
+            performance_menu.add_command(label="Optimize Performance", command=optimize_performance)
+            performance_menu.add_command(label="Toggle Profiling", command=toggle_profiling)
+            performance_menu.add_separator()
+            performance_menu.add_command(label="Open Optimizations", 
+                                       command=lambda: subprocess.run(["xdg-open", "core/optimizations"]))
+
             # Preferences menu
             preferences_menu = tk.Menu(menubar, tearoff=0)
             menubar.add_cascade(label="Preferences", menu=preferences_menu)
@@ -494,9 +899,26 @@ def main():
                 nonlocal current_theme
                 theme = THEMES[theme_key]
                 
-                # Text widgets
-                editor_text.config(bg=theme["text_bg"], fg=theme["text_fg"], 
-                                 insertbackground=theme["text_fg"])
+                # Text widgets - handle both regular text and syntax highlighting widgets
+                if hasattr(editor_text, 'text'):
+                    # Syntax highlighting widget
+                    editor_text.text.config(bg=theme["text_bg"], fg=theme["text_fg"], 
+                                          insertbackground=theme["text_fg"])
+                    # Update syntax highlighting theme
+                    if hasattr(editor_text, 'set_theme'):
+                        editor_text.set_theme(theme_key)
+                    
+                    # Update line numbers background
+                    if hasattr(editor_text, 'line_numbers'):
+                        bg_color = {'dark': '#1e1e1e', 'light': '#f0f0f0', 'monokai': '#272822',
+                                   'classic': '#ffffff', 'solarized_dark': '#002b36', 'solarized_light': '#fdf6e3',
+                                   'dracula': '#282a36', 'nord': '#2e3440', 'high_contrast': '#000000'}.get(theme_key, '#1e1e1e')
+                        editor_text.line_numbers.config(bg=bg_color)
+                else:
+                    # Regular text widget
+                    editor_text.config(bg=theme["text_bg"], fg=theme["text_fg"], 
+                                     insertbackground=theme["text_fg"])
+                
                 output_text.config(bg=theme["text_bg"], fg=theme["text_fg"], 
                                  insertbackground=theme["text_fg"])
                 
@@ -569,7 +991,13 @@ def main():
                 """Apply a font family to editor and output."""
                 nonlocal current_font_family
                 size = FONT_SIZES[current_font]
-                editor_text.config(font=(family_name, size["editor"]))
+                
+                # Apply font to editor text widget
+                if hasattr(editor_text, 'set_font'):
+                    editor_text.set_font((family_name, size["editor"]))
+                else:
+                    editor_text.config(font=(family_name, size["editor"]))
+                
                 output_text.config(font=(family_name, size["output"]))
                 
                 # Save setting
@@ -618,7 +1046,13 @@ def main():
                 """Apply a font size to editor and output."""
                 nonlocal current_font
                 size = FONT_SIZES[size_key]
-                editor_text.config(font=(current_font_family, size["editor"]))
+                
+                # Apply font to editor text widget
+                if hasattr(editor_text, 'set_font'):
+                    editor_text.set_font((current_font_family, size["editor"]))
+                else:
+                    editor_text.config(font=(current_font_family, size["editor"]))
+                
                 output_text.config(font=(current_font_family, size["output"]))
                 
                 # Save setting
@@ -676,6 +1110,8 @@ def main():
             root.bind("<Control-z>", lambda e: undo_text())
             root.bind("<Control-y>", lambda e: redo_text())
             root.bind("<Control-a>", lambda e: select_all())
+            root.bind("<Control-f>", lambda e: find_text())
+            root.bind("<Control-h>", lambda e: replace_text())
 
             # Create GUI layout with PanedWindow for resizable sections
             main_paned = tk.PanedWindow(root, orient=tk.HORIZONTAL, sashwidth=5, bg="#252526")
@@ -713,12 +1149,24 @@ def main():
             editor_frame = tk.LabelFrame(left_panel, text="Code Editor", padx=5, pady=5, bg="#252526", fg="#d4d4d4")
             editor_frame.pack(fill=tk.BOTH, expand=True)
 
-            # Editor text widget with undo/redo enabled
-            editor_text = scrolledtext.ScrolledText(
-                editor_frame, wrap=tk.WORD, font=("Courier", 11), undo=True, maxundo=-1,
-                bg="#1e1e1e", fg="#d4d4d4", insertbackground="#d4d4d4"
-            )
-            editor_text.pack(fill=tk.BOTH, expand=True)
+            # Create syntax highlighting text widget
+            if PYGMENTS_AVAILABLE:
+                editor_text = SyntaxHighlightingText(
+                    editor_frame,
+                    language="text",
+                    theme="dark",
+                    bg="#1e1e1e",
+                    fg="#d4d4d4",
+                    insertbackground="#d4d4d4"
+                )
+            else:
+                # Fallback to line-numbered text if pygments not available
+                editor_text = LineNumberedText(
+                    editor_frame,
+                    bg="#1e1e1e",
+                    fg="#d4d4d4",
+                    insertbackground="#d4d4d4"
+                )
 
             # Right panel - Split between output and graphics
             right_panel = tk.Frame(main_paned, bg="#252526")

@@ -12,6 +12,7 @@
 
 # Required runtime dependencies
 pygame>=2.0.0           # Graphics and multimedia support
+pygments>=2.15.0        # Syntax highlighting for code editor
 
 # Development dependencies
 pytest>=7.0.0          # Testing framework

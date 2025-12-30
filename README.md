@@ -26,16 +26,22 @@ Execute code in 9 different programming languages, each with full language-speci
 - **JavaScript** - Web scripting with ES6+ features
 
 ### Professional IDE Interface
-- **Refined Menu System** - File, Edit, Program, Preferences, About
+- **Refined Menu System** - File, Edit, Program, Debug, Test, Preferences, About
 - **Integrated Editor** - Syntax-aware code editing with undo/redo
+- **Syntax Highlighting** - Real-time syntax coloring for all supported languages
+- **Line Numbers** - Always-visible line numbering for easy navigation
 - **Real-time Output** - Immediate program execution feedback
 - **Turtle Graphics Canvas** - Visual programming with integrated graphics display
 - **Theme Support** - 9 color themes with persistence
+- **Debug Tools** - Debug mode, breakpoints, error history tracking
+- **Enhanced Error Messages** - Detailed error reporting with line numbers
 - **Customizable Fonts** - 7 font sizes plus system monospace choices
 - **Panel Management** - Resizable output and graphics panels
 
 ### Educational Focus
-- Clear, descriptive error messages
+- **Enhanced Error Messages** - Detailed error reporting with line numbers and context
+- **Debug Tools** - Step-through debugging, breakpoint management, error history
+- **Testing Framework** - Built-in test suite with smoke tests and comprehensive coverage
 - Example programs for every language
 - Immediate execution feedback
 - Visual programming support
@@ -76,6 +82,51 @@ Execute code in 9 different programming languages, each with full language-speci
    ```bash
    python Time_Warp.py
    ```
+
+## 🧪 Testing
+
+Time_Warp_Classic includes a comprehensive test suite to ensure code quality and reliability.
+
+### Running Tests
+
+#### From Command Line
+```bash
+# Run all tests
+python scripts/run_tests.py
+
+# Run specific test types
+python scripts/run_tests.py unit        # Unit tests only
+python scripts/run_tests.py integration # Integration tests only
+python scripts/run_tests.py smoke       # Quick smoke test
+
+# Run with coverage
+python scripts/run_tests.py --coverage
+```
+
+#### From Within the Application
+Use the **Test** menu in the IDE:
+- **Run Smoke Test** - Quick functionality check
+- **Run Full Test Suite** - Complete test suite with verbose output
+- **Open Test Directory** - Browse test files
+
+### Test Structure
+```
+tests/
+├── conftest.py          # Shared fixtures and configuration
+├── unit/               # Unit tests for individual components
+│   ├── test_interpreter.py    # Core interpreter tests
+│   ├── test_languages.py      # Language executor tests
+│   └── test_syntax_highlighting.py
+├── integration/        # Integration tests for workflows
+│   └── test_execution.py
+└── language/           # Language-specific tests
+```
+
+### Writing Tests
+Tests use pytest with fixtures for common setup:
+- `interpreter` - Fresh interpreter instance
+- `sample_programs` - Example programs for each language
+- `root` - Tkinter root window for GUI tests
 
 ---
 

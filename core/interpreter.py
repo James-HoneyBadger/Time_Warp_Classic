@@ -656,6 +656,29 @@ class Time_WarpInterpreter:  # pylint: disable=too-many-public-methods
         self.current_language_mode = None
         self.current_language = None
 
+        # Initialize performance optimizations
+        if PERFORMANCE_OPTIMIZATIONS_AVAILABLE:
+            # Create optimization mixin instance
+            self.optimizations = OptimizedInterpreterMixin(self)
+            # Copy optimization attributes to self for easier access
+            self.expression_cache = self.optimizations.expression_cache
+            self.lazy_loader = self.optimizations.lazy_loader
+            self.profiler = self.optimizations.profiler
+            self.memory_optimizer = self.optimizations.memory_optimizer
+            self.enable_caching = self.optimizations.enable_caching
+            self.enable_profiling = self.optimizations.enable_profiling
+            self.enable_lazy_loading = self.optimizations.enable_lazy_loading
+            # Copy methods
+            self.optimized_evaluate_expression = self.optimizations.optimized_evaluate_expression
+            self.optimized_execute_line = self.optimizations.optimized_execute_line
+            self.get_performance_stats = self.optimizations.get_performance_stats
+            self.optimize_for_production = self.optimizations.optimize_for_production
+            self.cleanup_resources = self.optimizations.cleanup_resources
+            self.log_output("🚀 Performance optimizations enabled")
+        else:
+            self.optimizations = None
+            self.log_output("ℹ️  Performance optimizations not available")
+
     def set_language_mode(self, mode):
         """Set the current language mode for script execution"""
         valid_modes = [
@@ -886,6 +909,22 @@ class Time_WarpInterpreter:  # pylint: disable=too-many-public-methods
         self.variables["TURTLE_HEADING"] = self.turtle_graphics["heading"]
         self.update_turtle_display()
 
+    @property
+    def turtle_angle(self):
+        """Get current turtle angle (heading)"""
+        if self.turtle_graphics:
+            return self.turtle_graphics["heading"]
+        return 0.0
+
+    @turtle_angle.setter
+    def turtle_angle(self, angle):
+        """Set turtle angle (heading)"""
+        if not self.turtle_graphics:
+            self.init_turtle_graphics()
+        self.turtle_graphics["heading"] = float(angle) % 360
+        self.variables["TURTLE_HEADING"] = self.turtle_graphics["heading"]
+        self.update_turtle_display()
+
     def turtle_home(self):
         """Move turtle to home position (0,0) and reset heading"""
         if not self.turtle_graphics:
@@ -1036,6 +1075,24 @@ class Time_WarpInterpreter:  # pylint: disable=too-many-public-methods
         else:
             print(text)
 
+    def log_error(self, error_msg, line_num=None):
+        """Log error with enhanced formatting and line number information"""
+        if line_num is not None:
+            formatted_error = f"❌ ERROR (Line {line_num}): {error_msg}"
+        else:
+            formatted_error = f"❌ ERROR: {error_msg}"
+        
+        # Add error to error history for debugging
+        if not hasattr(self, 'error_history'):
+            self.error_history = []
+        self.error_history.append({
+            'message': error_msg,
+            'line': line_num,
+            'timestamp': self.get_current_time() if hasattr(self, 'get_current_time') else None
+        })
+        
+        self.log_output(formatted_error)
+
     def debug_output(self, text):
         """Log debug output only when debug mode is enabled"""
         if self.debug_mode:
@@ -1120,6 +1177,16 @@ class Time_WarpInterpreter:  # pylint: disable=too-many-public-methods
 
     def evaluate_expression(self, expr):
         """Safely evaluate mathematical expressions with variables"""
+        # Use optimized evaluation if available and enabled
+        if (hasattr(self, 'optimized_evaluate_expression') and
+            hasattr(self, 'enable_caching') and self.enable_caching):
+            return self.optimized_evaluate_expression(expr)
+
+        # Call original implementation
+        return self._evaluate_expression_original(expr)
+
+    def _evaluate_expression_original(self, expr):
+        """Original expression evaluation implementation"""
         # Replace variables.
         # First substitute explicit *VAR* interpolation (used in many programs).
         for var_name, var_value in self.variables.items():
@@ -1310,7 +1377,7 @@ class Time_WarpInterpreter:  # pylint: disable=too-many-public-methods
         try:
             return eval(expr, safe_dict)
         except ZeroDivisionError:
-            self.log_output("Expression error: Division by zero")
+            self.log_error("Division by zero in expression", None)
             return "ERROR: Division by zero"
         except TypeError as te:
             # Attempt intelligent fallback for string + int concatenation
@@ -1330,7 +1397,13 @@ class Time_WarpInterpreter:  # pylint: disable=too-many-public-methods
                         return "".join(resolved_parts)
                 except Exception:
                     pass
-            self.log_output(f"Expression error: {te}")
+            self.log_error(f"Type error in expression: {te}", None)
+            return 0
+        except NameError as ne:
+            self.log_error(f"Undefined variable or function: {ne}", None)
+            return 0
+        except SyntaxError as se:
+            self.log_error(f"Syntax error in expression: {se}", None)
             return 0
         except Exception as e:
             # Better fallback handling for different expression types
@@ -1352,7 +1425,7 @@ class Time_WarpInterpreter:  # pylint: disable=too-many-public-methods
                 return stripped
             except Exception:
                 pass
-            self.log_output(f"Expression error: {e}")
+            self.log_error(f"Failed to evaluate expression '{expr[:50]}...': {str(e)}", None)
             return expr  # Return original instead of 0
 
     def interpolate_text(self, text: str) -> str:
@@ -1660,53 +1733,73 @@ class Time_WarpInterpreter:  # pylint: disable=too-many-public-methods
 
     def execute_line(self, line):
         """Execute a single line of code"""
-        line_num, command = self.parse_line(line)
+        # Use optimized execution if available and enabled
+        if (hasattr(self, 'optimized_execute_line') and
+            hasattr(self, 'enable_profiling') and self.enable_profiling):
+            return self.optimized_execute_line(line)
 
-        # For interactive execution, treat leading-number lines as data (not labels)
-        # if a non-BASIC language mode is active. This allows languages like Forth
-        # to accept lines that start with numeric literals (e.g. "5 DUP .").
-        if line_num is not None and self.current_language_mode:
-            if self.current_language_mode.lower() != "basic":
-                # Don't treat this as a line label for other languages
-                command = line.strip()
-                line_num = None
+        # Call original implementation
+        return self._execute_line_original(line)
 
-        if not command:
-            return "continue"
+    def _execute_line_original(self, line):
+        """Original line execution implementation"""
+        try:
+            line_num, command = self.parse_line(line)
 
-        # Skip whole-line comments that start with comment markers commonly used
-        # across example files (e.g., ';' used in PILOT/Logo, '#' used in some scripts)
-        stripped = command.lstrip()
-        # Treat ';' or '#' as whole-line comments for non-Forth languages.
-        # In Forth, ';' is the end-of-definition word, so it must be executed.
-        if self.current_language_mode != "forth":
-            if stripped.startswith(";") or stripped.startswith("#"):
+            # For interactive execution, treat leading-number lines as data (not labels)
+            # if a non-BASIC language mode is active. This allows languages like Forth
+            # to accept lines that start with numeric literals (e.g. "5 DUP .").
+            if line_num is not None and self.current_language_mode:
+                if self.current_language_mode.lower() != "basic":
+                    # Don't treat this as a line label for other languages
+                    command = line.strip()
+                    line_num = None
+
+            if not command:
                 return "continue"
 
-        # Determine command type and execute
-        cmd_type = self.determine_command_type(command, self.current_language_mode)
-        self.debug_output(f"Command '{command}' determined as type: {cmd_type}")
+            # Skip whole-line comments that start with comment markers commonly used
+            # across example files (e.g., ';' used in PILOT/Logo, '#' used in some scripts)
+            stripped = command.lstrip()
+            # Treat ';' or '#' as whole-line comments for non-Forth languages.
+            # In Forth, ';' is the end-of-definition word, so it must be executed.
+            if self.current_language_mode != "forth":
+                if stripped.startswith(";") or stripped.startswith("#"):
+                    return "continue"
 
-        if cmd_type == "pilot":
-            return self.pilot_executor.execute_command(command)
-        elif cmd_type == "basic":
-            return self.basic_executor.execute_command(command)
-        elif cmd_type == "logo":
-            return self.logo_executor.execute_command(command)
-        elif cmd_type == "pascal":
-            return self.pascal_executor.execute_command(command)
-        elif cmd_type == "prolog":
-            return self.prolog_executor.execute_command(command)
-        elif cmd_type == "forth":
-            return self.forth_executor.execute_command(command)
-        elif cmd_type == "perl":
-            return self.perl_executor.execute_command(command)
-        elif cmd_type == "python":
-            return self.python_executor.execute_command(command)
-        elif cmd_type == "javascript":
-            return self.javascript_executor.execute_command(command)
+            # Determine command type and execute
+            cmd_type = self.determine_command_type(command, self.current_language_mode)
+            self.debug_output(f"Command '{command}' determined as type: {cmd_type}")
 
-        return "continue"
+            if cmd_type == "pilot":
+                return self.pilot_executor.execute_command(command)
+            elif cmd_type == "basic":
+                return self.basic_executor.execute_command(command)
+            elif cmd_type == "logo":
+                return self.logo_executor.execute_command(command)
+            elif cmd_type == "pascal":
+                return self.pascal_executor.execute_command(command)
+            elif cmd_type == "prolog":
+                return self.prolog_executor.execute_command(command)
+            elif cmd_type == "forth":
+                return self.forth_executor.execute_command(command)
+            elif cmd_type == "perl":
+                return self.perl_executor.execute_command(command)
+            elif cmd_type == "python":
+                return self.python_executor.execute_command(command)
+            elif cmd_type == "javascript":
+                return self.javascript_executor.execute_command(command)
+            else:
+                error_msg = f"Unknown command type '{cmd_type}' for command: {command[:50]}..."
+                self.log_error(error_msg, line_num)
+                return "error"
+
+            return "continue"
+            
+        except Exception as e:
+            error_msg = f"Execution error in line {line_num or self.current_line}: {str(e)}"
+            self.log_error(error_msg, line_num)
+            return "error"
 
     def load_program(self, program_text):
         """Load and parse a program"""
@@ -1785,7 +1878,8 @@ class Time_WarpInterpreter:  # pylint: disable=too-many-public-methods
                 iterations += 1
 
                 if self.debug_mode and self.current_line in self.breakpoints:
-                    self.log_output(f"Breakpoint hit at line {self.current_line}")
+                    self.log_output(f"🔍 DEBUG: Breakpoint hit at line {self.current_line + 1}")
+                    break
 
                 _line_num, command = self.program_lines[self.current_line]
 
@@ -1794,31 +1888,55 @@ class Time_WarpInterpreter:  # pylint: disable=too-many-public-methods
                     self.current_line += 1
                     continue
 
-                result = self.execute_line(command)
+                # Log current execution line in debug mode
+                if self.debug_mode:
+                    self.debug_output(f"Executing line {self.current_line + 1}: {command[:50]}{'...' if len(command) > 50 else ''}")
+
+                try:
+                    result = self.execute_line(command)
+                except Exception as e:
+                    error_msg = f"Unexpected error executing line {self.current_line + 1}: {str(e)}"
+                    self.log_error(error_msg, self.current_line + 1)
+                    if not self.debug_mode:
+                        break
+                    # In debug mode, continue to next line
+                    self.current_line += 1
+                    continue
 
                 if result == "end":
                     break
                 if isinstance(result, str) and result.startswith("jump:"):
                     try:
                         jump_target = int(result.split(":")[1])
+                        if jump_target < 0 or jump_target >= len(self.program_lines):
+                            self.log_error(f"Invalid jump target: {jump_target}", self.current_line + 1)
+                            break
                         self.current_line = jump_target
                         continue
-                    except (ValueError, IndexError):
-                        pass
+                    except (ValueError, IndexError) as e:
+                        self.log_error(f"Jump command error: {str(e)}", self.current_line + 1)
+                        break
                 elif result == "error":
-                    self.log_output("Program terminated due to error")
-                    break
+                    if not self.debug_mode:
+                        self.log_output("🛑 Program terminated due to error")
+                        break
+                    # In debug mode, continue execution
+                    self.log_output("⚠️  Continuing execution after error (debug mode)")
 
                 self.current_line += 1
 
             if iterations >= max_iterations:
-                self.log_output("Program stopped: Maximum iterations reached")
+                self.log_error("Program stopped: Maximum iterations reached (possible infinite loop)", self.current_line + 1)
 
         except Exception as e:
-            self.log_output(f"Runtime error: {e}")
+            error_msg = f"Critical runtime error at line {self.current_line + 1}: {str(e)}"
+            self.log_error(error_msg, self.current_line + 1)
         finally:
             self.running = False
-            self.log_output("Program execution completed")
+            if hasattr(self, 'error_history') and self.error_history:
+                self.log_output(f"📊 Execution completed with {len(self.error_history)} error(s)")
+            else:
+                self.log_output("✅ Program execution completed successfully")
 
         return True
 
