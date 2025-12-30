@@ -59,6 +59,9 @@ def run_quick_test():
     """Run a quick smoke test to verify basic functionality."""
     print("🧪 Running quick smoke test...")
 
+    project_root = Path(__file__).parent.parent
+    sys.path.insert(0, str(project_root))
+
     try:
         # Import core modules
         from core.interpreter import Time_WarpInterpreter
