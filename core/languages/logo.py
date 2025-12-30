@@ -62,272 +62,259 @@ class TwLogoExecutor:
             if not self.interpreter.turtle_graphics:
                 self.interpreter.init_turtle_graphics()
 
-            # Macro CALL
-            if cmd == "CALL" and len(parts) >= 2:
-                return self._handle_call(parts[1])
+            # Dispatch to appropriate handler
+            return self._dispatch_command(cmd, parts, command)
 
-            # Variable assignment (MAKE)
-            if cmd == "MAKE" and len(parts) >= 3:
-                return self._handle_make(parts)
-
-            # DEFINE macro
-            if cmd == "DEFINE" and len(parts) >= 2:
-                return self._handle_define(command, parts[1])
-
-            # Nested REPEAT
-            if cmd == "REPEAT":
-                return self._handle_repeat(command)
-
-            # IF conditional
-            if cmd == "IF":
-                return self._handle_if(command)
-
-            # Movement commands
-            if cmd in ["FORWARD", "FD"]:
-                return self._handle_forward(parts)
-            elif cmd in ["BACK", "BK", "BACKWARD"]:
-                return self._handle_backward(parts)
-            elif cmd in ["LEFT", "LT"]:
-                return self._handle_left(parts)
-            elif cmd in ["RIGHT", "RT"]:
-                return self._handle_right(parts)
-
-            # Pen control commands
-            elif cmd in ["PENUP", "PU"]:
-                return self._handle_penup()
-            elif cmd in ["PENDOWN", "PD"]:
-                return self._handle_pendown()
-
-            # Screen and positioning commands
-            elif cmd in ["CLEARSCREEN", "CS"]:
-                return self._handle_clearscreen()
-            elif cmd in ["CLEARTEXT", "CT"]:
-                return self._handle_cleartext()
-            elif cmd in ["HOME"]:
-                return self._handle_home()
-            elif cmd == "SETXY":
-                return self._handle_setxy(parts)
-
-            # Color and appearance commands
-            elif cmd in ["SETCOLOR", "SETCOLOUR", "COLOR", "SETPENCOLOR", "SETPC"]:
-                return self._handle_setcolor(parts)
-            elif cmd == "SETPENSIZE":
-                return self._handle_setpensize(parts)
-
-            # Drawing shapes
-            elif cmd == "CIRCLE":
-                return self._handle_circle(parts)
-            elif cmd == "DOT":
-                return self._handle_dot(parts)
-            elif cmd == "RECT":
-                return self._handle_rect(parts)
-            elif cmd == "TEXT":
-                return self._handle_text(parts)
-
-            # Information commands
-            elif cmd in ["SHOWTURTLE", "ST"]:
-                return self._handle_showturtle()
-            elif cmd in ["HIDETURTLE", "HT"]:
-                return self._handle_hideturtle()
-            elif cmd == "PRINT":
-                return self._handle_print(parts)
-            elif cmd == "STOP":
-                return "stop"
-            elif cmd == "HEADING":
-                return self._handle_heading()
-            elif cmd == "POSITION":
-                return self._handle_position()
-
-            # Advanced commands
-            elif cmd == "TRACE":
-                return self._handle_trace(parts)
-            elif cmd == "PROFILE":
-                return self._handle_profile(parts)
-
-            # Game Development Commands (Logo style)
-            elif (
-                cmd.startswith("CREATE")
-                or cmd.startswith("MOVE")
-                or cmd.startswith("GAME")
-            ):
-                return self._handle_game_commands(cmd, parts)
-
-            # Audio System Commands (Logo style)
-            elif (
-                cmd.startswith("LOAD")
-                or cmd.startswith("PLAY")
-                or cmd.startswith("STOP")
-            ):
-                return self._handle_audio_commands(cmd, parts)
-
-            # Enhanced Commands
-            elif cmd in ["ARC", "POLYGON", "FILL", "CLONE", "STAMP"]:
-                return self._handle_enhanced_turtle(cmd, parts)
-            elif cmd in ["SIN", "COS", "TAN", "SQRT", "POWER", "LOG"]:
-                return self._handle_math_functions(cmd, parts)
-            elif cmd in ["LIST", "FIRST", "LAST", "BUTFIRST", "BUTLAST"]:
-                return self._handle_list_operations(cmd, parts)
-            elif cmd in ["SAVE", "LOAD", "EXPORT"]:
-                return self._handle_file_operations(cmd, parts)
-            elif cmd in ["PLAYNOTE", "PLAYTUNE", "SETSOUND"]:
-                return self._handle_sound_generation(cmd, parts)
-            elif cmd in ["CUBE", "SPHERE", "CYLINDER", "PYRAMID"]:
-                return self._handle_3d_primitives(cmd, parts)
-
-            # UCBLogo Array Commands
-            elif cmd == "ARRAY":
-                return self._handle_array(parts)
-            elif cmd == "MDARRAY":
-                return self._handle_mdarray(parts)
-            elif cmd == "SETITEM":
-                return self._handle_setitem(parts)
-            elif cmd == "MDSETITEM":
-                return self._handle_mdsetitem(parts)
-            elif cmd == "ITEM":
-                return self._handle_item(parts)
-
-            # UCBLogo Property List Commands
-            elif cmd == "PPROP":
-                return self._handle_pprop(parts)
-            elif cmd == "GPROP":
-                return self._handle_gprop(parts)
-            elif cmd == "PLIST":
-                return self._handle_plist(parts)
-            elif cmd == "REMPROP":
-                return self._handle_remprop(parts)
-
-            # UCBLogo Advanced Control Structures
-            elif cmd == "APPLY":
-                return self._handle_apply(parts)
-            elif cmd == "INVOKE":
-                return self._handle_invoke(parts)
-            elif cmd == "FOREACH":
-                return self._handle_foreach(parts)
-            elif cmd == "CASCADE":
-                return self._handle_cascade(parts)
-            elif cmd == "CASE":
-                return self._handle_case(parts)
-            elif cmd == "COND":
-                return self._handle_cond(parts)
-            elif cmd == "WHILE":
-                return self._handle_while(parts)
-            elif cmd == "UNTIL":
-                return self._handle_until(parts)
-            elif cmd == "DO.WHILE":
-                return self._handle_do_while(parts)
-            elif cmd == "DO.UNTIL":
-                return self._handle_do_until(parts)
-            elif cmd == "FOR":
-                return self._handle_for(parts)
-
-            # UCBLogo Advanced Turtle Commands
-            elif cmd == "SETHEADING":
-                return self._handle_setheading(parts)
-            elif cmd == "TOWARDS":
-                return self._handle_towards(parts)
-            elif cmd == "SCRUNCH":
-                return self._handle_scrunch(parts)
-
-            # UCBLogo Error Handling
-            elif cmd == "ERRACT":
-                return self._handle_erract(parts)
-            elif cmd == "ERROR":
-                return self._handle_error(parts)
-
-            # UCBLogo Advanced Arithmetic
-            elif cmd in [
-                "BITAND",
-                "BITOR",
-                "BITXOR",
-                "BITNOT",
-                "ASHIFT",
-                "LSHIFT",
-            ]:
-                return self._handle_bitwise(cmd, parts)
-
-            # UCBLogo Macros
-            elif cmd == ".MACRO":
-                return self._handle_macro_define(parts)
-            elif cmd == ".DEFMACRO":
-                return self._handle_defmacro(parts)
-
-            # Check if it's a user-defined procedure call
-            elif cmd in self.interpreter.logo_procedures:
-                self.interpreter.debug_output(f"Calling procedure: {cmd}")
-                # Get number of parameters
-                params, _ = self.interpreter.logo_procedures[cmd]
-                # Collect arguments: one per param
-                args = []
-                idx = 1
-                for _ in range(len(params)):
-                    arg_tokens = []
-                    # Collect tokens for this argument until
-                    # we hit the next parameter-looking argument
-                    while idx < len(parts):
-                        token = parts[idx]
-                        # Stop if we see something that
-                        # looks like start of next arg
-                        # (either starts with : or looks like
-                        # a number/word when we already have tokens)
-                        if arg_tokens and (
-                            token.startswith(":") or not token[0].isalpha()
-                        ):
-                            break
-                        arg_tokens.append(token)
-                        idx += 1
-                    if arg_tokens:
-                        args.append(" ".join(arg_tokens))
-                return self._call_logo_procedure(cmd, args)
-
-            else:
-                # Check if might be a procedure with different case
-                cmd_upper = cmd.upper()
-                if cmd_upper in self.interpreter.logo_procedures:
-                    self.interpreter.debug_output(f"Calling procedure: {cmd_upper}")
-                    # Get number of parameters
-                    params, _ = self.interpreter.logo_procedures[cmd_upper]
-                    # Collect arguments: one per param
-                    args = []
-                    idx = 1
-                    for _ in range(len(params)):
-                        arg_tokens = []
-                        # Collect tokens for this argument
-                        while idx < len(parts):
-                            token = parts[idx]
-                            # Stop if we see something that
-                            # looks like start of next arg
-                            if arg_tokens and (
-                                token.startswith(":") or not token[0].isalpha()
-                            ):
-                                break
-                            arg_tokens.append(token)
-                            idx += 1
-                        if arg_tokens:
-                            args.append(" ".join(arg_tokens))
-                    return self._call_logo_procedure(cmd_upper, args)
-                self.interpreter.log_output(f"Unknown Logo command: {cmd}")
-
-            # Profiling aggregation (Logo only) done after successful handling
-            if self.interpreter.profile_enabled and prof_start is not None:
-                try:
-                    elapsed = time.perf_counter() - prof_start
-                    key = cmd.upper()[:25]
-                    stats = self.interpreter.profile_stats.setdefault(
-                        key, {"count": 0, "total": 0.0, "max": 0.0}
-                    )
-                    stats["count"] += 1
-                    stats["total"] += elapsed
-                    if elapsed > stats["max"]:
-                        stats["max"] = elapsed
-                except Exception:
-                    pass
-
-        except ValueError as e:
-            self.interpreter.debug_output(f"Logo command parameter error: {e}")
         except Exception as e:
-            self.interpreter.debug_output(f"Logo command error: {e}")
+            self.interpreter.log_output(f"Logo error: {e}")
+            return "error"
 
-        return "continue"
+    def _dispatch_command(self, cmd, parts, command):
+        """Dispatch command to appropriate handler based on command name"""
+        # Macro and definition commands
+        if cmd == "CALL" and len(parts) >= 2:
+            return self._handle_call(parts[1])
+        if cmd == "MAKE" and len(parts) >= 3:
+            return self._handle_make(parts)
+        if cmd == "DEFINE" and len(parts) >= 2:
+            return self._handle_define(command, parts[1])
+
+        # Control structures
+        if cmd == "REPEAT":
+            return self._handle_repeat(command)
+        if cmd == "IF":
+            return self._handle_if(command)
+
+        # Movement command group
+        result = self._handle_movement_commands(cmd, parts)
+        if result is not None:
+            return result
+
+        # Pen and screen commands
+        result = self._handle_pen_screen_commands(cmd, parts)
+        if result is not None:
+            return result
+
+        # Color and visual commands
+        result = self._handle_visual_commands(cmd, parts)
+        if result is not None:
+            return result
+
+        # Drawing commands
+        result = self._handle_drawing_commands(cmd, parts)
+        if result is not None:
+            return result
+
+        # Advanced command groups
+        result = self._handle_advanced_commands(cmd, parts)
+        if result is not None:
+            return result
+
+        # User-defined procedures
+        return self._handle_user_procedure(cmd, parts)
+
+    def _handle_movement_commands(self, cmd, parts):
+        """Handle movement-related commands"""
+        if cmd in ["FORWARD", "FD"]:
+            return self._handle_forward(parts)
+        if cmd in ["BACK", "BK", "BACKWARD"]:
+            return self._handle_backward(parts)
+        if cmd in ["LEFT", "LT"]:
+            return self._handle_left(parts)
+        if cmd in ["RIGHT", "RT"]:
+            return self._handle_right(parts)
+        return None
+
+    def _handle_pen_screen_commands(self, cmd, parts):
+        """Handle pen control and screen commands"""
+        if cmd in ["PENUP", "PU"]:
+            return self._handle_penup()
+        if cmd in ["PENDOWN", "PD"]:
+            return self._handle_pendown()
+        if cmd in ["CLEARSCREEN", "CS"]:
+            return self._handle_clearscreen()
+        if cmd in ["CLEARTEXT", "CT"]:
+            return self._handle_cleartext()
+        if cmd == "HOME":
+            return self._handle_home()
+        if cmd == "SETXY":
+            return self._handle_setxy(parts)
+        return None
+
+    def _handle_visual_commands(self, cmd, parts):
+        """Handle color and turtle visibility commands"""
+        if cmd in ["SETCOLOR", "SETCOLOUR", "COLOR", "SETPENCOLOR", "SETPC"]:
+            return self._handle_setcolor(parts)
+        if cmd == "SETPENSIZE":
+            return self._handle_setpensize(parts)
+        if cmd in ["SHOWTURTLE", "ST"]:
+            return self._handle_showturtle()
+        if cmd in ["HIDETURTLE", "HT"]:
+            return self._handle_hideturtle()
+        return None
+
+    def _handle_drawing_commands(self, cmd, parts):
+        """Handle shape drawing commands"""
+        if cmd == "CIRCLE":
+            return self._handle_circle(parts)
+        if cmd == "DOT":
+            return self._handle_dot(parts)
+        if cmd == "RECT":
+            return self._handle_rect(parts)
+        if cmd == "TEXT":
+            return self._handle_text(parts)
+        if cmd == "ARC":
+            return self._handle_enhanced_turtle(cmd, parts)
+        return None
+
+    def _handle_advanced_commands(self, cmd, parts):
+        """Handle advanced Logo commands"""
+        # Information and utility commands
+        if cmd == "PRINT":
+            return self._handle_print(parts)
+        if cmd == "STOP":
+            return "stop"
+        if cmd == "HEADING":
+            return self._handle_heading()
+        if cmd == "POSITION":
+            return self._handle_position()
+        if cmd == "TRACE":
+            return self._handle_trace(parts)
+        if cmd == "PROFILE":
+            return self._handle_profile(parts)
+
+        # Game, audio, and specialized commands
+        if cmd.startswith("CREATE") or cmd.startswith("MOVE") or cmd.startswith("GAME"):
+            return self._handle_game_commands(cmd, parts)
+        if cmd.startswith("LOAD") or cmd.startswith("PLAY"):
+            return self._handle_audio_commands(cmd, parts)
+
+        # List and array operations
+        if cmd in ["LIST", "FIRST", "LAST", "BUTFIRST", "BUTLAST"]:
+            return self._handle_list_operations(cmd, parts)
+        if cmd in ["ARRAY", "MDARRAY", "SETITEM", "MDSETITEM", "ITEM"]:
+            return self._handle_array_operations(cmd, parts)
+
+        # Math, file, sound, and 3D commands
+        if cmd in ["SIN", "COS", "TAN", "SQRT", "POWER", "LOG"]:
+            return self._handle_math_functions(cmd, parts)
+        if cmd in ["SAVE", "LOAD", "EXPORT"]:
+            return self._handle_file_operations(cmd, parts)
+        if cmd in ["PLAYNOTE", "PLAYTUNE", "SETSOUND"]:
+            return self._handle_sound_generation(cmd, parts)
+        if cmd in ["CUBE", "SPHERE", "CYLINDER", "PYRAMID"]:
+            return self._handle_3d_primitives(cmd, parts)
+
+        # UCBLogo advanced features
+        if self._handle_ucblogo_features(cmd, parts) is not None:
+            return self._handle_ucblogo_features(cmd, parts)
+
+        return None
+
+    def _handle_ucblogo_features(self, cmd, parts):
+        """Handle UCBLogo advanced features"""
+        # Property list commands
+        if cmd == "PPROP":
+            return self._handle_pprop(parts)
+        if cmd == "GPROP":
+            return self._handle_gprop(parts)
+        if cmd == "PLIST":
+            return self._handle_plist(parts)
+        if cmd == "REMPROP":
+            return self._handle_remprop(parts)
+
+        # Control structures
+        control_cmds = {
+            "APPLY": self._handle_apply,
+            "INVOKE": self._handle_invoke,
+            "FOREACH": self._handle_foreach,
+            "CASCADE": self._handle_cascade,
+            "CASE": self._handle_case,
+            "COND": self._handle_cond,
+            "WHILE": self._handle_while,
+            "UNTIL": self._handle_until,
+            "DO.WHILE": self._handle_do_while,
+            "DO.UNTIL": self._handle_do_until,
+            "FOR": self._handle_for,
+        }
+        if cmd in control_cmds:
+            return control_cmds[cmd](parts)
+
+        # Turtle commands
+        if cmd == "SETHEADING":
+            return self._handle_setheading(parts)
+        if cmd == "TOWARDS":
+            return self._handle_towards(parts)
+        if cmd == "SCRUNCH":
+            return self._handle_scrunch(parts)
+
+        # Error handling
+        if cmd == "ERRACT":
+            return self._handle_erract(parts)
+        if cmd == "ERROR":
+            return self._handle_error(parts)
+
+        # Bitwise operations
+        bitwise_cmds = ["BITAND", "BITOR", "BITXOR", "BITNOT", "ASHIFT", "LSHIFT"]
+        if cmd in bitwise_cmds:
+            return self._handle_bitwise(cmd, parts)
+
+        # Macros
+        if cmd == ".MACRO":
+            return self._handle_macro_define(parts)
+        if cmd == ".DEFMACRO":
+            return self._handle_defmacro(parts)
+
+        return None
+
+    def _handle_user_procedure(self, cmd, parts):
+        """Handle user-defined procedure calls"""
+        if cmd in self.interpreter.logo_procedures:
+            self.interpreter.debug_output(f"Calling procedure: {cmd}")
+            params, _ = self.interpreter.logo_procedures[cmd]
+            args = self._collect_procedure_args(parts, len(params))
+            return self._call_logo_procedure(cmd, args)
+
+        # Try case-insensitive lookup
+        cmd_upper = cmd.upper()
+        if cmd_upper in self.interpreter.logo_procedures:
+            self.interpreter.debug_output(f"Calling procedure: {cmd_upper}")
+            params, _ = self.interpreter.logo_procedures[cmd_upper]
+            args = self._collect_procedure_args(parts, len(params))
+            return self._call_logo_procedure(cmd_upper, args)
+
+        self.interpreter.log_output(f"Unknown Logo command: {cmd}")
+        return None
+
+    def _collect_procedure_args(self, parts, num_params):
+        """Collect arguments for a procedure call"""
+        args = []
+        idx = 1
+        for _ in range(num_params):
+            arg_tokens = []
+            while idx < len(parts):
+                token = parts[idx]
+                if arg_tokens and (token.startswith(":") or not token[0].isalpha()):
+                    break
+                arg_tokens.append(token)
+                idx += 1
+            if arg_tokens:
+                args.append(" ".join(arg_tokens))
+        return args
+
+    def _handle_array_operations(self, cmd, parts):
+        """Handle array-related operations"""
+        if cmd == "ARRAY":
+            return self._handle_array(parts)
+        if cmd == "MDARRAY":
+            return self._handle_mdarray(parts)
+        if cmd == "SETITEM":
+            return self._handle_setitem(parts)
+        if cmd == "MDSETITEM":
+            return self._handle_mdsetitem(parts)
+        if cmd == "ITEM":
+            return self._handle_item(parts)
+        return None
 
     def _handle_call(self, name):
         """Handle macro CALL"""
@@ -1148,98 +1135,111 @@ class TwLogoExecutor:
         """Handle list processing operations in Logo"""
         try:
             if cmd == "LIST":
-                # LIST item1 item2 ... - create a list
-                if len(parts) >= 2:
-                    items = []
-                    for part in parts[1:]:
-                        # Try to evaluate as number, otherwise keep as string
-                        try:
-                            items.append(float(part))
-                        except ValueError:
-                            items.append(part.strip('"'))
+                return self._handle_list_creation(parts)
 
-                    list_name = f"LIST_{len(self.interpreter.variables)}"
-                    self.interpreter.variables[list_name] = items
-                    self.interpreter.log_output(
-                        f"Created list {list_name} with {len(items)} items"
-                    )
-                    self.interpreter.variables["LAST_LIST"] = list_name
-
-            elif cmd in ["ITEM", "FIRST", "LAST", "BUTFIRST", "BUTLAST"]:
-                # These operations work on the last
-                # created list or a specified list
-                list_name = (
-                    parts[1]
-                    if len(parts) > 1
-                    else self.interpreter.variables.get("LAST_LIST")
-                )
-
-                if list_name and list_name in self.interpreter.variables:
-                    lst = self.interpreter.variables[list_name]
-                    if isinstance(lst, list) and lst:
-
-                        if cmd == "ITEM":
-                            # ITEM index list
-                            if len(parts) >= 3:
-                                try:
-                                    index = int(parts[1]) - 1  # Logo is 1-based
-                                    list_name = parts[2]
-                                    if list_name in self.interpreter.variables:
-                                        lst = self.interpreter.variables[list_name]
-                                        if isinstance(lst, list) and 0 <= index < len(
-                                            lst
-                                        ):
-                                            result = lst[index]
-                                            self.interpreter.variables[
-                                                "LIST_RESULT"
-                                            ] = result
-                                            self.interpreter.log_output(
-                                                f"ITEM {index+1} of {list_name} = {result}"
-                                            )
-                                        else:
-                                            self.interpreter.log_output(
-                                                "Invalid index or list"
-                                            )
-                                except ValueError:
-                                    self.interpreter.log_output(
-                                        "ITEM requires numeric index"
-                                    )
-
-                        elif cmd == "FIRST":
-                            result = lst[0]
-                            self.interpreter.variables["LIST_RESULT"] = result
-                            self.interpreter.log_output(
-                                f"FIRST of {list_name} = {result}"
-                            )
-
-                        elif cmd == "LAST":
-                            result = lst[-1]
-                            self.interpreter.variables["LIST_RESULT"] = result
-                            self.interpreter.log_output(
-                                f"LAST of {list_name} = {result}"
-                            )
-
-                        elif cmd == "BUTFIRST":
-                            result = lst[1:]
-                            self.interpreter.variables["LIST_RESULT"] = result
-                            self.interpreter.log_output(
-                                f"BUTFIRST of {list_name} = {result}"
-                            )
-
-                        elif cmd == "BUTLAST":
-                            result = lst[:-1]
-                            self.interpreter.variables["LIST_RESULT"] = result
-                            self.interpreter.log_output(
-                                f"BUTLAST of {list_name} = {result}"
-                            )
-                    else:
-                        self.interpreter.log_output("Invalid or empty list")
-                else:
-                    self.interpreter.log_output("No list available")
+            # All list access operations
+            result = self._handle_list_access(cmd, parts)
+            if result:
+                return result
 
         except Exception as e:
             self.interpreter.debug_output(f"List operation error: {e}")
         return "continue"
+
+    def _handle_list_creation(self, parts):
+        """Create a new list from parts"""
+        if len(parts) >= 2:
+            items = []
+            for part in parts[1:]:
+                try:
+                    items.append(float(part))
+                except ValueError:
+                    items.append(part.strip('"'))
+
+            list_name = f"LIST_{len(self.interpreter.variables)}"
+            self.interpreter.variables[list_name] = items
+            self.interpreter.log_output(
+                f"Created list {list_name} with {len(items)} items"
+            )
+            self.interpreter.variables["LAST_LIST"] = list_name
+        return "continue"
+
+    def _handle_list_access(self, cmd, parts):
+        """Handle list access operations (ITEM, FIRST, LAST, BUTFIRST, BUTLAST)"""
+        if cmd not in ["ITEM", "FIRST", "LAST", "BUTFIRST", "BUTLAST"]:
+            return None
+
+        list_name = (
+            parts[1]
+            if len(parts) > 1
+            else self.interpreter.variables.get("LAST_LIST")
+        )
+
+        if not list_name or list_name not in self.interpreter.variables:
+            self.interpreter.log_output("No list available")
+            return "continue"
+
+        lst = self.interpreter.variables[list_name]
+        if not isinstance(lst, list) or not lst:
+            self.interpreter.log_output("Invalid or empty list")
+            return "continue"
+
+        # Dispatch to specific operation handler
+        if cmd == "ITEM":
+            self._list_item_operation(parts, list_name, lst)
+        elif cmd == "FIRST":
+            self._list_first_operation(list_name, lst)
+        elif cmd == "LAST":
+            self._list_last_operation(list_name, lst)
+        elif cmd == "BUTFIRST":
+            self._list_butfirst_operation(list_name, lst)
+        elif cmd == "BUTLAST":
+            self._list_butlast_operation(list_name, lst)
+
+        return "continue"
+
+    def _list_item_operation(self, parts, list_name, lst):
+        """Handle ITEM index list operation"""
+        if len(parts) >= 3:
+            try:
+                index = int(parts[1]) - 1
+                list_name = parts[2]
+                if list_name in self.interpreter.variables:
+                    lst = self.interpreter.variables[list_name]
+                    if isinstance(lst, list) and 0 <= index < len(lst):
+                        result = lst[index]
+                        self.interpreter.variables["LIST_RESULT"] = result
+                        self.interpreter.log_output(
+                            f"ITEM {index+1} of {list_name} = {result}"
+                        )
+                    else:
+                        self.interpreter.log_output("Invalid index or list")
+            except ValueError:
+                self.interpreter.log_output("ITEM requires numeric index")
+
+    def _list_first_operation(self, list_name, lst):
+        """Handle FIRST operation"""
+        result = lst[0]
+        self.interpreter.variables["LIST_RESULT"] = result
+        self.interpreter.log_output(f"FIRST of {list_name} = {result}")
+
+    def _list_last_operation(self, list_name, lst):
+        """Handle LAST operation"""
+        result = lst[-1]
+        self.interpreter.variables["LIST_RESULT"] = result
+        self.interpreter.log_output(f"LAST of {list_name} = {result}")
+
+    def _list_butfirst_operation(self, list_name, lst):
+        """Handle BUTFIRST operation"""
+        result = lst[1:]
+        self.interpreter.variables["LIST_RESULT"] = result
+        self.interpreter.log_output(f"BUTFIRST of {list_name} = {result}")
+
+    def _list_butlast_operation(self, list_name, lst):
+        """Handle BUTLAST operation"""
+        result = lst[:-1]
+        self.interpreter.variables["LIST_RESULT"] = result
+        self.interpreter.log_output(f"BUTLAST of {list_name} = {result}")
 
     def _handle_file_operations(self, cmd, parts):
         """Handle file operations in Logo"""

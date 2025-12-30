@@ -166,10 +166,18 @@ print()
 
 # --- LAMBDA FUNCTIONS ---
 print("=== LAMBDA FUNCTIONS ===")
+
+
 def square_val(x):
+    """Return the square of a number"""
     return x ** 2
+
+
 def add_vals(x, y):
+    """Add two numbers together"""
     return x + y
+
+
 print(f"Square of 5: {square_val(5)}")
 print(f"Add 3 + 7: {add_vals(3, 7)}")
 print()
@@ -185,6 +193,8 @@ print()
 # --- MATHEMATICAL OPERATIONS ---
 print("=== MATHEMATICAL OPERATIONS ===")
 import math
+
+
 print(f"math.sqrt(16): {math.sqrt(16)}")
 print(f"math.sin(0): {math.sin(0)}")
 print(f"math.cos(0): {math.cos(0)}")
@@ -197,7 +207,7 @@ print("=== STRING FORMATTING ===")
 name = "Bob"
 score = 95.5
 print(f"f-string: {name} scored {score}%")
-print("format: {} scored {}%".format(name, score))
+print(f"format: {name} scored {score}%")
 print("%s scored %.1f%%" % (name, score))
 print()
 

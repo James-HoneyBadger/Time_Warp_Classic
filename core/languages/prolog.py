@@ -746,7 +746,8 @@ class TwPrologExecutor:
 
             # Remove the matched fact
             for fact in facts_to_remove:
-                self.database.remove(fact)
+                if fact in self.database:
+                    self.database.remove(fact)
 
             if found:
                 self.interpreter.log_output(f"🔄 Retracted: {fact_str}")
