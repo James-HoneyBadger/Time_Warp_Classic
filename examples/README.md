@@ -1,6 +1,6 @@
-# Time_Warp Classic - Example Programs
+# Time Warp Classic - Code Examples
 
-This directory contains example programs for all 9 supported programming languages. Examples are organized by language and demonstrate key features of each language.
+This directory contains comprehensive example programs demonstrating all features of the 9 supported programming languages in Time Warp Classic.
 
 ---
 
@@ -8,362 +8,341 @@ This directory contains example programs for all 9 supported programming languag
 
 ```
 examples/
-├── basic/          # BASIC programs
-├── logo/           # Logo turtle graphics
-├── pilot/          # PILOT educational programs
-├── pascal/         # Pascal structured programming
-├── prolog/         # Prolog logic programming
-├── forth/          # Forth stack-based programming
-├── perl/           # Perl text processing
-├── python/         # Python modern programming
-└── javascript/     # JavaScript ES6+ features
+├── README.md                      # This file
+├── basic/
+│   └── comprehensive_demo.bas     # Complete BASIC feature demo
+├── forth/
+│   └── comprehensive_demo.fth     # Complete Forth feature demo
+├── javascript/
+│   └── comprehensive_demo.js      # Complete JavaScript feature demo
+├── logo/
+│   └── comprehensive_demo.logo    # Complete Logo feature demo
+├── pascal/
+│   └── comprehensive_demo.pas     # Complete Pascal feature demo
+├── perl/
+│   └── comprehensive_demo.pl      # Complete Perl feature demo
+├── pilot/
+│   └── comprehensive_demo.pilot   # Complete PILOT feature demo
+├── prolog/
+│   └── comprehensive_demo.pl      # Complete Prolog feature demo
+└── python/
+    └── comprehensive_demo.py      # Complete Python feature demo
 ```
 
 ---
 
-## Language Examples
+## Comprehensive Demo Programs
 
-### PILOT - Computer-Assisted Instruction
+Each language directory contains a **comprehensive_demo** file that thoroughly demonstrates all major features and commands of that language.
 
-**File:** `pilot/quiz_pilot.pilot`
+### 1. BASIC (`basic/comprehensive_demo.bas`)
 
-Demonstrates:
-- Text output with `T:`
-- User input with `A:`
-- Pattern matching with `M:`
-- Conditional output with `TY:` and `TN:`
-- Variable substitution with `*VAR*`
-- Labels and branching
+**Features Demonstrated:**
+- Variables and data types
+- Arithmetic operations (+, -, *, /, MOD, ^)
+- Mathematical functions (SIN, COS, SQRT, ABS, INT, RND)
+- String operations (LEN, LEFT, RIGHT, MID, INSTR, UPPER, LOWER)
+- Array operations (DIM, SORT, SUM, AVG, MIN, MAX)
+- Conditional statements (IF/THEN/ELSE)
+- Loop control (FOR/NEXT, WHILE loops)
+- Subroutines (GOSUB/RETURN)
+- Type conversion (VAL, STR$)
 
-**Try it:**
-```bash
-Program → Load Example → PILOT → Quiz Demo
+**Output:** Text-based demonstration of all language features
+
+---
+
+### 2. Python (`python/comprehensive_demo.py`)
+
+**Features Demonstrated:**
+- Variables and all data types (int, float, str, bool)
+- Arithmetic and comparison operators
+- String methods and operations
+- Collections (lists, dictionaries, tuples, sets)
+- Conditional statements (if/elif/else)
+- Loop constructs (for, while, list comprehensions)
+- Function definitions and recursion
+- Lambda expressions
+- Exception handling
+- Mathematical operations
+- String formatting (f-strings, format)
+
+**Output:** Comprehensive showcase of Python language capabilities
+
+---
+
+### 3. JavaScript (`javascript/comprehensive_demo.js`)
+
+**Features Demonstrated:**
+- Variables (var declaration)
+- All data types (number, string, boolean, null, undefined)
+- Arithmetic operators and precedence
+- String operations and methods
+- Arrays (create, access, methods)
+- Objects (properties, methods)
+- Conditional statements (if/else, switch)
+- Loop constructs (for, while, do-while)
+- Functions and anonymous functions
+- Mathematical functions (Math object)
+- Type conversion
+- Comparison and logical operators
+
+**Output:** Interactive demonstration of JavaScript features
+
+---
+
+### 4. Pascal (`pascal/comprehensive_demo.pas`)
+
+**Features Demonstrated:**
+- Variables with explicit typing
+- Constants and custom types
+- Procedures and functions
+- Formal parameters and return values
+- Arithmetic operations
+- String operations
+- Array declarations and operations
+- IF/THEN/ELSE and CASE statements
+- FOR, WHILE, and REPEAT-UNTIL loops
+- Function recursion
+- Boolean logic and comparisons
+
+**Output:** Structured showcase of Pascal programming concepts
+
+---
+
+### 5. Prolog (`prolog/comprehensive_demo.pl`)
+
+**Features Demonstrated:**
+- Facts and rules (predicates)
+- Unification and pattern matching
+- List operations (append, member, length, sum)
+- Recursion (ancestors, factorial)
+- Arithmetic evaluation (is, =:=, =\=)
+- Comparison operators
+- Logical operators (AND, OR, NOT)
+- Backtracking and search
+- Aggregation (findall, forall)
+- Database operations (retract, consult)
+- I/O predicates (readln, readchar, readint)
+
+**Output:** Logic programming demonstrations and family relationship queries
+
+---
+
+### 6. Forth (`forth/comprehensive_demo.fth`)
+
+**Features Demonstrated:**
+- Stack manipulation (DUP, SWAP, ROT, OVER)
+- Variables and memory operations
+- Word definitions (colon definitions)
+- Conditional logic (IF/ELSE)
+- Loop constructs (DO...LOOP, ?DO)
+- Array/table creation and access
+- Recursion
+- User-defined words
+- Floating-point operations
+- Mathematical functions
+
+**Output:** Stack-based computation demonstrations
+
+---
+
+### 7. Perl (`perl/comprehensive_demo.pl`)
+
+**Features Demonstrated:**
+- Variables (scalars, arrays, hashes)
+- Arithmetic and string operators
+- String operations and methods
+- Arrays (push, pop, shift, unshift, sort)
+- Hashes (key-value pairs)
+- Conditional statements (if/elsif/else, unless)
+- All loop types (for, foreach, while, do-while)
+- Subroutines with parameters
+- Regular expressions (matching, substitution)
+- References and dereferencing
+- Map and grep operations
+- String comparison
+- Logical operators
+
+**Output:** Text processing and data manipulation demonstrations
+
+---
+
+### 8. Logo (`logo/comprehensive_demo.logo`)
+
+**Features Demonstrated:**
+- Turtle movement (FORWARD, BACKWARD, RIGHT, LEFT)
+- Pen control (PENUP, PENDOWN)
+- Pen properties (SETPENCOLOR, SETPENSIZE)
+- Drawing shapes (squares, circles, stars)
+- REPEAT loops for patterns
+- Nested structures
+- Screen manipulation (CLEARSCREEN, HOME)
+- Recursive drawing patterns
+
+**Output:** Visual graphics on the turtle canvas
+
+---
+
+### 9. PILOT (`pilot/comprehensive_demo.pilot`)
+
+**Features Demonstrated:**
+- Text output (T:)
+- Variable assignment (A:)
+- Conditional branching (C:, Y, N)
+- Arithmetic in variables
+- Labels and jumping (M:, G:)
+- Loop control
+- Comparison operations
+- String concatenation
+- Multiple variables
+- Nested conditionals
+
+**Output:** Educational instruction program demonstrations
+
+---
+
+## How to Use the Demos
+
+### Quick Start
+
+1. **Launch Time Warp Classic:**
+   ```bash
+   python3 run.py
+   ```
+
+2. **Select a Language:**
+   Use the dropdown menu to select from 9 languages
+
+3. **Open a Demo:**
+   Copy the comprehensive_demo file contents into the editor for your chosen language
+
+4. **Run the Program:**
+   Click "Run" button or press the Run button
+
+5. **View Results:**
+   Check the output panel for results and graphics
+
+### Step-by-Step Example
+
+```
+1. Launch: python3 run.py
+2. Select Language: Click dropdown → Choose "Python"
+3. Open Demo: Copy contents of python/comprehensive_demo.py
+4. Paste: Into the editor panel
+5. Execute: Click Run button
+6. Observe: Output shows all Python features
 ```
 
 ---
 
-### BASIC - Classic Line-Numbered Programming
+## Learning Recommendations
 
-**Files:**
-- `basic/hello_basic.bas` - Hello world with turtle graphics
-- `basic/INDEX.bas` - Interactive menu system
+### By Skill Level
 
-**hello_basic.bas** demonstrates:
-- `PRINT` statements for output
-- `LET` for variable assignment
-- `FOR...NEXT` loops
-- `REM` comments
-- Turtle graphics (`FORWARD`, `RIGHT`, `PENDOWN`, `PENUP`)
-- Drawing geometric shapes
+**Absolute Beginner:**
+1. Start with **BASIC** - Familiar syntax, clear output
+2. Try **Logo** - Visual feedback helps understanding
+3. Explore **PILOT** - Instruction-oriented design
 
-**Try it:**
-```bash
-Program → Load Example → BASIC → Hello World + Turtle Graphics
-```
+**Intermediate:**
+1. Learn **Python** - Modern, readable syntax
+2. Try **Pascal** - Structured, strongly typed
+3. Explore **Perl** - Text processing power
 
----
+**Advanced:**
+1. Master **Prolog** - Logic programming paradigm
+2. Study **Forth** - Stack-based thinking
+3. Review **JavaScript** - Multiple paradigms
 
-### Logo - Turtle Graphics Programming
+### By Learning Goal
 
-**File:** `logo/spiral_logo.logo`
+**Goal: Learn Programming Fundamentals**
+- BASIC → Pascal → Python
 
-Demonstrates:
-- `REPEAT` loops
-- Turtle movement commands (`FORWARD`, `RIGHT`)
-- Color commands (`SETPENCOLOR`)
-- Variable manipulation with `MAKE`
-- Creating spirals and patterns
-- Visual output on graphics canvas
+**Goal: Understand Different Paradigms**
+- Procedural: BASIC, Pascal, Python
+- Functional: JavaScript, Perl
+- Logical: Prolog
+- Stack-based: Forth
 
-**Try it:**
-```bash
-Program → Load Example → Logo → Colorful Spiral
-```
+**Goal: Practice Pattern Matching & Logic**
+- Prolog (pattern matching)
+- Perl (regular expressions)
+- Pascal (structured logic)
 
-**What it does:**
-Draws a colorful expanding spiral by gradually increasing the forward distance and changing colors.
+**Goal: Visual/Graphics Programming**
+- Logo (turtle graphics)
+- BASIC (with graphics extensions)
 
 ---
 
-### Pascal - Structured Programming
+## Tips for Using These Examples
 
-**File:** `pascal/hello_pascal.pas`
+### Before Running
 
-Demonstrates:
-- Program structure (`program`, `begin`, `end`)
-- Variable declarations (`var`)
-- Functions and procedures
-- `FOR` loops
-- `WriteLn` for output
-- Comments with `{ }`
-- Strong typing
+1. **Read the Comments** - Each demo has inline comments explaining features
+2. **Understand the Structure** - Look at how the program is organized
+3. **Identify Language Features** - Try to spot variables, loops, functions, etc.
+4. **Predict Output** - Mentally run through the program
 
-**Try it:**
-```bash
-Program → Load Example → Pascal → Hello World + Functions
-```
+### While Running
 
----
+1. **Watch the Output** - See exactly what each command produces
+2. **Note the Order** - Output follows code execution order
+3. **Check Section Headers** - Demos are organized into clear sections
+4. **Read Carefully** - Output explains what each feature does
 
-### Prolog - Logic Programming
+### After Running
 
-**File:** `prolog/facts_prolog.pl`
-
-Demonstrates:
-- Facts (parent relationships)
-- Rules (sibling, ancestor)
-- Queries
-- Pattern matching
-- Logical inference
-- Family tree relationships
-
-**Try it:**
-```bash
-Program → Load Example → Prolog → Facts & Rules
-```
-
-**What it does:**
-Defines family relationships and allows querying about ancestors, siblings, and family connections.
+1. **Modify Values** - Change numbers and re-run
+2. **Add Comments** - Mark sections you want to understand better
+3. **Create Variations** - Try adding new features
+4. **Compare Languages** - Run demos in multiple languages to see differences
 
 ---
 
-### Forth - Stack-Based Programming
+## Feature Reference Matrix
 
-**File:** `forth/stack_forth.fth`
-
-Demonstrates:
-- Stack operations (`DUP`, `SWAP`, `DROP`)
-- Word definitions (`:` and `;`)
-- Arithmetic operators
-- RPN (Reverse Polish Notation)
-- Stack manipulation
-- Custom words
-
-**Try it:**
-```bash
-Program → Load Example → Forth → Stack Operations
-```
-
-**What it does:**
-Shows stack-based computation and custom word definitions.
+| Feature | BASIC | Python | JS | Pascal | Prolog | Forth | Perl | Logo | PILOT |
+|---------|:-----:|:------:|:--:|:------:|:------:|:-----:|:----:|:----:|:-----:|
+| Variables | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | - | ✅ |
+| Arithmetic | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | - | ✅ |
+| Strings | ✅ | ✅ | ✅ | ✅ | - | - | ✅ | - | ✅ |
+| Arrays | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | - | - |
+| If/Else | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | - | ✅ |
+| Loops | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ |
+| Functions | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | - | - |
+| Recursion | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | - | - |
+| Regular Expr | - | ✅ | ✅ | - | - | - | ✅ | - | - |
+| Graphics | - | - | - | - | - | - | - | ✅ | - |
 
 ---
 
-### Perl - Text Processing
+## Performance Notes
 
-**File:** `perl/patterns_perl.pl`
-
-Demonstrates:
-- Regular expressions
-- Array operations
-- Hash (dictionary) usage
-- Text pattern matching
-- String manipulation
-- `foreach` loops
-- File-like operations
-
-**Try it:**
-```bash
-Program → Load Example → Perl → Patterns & Text Processing
-```
-
----
-
-### Python - Modern Programming
-
-**File:** `python/modern_python.py`
-
-Demonstrates:
-- List comprehensions
-- Dictionary comprehensions
-- Generator expressions
-- Classes and objects
-- Lambda functions
-- f-strings for formatting
-- Modern Python 3.9+ features
-
-**Try it:**
-```bash
-Program → Load Example → Python → Modern Python Features
-```
-
-**What it does:**
-Showcases modern Python syntax and functional programming features.
-
----
-
-### JavaScript - ES6+ Web Scripting
-
-**File:** `javascript/interactive_javascript.js`
-
-Demonstrates:
-- Arrow functions
-- `const` and `let` declarations
-- Template literals
-- Array methods (`map`, `filter`, `reduce`)
-- Promises and async/await
-- Classes
-- Destructuring
-- Spread operator
-
-**Try it:**
-```bash
-Program → Load Example → JavaScript → Modern JavaScript (ES6+)
-```
-
----
-
-## Loading Examples
-
-### Via GUI Menu
-
-1. Click **Program → Load Example**
-2. Select language submenu
-3. Choose example program
-4. Click **▶ Run** or press **F5**
-
-### Via File Browser
-
-1. Click **File → Open File...**
-2. Navigate to `examples/[language]/`
-3. Select `.bas`, `.logo`, `.pilot`, etc.
-4. Click **▶ Run** or press **F5**
-
----
-
-## Creating Your Own Examples
-
-### Naming Conventions
-
-- **PILOT:** `.pilot` extension
-- **BASIC:** `.bas` extension
-- **Logo:** `.logo` extension
-- **Pascal:** `.pas` extension
-- **Prolog:** `.pl` or `.pro` extension
-- **Forth:** `.fth` or `.4th` extension
-- **Perl:** `.pl` extension
-- **Python:** `.py` extension
-- **JavaScript:** `.js` extension
-
-### Example Template
-
-Create a new file following this structure:
-
-```
-[Language] - [Description]
-Author: Your Name
-Date: YYYY-MM-DD
-
-Description:
-  Brief description of what the program does
-
-Features Demonstrated:
-  - Feature 1
-  - Feature 2
-  - Feature 3
-
-[Your code here]
-```
-
-### Contributing Examples
-
-Want to share your examples?
-
-1. Create your program in the appropriate language directory
-2. Test it thoroughly in the IDE
-3. Add comments explaining the code
-4. Follow the language's style conventions
-5. Submit a pull request on GitHub
-
----
-
-## Tips for Learning
-
-### For Beginners
-
-1. **Start Simple** - Begin with `hello_basic.bas` or `quiz_pilot.pilot`
-2. **Study the Code** - Read through examples before running them
-3. **Experiment** - Modify values and see what changes
-4. **Compare Languages** - See how different languages solve similar problems
-
-### For Teachers
-
-1. **Use as Templates** - Customize examples for your lessons
-2. **Show Side-by-Side** - Compare implementations across languages
-3. **Build Progressively** - Start simple, add complexity gradually
-4. **Encourage Creativity** - Have students create their own versions
-
-### For Programmers
-
-1. **Language Tour** - Try one example from each language
-2. **Paradigm Comparison** - Compare procedural vs functional vs logic programming
-3. **Performance Analysis** - Time different implementations
-4. **Extend Examples** - Add new features to existing programs
-
----
-
-## Example Challenges
-
-Try these exercises using the example programs as starting points:
-
-### Beginner Challenges
-
-1. **Modify the BASIC spiral** to draw a square instead
-2. **Change colors** in the Logo spiral program
-3. **Add new questions** to the PILOT quiz
-4. **Create a new Pascal function** for multiplication
-5. **Add more family members** to the Prolog facts
-
-### Intermediate Challenges
-
-1. **Draw a star** using Logo turtle graphics
-2. **Create a calculator** in BASIC
-3. **Build a word guessing game** in PILOT
-4. **Implement factorial** in Forth
-5. **Parse CSV data** in Perl
-
-### Advanced Challenges
-
-1. **Fractal tree** using recursive Logo
-2. **Maze solver** in Prolog
-3. **Text adventure game** in BASIC
-4. **Mandelbrot set** in Python
-5. **Sorting visualizer** in JavaScript
-
----
-
-## Troubleshooting Examples
-
-### Example Won't Run
-
-- **Check language selection** - Dropdown must match file type
-- **Check file extension** - Must be recognized extension
-- **Check syntax** - Look for error messages in output
-- **Check dependencies** - Ensure all packages installed
-
-### Graphics Don't Appear
-
-- **Verify Graphics Panel visible** - View → Graphics Panel
-- **Check pen state** - Must use `PENDOWN` or `PD`
-- **Verify movement commands** - Must call `FORWARD`, `BACK`, etc.
-- **Check coordinates** - Must be within canvas bounds
-
-### Wrong Output
-
-- **Compare with expected** - Check example description
-- **Read error messages** - They explain what went wrong
-- **Check variable values** - May need to initialize variables
-- **Verify logic** - Step through code mentally
+- **BASIC, Python, JavaScript, Pascal**: Fast execution ⚡
+- **Prolog**: Slower due to backtracking; expected behavior
+- **Forth**: Very fast; minimal overhead
+- **Perl**: Good performance for text operations
+- **Logo**: Graphics rendering adds minimal delay
+- **PILOT**: Instant execution for education purposes
 
 ---
 
 ## Additional Resources
 
-- **[User Manual](../docs/user/USER_MANUAL.md)** - Complete IDE guide
-- **[Technical Manual](../docs/dev/TECHNICAL_MANUAL.md)** - Implementation details
+For more information:
+- Check **SETUP.md** for installation and troubleshooting
+- See **PROJECT_STATUS.md** for feature completeness status
+- Review **README.md** in the root for project overview
+- Browse **docs/** directory for detailed language documentation
+- Check **INCOMPLETE_FEATURES.md** for known limitations
 
 ---
 
-**Happy Coding Through the Ages!** 🕰️
+**Happy Learning! 🚀**
+
+Master multiple programming languages from the 1970s-1990s era!
 
 © 2025 Honey Badger Universe | Example Programs
