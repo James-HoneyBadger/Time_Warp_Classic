@@ -1,0 +1,193 @@
+|
+| =========================================================
+| COMPREHENSIVE PILOT DEMO - Time Warp Classic IDE
+| Demonstrates all major PILOT language features
+| =========================================================
+|
+T:COMPREHENSIVE PILOT DEMO
+
+T:=========================================================
+T:=== WELCOME TO PILOT INSTRUCTION LANGUAGE ===
+T:=========================================================
+
+T:
+T:PILOT is a computer-assisted instruction language
+T:developed for educational purposes.
+
+T:
+T:=== BASIC TEXT OUTPUT ===
+T:This is a simple text line
+T:This is another line
+T:PILOT can display multiple lines of text
+
+T:
+T:=== VARIABLES AND ASSIGNMENT ===
+A:name=John Smith
+T:Hello, {name}!
+
+T:
+T:=== ARITHMETIC OPERATIONS ===
+A:x=10
+A:y=3
+A:sum=x + y
+T:10 + 3 = {sum}
+
+A:a=20
+A:b=5
+A:product=a * b
+T:20 * 5 = {product}
+
+A:dividend=17
+A:divisor=5
+A:quotient=dividend / divisor
+T:17 / 5 = {quotient}
+
+A:m=17
+A:n=5
+A:remainder=m MOD n
+T:17 MOD 5 = {remainder}
+
+T:
+T:=== CONDITIONAL STATEMENTS ===
+A:age=25
+C:age >= 18
+Y
+T:You are an adult
+N
+T:You are a minor
+*
+
+T:
+T:=== COMPARISON OPERATIONS ===
+A:score=85
+C:score >= 90
+Y
+T:Grade: A
+N
+C:score >= 80
+Y
+T:Grade: B
+N
+C:score >= 70
+Y
+T:Grade: C
+N
+T:Grade: F
+*
+*
+
+T:
+T:=== LOOPS - REPEAT N TIMES ===
+A:counter=0
+T:Counting from 1 to 5:
+M:COUNT
+A:counter=counter + 1
+T:{counter}
+C:counter < 5
+Y
+G:COUNT
+N
+*
+
+T:
+T:=== BOOLEAN CONDITIONS ===
+A:is_valid=1
+C:is_valid
+Y
+T:Condition is true
+N
+T:Condition is false
+*
+
+T:
+T:=== MULTIPLE VARIABLES ===
+A:first_name=Alice
+A:last_name=Smith
+A:age=30
+T:Name: {first_name} {last_name}
+T:Age: {age}
+
+T:
+T:=== STRING CONCATENATION ===
+A:greeting=Hello
+A:separator= 
+A:name=World
+A:message=greeting + separator + name
+T:{message}
+
+T:
+T:=== ARITHMETIC EXPRESSIONS ===
+A:x=10
+A:y=5
+A:result=x + y * 2
+T:10 + 5 * 2 = {result}
+
+A:a=20
+A:b=4
+A:calc=(a / b) + 3
+T:(20 / 4) + 3 = {calc}
+
+T:
+T:=== CONDITIONAL LOOPS ===
+A:num=1
+M:LOOP
+T:Number: {num}
+A:num=num + 1
+C:num <= 3
+Y
+G:LOOP
+N
+*
+
+T:
+T:=== COMPLEX CONDITIONS ===
+A:x=7
+C:x > 5
+Y
+T:X is greater than 5
+N
+C:x < 10
+Y
+T:X is less than 10
+N
+*
+
+T:
+T:=== NESTED CONDITIONALS ===
+A:value=15
+C:value > 10
+Y
+T:Value is greater than 10
+C:value > 20
+Y
+T:Value is also greater than 20
+N
+T:But less than or equal to 20
+*
+N
+*
+
+T:
+T:=== COUNTING DEMONSTRATION ===
+A:i=1
+M:COUNTER_LOOP
+T:Iteration {i}
+A:i=i + 1
+C:i <= 5
+Y
+G:COUNTER_LOOP
+N
+*
+
+T:
+T:=== FINAL DEMONSTRATION ===
+A:language=PILOT
+A:features=variables,conditionals,loops
+T:Language: {language}
+T:Features: {features}
+
+T:
+T:=========================================================
+T:PILOT DEMO COMPLETE!
+T:All major PILOT language features demonstrated!
+T:=========================================================
