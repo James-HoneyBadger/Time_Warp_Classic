@@ -12,7 +12,6 @@
 
 # Required runtime dependencies
 pygame>=2.0.0           # Graphics and multimedia support
-pygments>=2.15.0        # Syntax highlighting for CLI
 
 # Development dependencies
 pytest>=7.0.0          # Testing framework
@@ -21,4 +20,3 @@ flake8>=4.0.0          # Linting
 
 # Runtime dependencies for enhanced features
 Pillow>=8.0.0        # Image processing (PIL)
-numpy>=1.20.0        # Mathematical operations

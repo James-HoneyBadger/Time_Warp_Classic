@@ -498,24 +498,86 @@ class TwPilotExecutor:
             return "end"
 
     def _handle_runtime_command(self, command):
-        """Handle R: runtime commands - placeholder for now"""
-        # This would contain the full
-        # implementation from the original interpreter
-        self.interpreter.log_output(f"Runtime command: {command[2:].strip()}")
+        """Handle R: runtime commands"""
+        cmd = command[2:].strip().upper()
+        
+        if cmd == "VERSION":
+            self.interpreter.log_output("Time_Warp PILOT v1.0")
+        elif cmd == "HELP":
+            self.interpreter.log_output("Available R: commands: VERSION, HELP, TIME, DATE")
+        elif cmd == "TIME":
+            import time
+            self.interpreter.log_output(f"Current time: {time.strftime('%H:%M:%S')}")
+        elif cmd == "DATE":
+            import time
+            self.interpreter.log_output(f"Current date: {time.strftime('%Y-%m-%d')}")
+        elif cmd.startswith("PRINT "):
+            # R:PRINT variable - print variable value
+            var_name = cmd[6:].strip()
+            if var_name in self.interpreter.variables:
+                self.interpreter.log_output(f"{var_name} = {self.interpreter.variables[var_name]}")
+            else:
+                self.interpreter.log_output(f"Variable {var_name} not found")
+        else:
+            self.interpreter.log_output(f"Unknown runtime command: {cmd}")
+        
         return "continue"
 
     def _handle_game_command(self, command):
-        """Handle GAME: game development commands - placeholder for now"""
-        # This would contain the full
-        # implementation from the original interpreter
-        self.interpreter.log_output(f"Game command: {command[5:].strip()}")
+        """Handle GAME: game development commands"""
+        cmd = command[5:].strip().upper()
+        
+        if cmd == "SCORE":
+            # Display current score
+            score = self.interpreter.variables.get("SCORE", 0)
+            self.interpreter.log_output(f"Current score: {score}")
+        elif cmd.startswith("SCORE "):
+            # GAME:SCORE 100 - set score
+            try:
+                new_score = int(cmd[6:].strip())
+                self.interpreter.variables["SCORE"] = new_score
+                self.interpreter.log_output(f"Score set to: {new_score}")
+            except ValueError:
+                self.interpreter.log_output("Error: Invalid score value")
+        elif cmd == "RESET":
+            # Reset game state
+            self.interpreter.variables["SCORE"] = 0
+            self.interpreter.variables["LIVES"] = 3
+            self.interpreter.log_output("Game reset")
+        elif cmd == "LIVES":
+            lives = self.interpreter.variables.get("LIVES", 3)
+            self.interpreter.log_output(f"Lives remaining: {lives}")
+        else:
+            self.interpreter.log_output(f"Unknown game command: {cmd}")
+        
         return "continue"
 
     def _handle_audio_command(self, command):
-        """Handle AUDIO: audio system commands - placeholder for now"""
-        # This would contain the full
-        # implementation from the original interpreter
-        self.interpreter.log_output(f"Audio command: {command[6:].strip()}")
+        """Handle AUDIO: audio system commands"""
+        cmd = command[6:].strip().upper()
+        
+        if cmd.startswith("PLAY "):
+            # AUDIO:PLAY tone - play a simple tone
+            tone = cmd[5:].strip()
+            self.interpreter.log_output(f"🎵 Playing tone: {tone}")
+            # In a full implementation, this would play actual audio
+        elif cmd == "BEEP":
+            self.interpreter.log_output("🔊 Beep!")
+        elif cmd.startswith("VOLUME "):
+            # AUDIO:VOLUME 50 - set volume
+            try:
+                volume = int(cmd[7:].strip())
+                if 0 <= volume <= 100:
+                    self.interpreter.log_output(f"🔊 Volume set to: {volume}%")
+                else:
+                    self.interpreter.log_output("Error: Volume must be 0-100")
+            except ValueError:
+                self.interpreter.log_output("Error: Invalid volume value")
+        elif cmd == "STOP":
+            self.interpreter.log_output("🔇 Audio stopped")
+        else:
+            self.interpreter.log_output(f"Unknown audio command: {cmd}")
+        
         return "continue"
 
     def _handle_file_command(self, command):

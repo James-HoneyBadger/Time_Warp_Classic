@@ -49,6 +49,8 @@ Execute code in 9 different programming languages, each with full language-speci
 - Python 3.9 or higher
 - tkinter (usually included with Python)
 - pip package manager
+- Node.js (for JavaScript execution)
+- Perl (for Perl execution)
 
 ### Quick Start
 

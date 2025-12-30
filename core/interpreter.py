@@ -1435,8 +1435,8 @@ class Time_WarpInterpreter:  # pylint: disable=too-many-public-methods
                 # In PILOT mode, handle comments and commands
                 if command.startswith("*"):
                     return "pilot"  # Comment line
-                elif len(command) > 1 and command[1] == ":":
-                    return "pilot"  # PILOT command
+                elif ":" in command:
+                    return "pilot"  # PILOT command (any command with colon)
                 # Fall through to other checks
 
         # PILOT commands start with a letter followed by colon

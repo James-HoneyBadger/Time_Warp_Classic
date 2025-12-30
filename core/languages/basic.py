@@ -2421,10 +2421,13 @@ class TwBasicExecutor:
                 except ValueError:
                     self.interpreter.log_output("Error: Invalid GAMECIRCLE parameters")
         elif cmd == "GAMEKEY":
-            # GAMEKEY() - get pressed key (placeholder
-            # - would need real input handling)
-            self.interpreter.variables["LAST_KEY"] = ""  # Placeholder
-            self.interpreter.log_output("🎮 Key input checked")
+            # GAMEKEY() - get pressed key
+            key = self.interpreter.get_user_input("Press a key: ")
+            if key:
+                self.interpreter.variables["LAST_KEY"] = key.upper()
+                self.interpreter.log_output(f"🎮 Key pressed: {key.upper()}")
+            else:
+                self.interpreter.variables["LAST_KEY"] = ""
         else:
             # Generic game command
             self.interpreter.log_output(f"🎮 Game command: {command}")

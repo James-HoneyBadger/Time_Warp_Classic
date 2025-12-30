@@ -23,11 +23,4 @@ else
     exit 1
 fi
 
-else
-    echo "❌ Python not found!"
-    echo "Please install Python 3 to run Time Warp Classic"
-    echo "Visit: https://www.python.org/downloads/"
-    exit 1
-fi
-
 echo "👋 Time Warp Classic session ended."
