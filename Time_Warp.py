@@ -12,7 +12,7 @@ Supports: PILOT, BASIC, Logo, Pascal, Prolog, Forth, Perl, Python, JavaScript
 Features:
 - 9 programming languages with built-in examples
 - Integrated turtle graphics for visual programming
-- Multiple color themes and font sizes  
+- Multiple color themes and font sizes
 - File persistence for editor content
 - Educational feedback and error messages
 """
@@ -20,6 +20,7 @@ Features:
 
 import sys
 import json
+import subprocess
 import os
 from pathlib import Path
 
@@ -30,47 +31,47 @@ def main():
     # Launch GUI
     print("🚀 Launching Time Warp Classic...")
     try:
-            # Import and launch the GUI application
-            import tkinter as tk
-            from tkinter import scrolledtext, messagebox, filedialog
-            from core.interpreter import Time_WarpInterpreter
-            from core.features.syntax_highlighting import SyntaxHighlightingText, LineNumberedText
+        # Import and launch the GUI application
+        import tkinter as tk
+        from tkinter import scrolledtext, messagebox, filedialog
+        from core.interpreter import Time_WarpInterpreter
+        from core.features.syntax_highlighting import SyntaxHighlightingText, LineNumberedText
 
-            # Import GUI optimizer
+        # Import GUI optimizer
+        try:
+            from core.optimizations.gui_optimizer import initialize_gui_optimizer
+            GUI_OPTIMIZATIONS_AVAILABLE = True
+        except ImportError:
+            GUI_OPTIMIZATIONS_AVAILABLE = False
+            initialize_gui_optimizer = None
+
+        # Check if pygments is available
+        try:
+            import pygments
+            PYGMENTS_AVAILABLE = True
+        except ImportError:
+            PYGMENTS_AVAILABLE = False
+
+        # Settings file for persistence
+        SETTINGS_FILE = Path.home() / ".timewarp_settings.json"
+
+        def load_settings():
+            """Load user settings from file."""
             try:
-                from core.optimizations.gui_optimizer import initialize_gui_optimizer
-                GUI_OPTIMIZATIONS_AVAILABLE = True
-            except ImportError:
-                GUI_OPTIMIZATIONS_AVAILABLE = False
-                initialize_gui_optimizer = None
+                if SETTINGS_FILE.exists():
+                    with open(SETTINGS_FILE, 'r', encoding='utf-8') as f:
+                        return json.load(f)
+            except Exception:
+                pass
+            return {"theme": "dark", "font_size": "medium", "font_family": "Courier"}
 
-            # Check if pygments is available
+        def save_settings(theme, font_size, font_family):
+            """Save user settings to file."""
             try:
-                import pygments
-                PYGMENTS_AVAILABLE = True
-            except ImportError:
-                PYGMENTS_AVAILABLE = False
-
-            # Settings file for persistence
-            SETTINGS_FILE = Path.home() / ".timewarp_settings.json"
-
-            def load_settings():
-                """Load user settings from file."""
-                try:
-                    if SETTINGS_FILE.exists():
-                        with open(SETTINGS_FILE, 'r') as f:
-                            return json.load(f)
-                except Exception:
-                    pass
-                return {"theme": "dark", "font_size": "medium", "font_family": "Courier"}
-
-            def save_settings(theme, font_size, font_family):
-                """Save user settings to file."""
-                try:
-                    with open(SETTINGS_FILE, 'w') as f:
-                        json.dump({"theme": theme, "font_size": font_size, "font_family": font_family}, f)
-                except Exception:
-                    pass
+                with open(SETTINGS_FILE, 'w', encoding='utf-8') as f:
+                    json.dump({"theme": theme, "font_size": font_size, "font_family": font_family}, f)
+            except Exception:
+                pass
 
             # Load saved settings
             settings = load_settings()
@@ -145,7 +146,6 @@ def main():
                             '.pro': 'Prolog',
                             '.pl': 'Perl'
                         }
-                        import os
                         _, ext = os.path.splitext(filename)
                         detected_lang = ext_to_lang.get(ext.lower())
                         
@@ -314,7 +314,7 @@ def main():
                     if search_term:
                         editor_text.clear_search_highlights()
                         match = editor_text.find_text(
-                            search_term, 
+                            search_term,
                             start_pos=editor_text.index(tk.INSERT),
                             case_sensitive=case_var.get(),
                             whole_word=whole_var.get(),
@@ -337,7 +337,6 @@ def main():
                             output_text.insert(tk.END, f"'{search_term}' not found\n")
                 
                 def find_next():
-                    current_pos = editor_text.index(tk.INSERT)
                     do_find()
                 
                 tk.Button(button_frame, text="Find", command=do_find, width=10).pack(side=tk.LEFT, padx=5)
@@ -494,7 +493,6 @@ def main():
                         '.pro': 'Prolog',
                         '.prolog': 'Prolog'
                     }
-                    import os
                     _, ext = os.path.splitext(filepath)
                     detected_lang = None
                     
@@ -619,19 +617,19 @@ def main():
 
             # Debug mode toggle
             debug_enabled = tk.BooleanVar(value=False)
-            debug_menu.add_checkbutton(label="Enable Debug Mode", variable=debug_enabled, 
-                                     command=lambda: interpreter.set_debug_mode(debug_enabled.get()))
+            debug_menu.add_checkbutton(label="Enable Debug Mode", variable=debug_enabled,
+                                       command=lambda: interpreter.set_debug_mode(debug_enabled.get()))
             debug_menu.add_separator()
 
             # Breakpoint management
-            debug_menu.add_command(label="Clear All Breakpoints", 
-                                 command=lambda: interpreter.breakpoints.clear())
+            debug_menu.add_command(label="Clear All Breakpoints",
+                                   command=lambda: interpreter.breakpoints.clear())
             debug_menu.add_separator()
 
             # Error history
             debug_menu.add_command(label="Show Error History", command=show_error_history)
-            debug_menu.add_command(label="Clear Error History", 
-                                 command=lambda: setattr(interpreter, 'error_history', []))
+            debug_menu.add_command(label="Clear Error History",
+                                   command=lambda: setattr(interpreter, 'error_history', []))
 
             # Test menu
             test_menu = tk.Menu(menubar, tearoff=0)
@@ -701,8 +699,8 @@ def main():
             test_menu.add_command(label="Run Smoke Test", command=run_smoke_test)
             test_menu.add_command(label="Run Full Test Suite", command=run_full_test_suite)
             test_menu.add_separator()
-            test_menu.add_command(label="Open Test Directory", 
-                                command=lambda: subprocess.run(["xdg-open", "tests"]))
+            test_menu.add_command(label="Open Test Directory",
+                                  command=lambda: subprocess.run(["xdg-open", "tests"]))
 
             # Performance menu
             performance_menu = tk.Menu(menubar, tearoff=0)
@@ -807,8 +805,8 @@ def main():
             performance_menu.add_command(label="Optimize Performance", command=optimize_performance)
             performance_menu.add_command(label="Toggle Profiling", command=toggle_profiling)
             performance_menu.add_separator()
-            performance_menu.add_command(label="Open Optimizations", 
-                                       command=lambda: subprocess.run(["xdg-open", "core/optimizations"]))
+            performance_menu.add_command(label="Open Optimizations",
+                                         command=lambda: subprocess.run(["xdg-open", "core/optimizations"]))
 
             # Preferences menu
             preferences_menu = tk.Menu(menubar, tearoff=0)
@@ -902,8 +900,8 @@ def main():
                 # Text widgets - handle both regular text and syntax highlighting widgets
                 if hasattr(editor_text, 'text'):
                     # Syntax highlighting widget
-                    editor_text.text.config(bg=theme["text_bg"], fg=theme["text_fg"], 
-                                          insertbackground=theme["text_fg"])
+                    editor_text.text.config(bg=theme["text_bg"], fg=theme["text_fg"],
+                                            insertbackground=theme["text_fg"])
                     # Update syntax highlighting theme
                     if hasattr(editor_text, 'set_theme'):
                         editor_text.set_theme(theme_key)
@@ -911,20 +909,20 @@ def main():
                     # Update line numbers background
                     if hasattr(editor_text, 'line_numbers'):
                         bg_color = {'dark': '#1e1e1e', 'light': '#f0f0f0', 'monokai': '#272822',
-                                   'classic': '#ffffff', 'solarized_dark': '#002b36', 'solarized_light': '#fdf6e3',
-                                   'dracula': '#282a36', 'nord': '#2e3440', 'high_contrast': '#000000'}.get(theme_key, '#1e1e1e')
+                                    'classic': '#ffffff', 'solarized_dark': '#002b36', 'solarized_light': '#fdf6e3',
+                                    'dracula': '#282a36', 'nord': '#2e3440', 'high_contrast': '#000000'}.get(theme_key, '#1e1e1e')
                         editor_text.line_numbers.config(bg=bg_color)
                 else:
                     # Regular text widget
-                    editor_text.config(bg=theme["text_bg"], fg=theme["text_fg"], 
-                                     insertbackground=theme["text_fg"])
+                    editor_text.config(bg=theme["text_bg"], fg=theme["text_fg"],
+                                       insertbackground=theme["text_fg"])
                 
-                output_text.config(bg=theme["text_bg"], fg=theme["text_fg"], 
-                                 insertbackground=theme["text_fg"])
+                output_text.config(bg=theme["text_bg"], fg=theme["text_fg"],
+                                   insertbackground=theme["text_fg"])
                 
                 # Canvas
-                turtle_canvas.config(bg=theme["canvas_bg"], 
-                                   highlightbackground=theme["canvas_border"])
+                turtle_canvas.config(bg=theme["canvas_bg"],
+                                     highlightbackground=theme["canvas_border"])
                 
                 # Frames
                 root.config(bg=theme["root_bg"])
@@ -938,8 +936,8 @@ def main():
                 editor_header.config(bg=theme["frame_bg"])
                 
                 # Input widget
-                input_entry.config(bg=theme["input_bg"], fg=theme["input_fg"], 
-                                 insertbackground=theme["input_fg"])
+                input_entry.config(bg=theme["input_bg"], fg=theme["input_fg"],
+                                   insertbackground=theme["input_fg"])
                 
                 # Update labels
                 for widget in editor_header.winfo_children():
