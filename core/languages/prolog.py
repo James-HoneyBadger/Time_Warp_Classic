@@ -635,37 +635,82 @@ class TwPrologExecutor:
     def _prove_readln(self, goal, bindings):
         """Prove readln/1 predicate - read line from input"""
         try:
-            # For educational purposes, simulate input
-            self.interpreter.log_output("💬 Enter input: (simulated)")
-            # simulated_input = "simulated_input"  # Would be used in full implementation
-            return [bindings]
+            var_name = goal[7:-1].strip()  # readln(VAR)
+            # Try to get input from input buffer if available
+            if hasattr(self.interpreter, 'input_buffer') and self.interpreter.input_buffer:
+                user_input = self.interpreter.input_buffer.pop(0)
+            else:
+                # Fallback to simulating input
+                self.interpreter.log_output("💬 readln/1: No input available (simulated)")
+                user_input = "simulated_input"
+            
+            # Unify with the variable
+            if var_name.startswith(':'):
+                var_name = var_name[1:]
+            new_bindings = self._unify(var_name, user_input, bindings.copy())
+            if new_bindings is not None:
+                return [new_bindings]
+            return []
         except (ValueError, TypeError):
             return []
 
     def _prove_readchar(self, goal, bindings):
         """Prove readchar/1 predicate - read character from input"""
         try:
-            self.interpreter.log_output("💬 Enter character: (simulated)")
-            # simulated_char = "A"  # Would be used in full implementation
-            return [bindings]
+            var_name = goal[9:-1].strip()  # readchar(VAR)
+            # Try to get input
+            if hasattr(self.interpreter, 'input_buffer') and self.interpreter.input_buffer:
+                user_input = self.interpreter.input_buffer.pop(0)[0]  # First char
+            else:
+                self.interpreter.log_output("💬 readchar/1: No input available (simulated)")
+                user_input = "A"
+            
+            if var_name.startswith(':'):
+                var_name = var_name[1:]
+            new_bindings = self._unify(var_name, user_input, bindings.copy())
+            if new_bindings is not None:
+                return [new_bindings]
+            return []
         except (ValueError, TypeError):
             return []
 
     def _prove_readint(self, goal, bindings):
         """Prove readint/1 predicate - read integer from input"""
         try:
-            self.interpreter.log_output("💬 Enter integer: (simulated)")
-            # simulated_int = 42  # Would be used in full implementation
-            return [bindings]
+            var_name = goal[8:-1].strip()  # readint(VAR)
+            if hasattr(self.interpreter, 'input_buffer') and self.interpreter.input_buffer:
+                user_input = self.interpreter.input_buffer.pop(0)
+                value = int(user_input)
+            else:
+                self.interpreter.log_output("💬 readint/1: No input available (simulated)")
+                value = 42
+            
+            if var_name.startswith(':'):
+                var_name = var_name[1:]
+            new_bindings = self._unify(var_name, value, bindings.copy())
+            if new_bindings is not None:
+                return [new_bindings]
+            return []
         except (ValueError, TypeError):
             return []
 
     def _prove_readreal(self, goal, bindings):
         """Prove readreal/1 predicate - read real number from input"""
         try:
-            self.interpreter.log_output("💬 Enter real number: (simulated)")
-            # simulated_real = 3.14  # Would be used in full implementation
-            return [bindings]
+            var_name = goal[9:-1].strip()  # readreal(VAR)
+            if hasattr(self.interpreter, 'input_buffer') and self.interpreter.input_buffer:
+                user_input = self.interpreter.input_buffer.pop(0)
+                value = float(user_input)
+            else:
+                self.interpreter.log_output("💬 readreal/1: No input available (simulated)")
+                value = 3.14
+            
+            if var_name.startswith(':'):
+                var_name = var_name[1:]
+            new_bindings = self._unify(var_name, value, bindings.copy())
+            if new_bindings is not None:
+                return [new_bindings]
+            return []
         except (ValueError, TypeError):
             return []
 
@@ -684,19 +729,55 @@ class TwPrologExecutor:
         """Prove retract/1 predicate - remove fact from database"""
         try:
             fact_str = goal[8:-1].strip()  # Remove retract(
-            # In a full implementation, this would remove matching facts
-            self.interpreter.log_output(f"🔄 Retracting: {fact_str} (simulated)")
-            return [bindings]
-        except (ValueError, TypeError):
+            
+            # Find and remove matching facts
+            found = False
+            facts_to_remove = []
+            
+            for fact in self.facts:
+                # Simple pattern matching
+                if fact.startswith(fact_str.split('(')[0]):
+                    # Try to unify to check if it matches
+                    test_bindings = self._unify(fact_str, fact, {})
+                    if test_bindings is not None:
+                        facts_to_remove.append(fact)
+                        found = True
+                        break  # retract only removes first match
+            
+            # Remove the matched fact
+            for fact in facts_to_remove:
+                self.facts.remove(fact)
+            
+            if found:
+                self.interpreter.log_output(f"🔄 Retracted: {fact_str}")
+                return [bindings]
+            return []
+        except (ValueError, TypeError, IndexError):
             return []
 
     def _prove_consult(self, goal, bindings):
         """Prove consult/1 predicate - load file"""
         try:
-            filename = goal[8:-1].strip()
-            self.interpreter.log_output(f"📂 Consulting file: {filename} (simulated)")
-            return [bindings]
-        except (ValueError, TypeError):
+            filename = goal[8:-1].strip().strip('"').strip("'")
+            
+            # Try to load and parse the file
+            try:
+                with open(filename, 'r', encoding='utf-8') as f:
+                    content = f.read()
+                
+                # Parse facts from file
+                for line in content.split('\n'):
+                    line = line.strip()
+                    if line and not line.startswith('%'):  # Skip comments
+                        if line.endswith('.'):
+                            self._handle_fact(line[:-1])  # Remove trailing period
+                
+                self.interpreter.log_output(f"📂 Consulted file: {filename}")
+                return [bindings]
+            except FileNotFoundError:
+                self.interpreter.log_output(f"❌ File not found: {filename}")
+                return []
+        except (ValueError, TypeError, IndexError):
             return []
 
     def _prove_not(self, goal, bindings):

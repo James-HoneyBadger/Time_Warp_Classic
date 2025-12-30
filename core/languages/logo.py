@@ -2080,27 +2080,40 @@ class TwLogoExecutor:
         return "continue"
 
     def _handle_foreach(self, parts):
-        """Handle FOREACH command - iterate over list"""
+        """Handle FOREACH command - iterate over list and execute block for each item"""
         try:
+            # FOREACH var_name list_name [block_commands]
             if len(parts) >= 3:
                 var_name = parts[1]
                 list_name = parts[2]
+                # Commands to execute for each item (everything after list_name)
+                block_commands = ' '.join(parts[3:]) if len(parts) > 3 else None
 
                 if list_name in self.interpreter.variables:
                     lst = self.interpreter.variables[list_name]
                     if isinstance(lst, list):
                         for item in lst:
                             self.interpreter.variables[var_name] = item
-                            self.interpreter.log_output(f"FOREACH: {var_name} = {item}")
-                            # In real implementation, would
-                            # execute a block here
+                            self.interpreter.debug_output(f"FOREACH: {var_name} = {item}")
+                            
+                            # Execute the block for each item if provided
+                            if block_commands:
+                                # Parse and execute block commands
+                                block_parts = block_commands.split()
+                                # Execute each command in the block
+                                for cmd in block_parts:
+                                    if cmd.strip():
+                                        result = self.execute_command(cmd)
+                                        if result in ["break", "return"]:
+                                            break
+                        self.interpreter.log_output(f"FOREACH: Completed iteration over {list_name}")
                     else:
-                        self.interpreter.log_output(f"'{list_name}' is not a list")
+                        self.interpreter.log_output(f"❌ '{list_name}' is not a list, got {type(lst).__name__}")
                 else:
-                    self.interpreter.log_output(f"Variable '{list_name}' not found")
+                    self.interpreter.log_output(f"❌ Variable '{list_name}' not found")
             else:
                 self.interpreter.log_output(
-                    "FOREACH requires variable name and list name"
+                    "⚠️  FOREACH syntax: FOREACH var_name list_name [commands...]"
                 )
         except Exception as e:
             self.interpreter.debug_output(f"FOREACH error: {e}")

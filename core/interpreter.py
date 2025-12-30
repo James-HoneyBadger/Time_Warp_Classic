@@ -132,8 +132,15 @@ try:
     )
     from .networking import CollaborationManager  # type: ignore[attr-defined]
 
-    ArduinoController = None  # Not implemented yet
-    AdvancedRobotInterface = None  # Not implemented yet
+    class ArduinoController:  # type: ignore[no-redef]
+        """Arduino support not available - stub for future implementation"""
+        def __init__(self, *args, **kwargs):
+            raise NotImplementedError("Arduino support not available in this version")
+    
+    class AdvancedRobotInterface:  # type: ignore[no-redef]
+        """Advanced robotics not available - stub for future implementation"""
+        def __init__(self, *args, **kwargs):
+            raise NotImplementedError("Advanced robotics not available in this version")
 
     # Create MultiplayerGameManager as subclass of GameManager
     class MultiplayerGameManager(GameManager):  # type: ignore[misc,valid-type]
@@ -230,16 +237,16 @@ except ImportError:
             return None
 
         def add_player(self, *args):
-            return False, "Not implemented"
+            raise NotImplementedError("Multiplayer mode not available in this version")
 
         def remove_player(self, *args):
-            return False, "Not implemented"
+            raise NotImplementedError("Multiplayer mode not available in this version")
 
         def start_multiplayer_game(self):
-            return False, "Not implemented"
+            raise NotImplementedError("Multiplayer mode not available in this version")
 
         def end_multiplayer_game(self, *args):
-            return False, "Not implemented"
+            raise NotImplementedError("Multiplayer mode not available in this version")
 
         def get_game_info(self):
             return {}
@@ -258,19 +265,25 @@ except ImportError:
 
     class CollaborationManager:  # type: ignore[no-redef]
         def __init__(self):
-            self.network_manager = type(
-                "",
-                (),
-                {
-                    "start_server": lambda *args: (False, "Not implemented"),
-                    "connect_to_server": lambda *args: (False, "Not implemented"),
-                    "send_message": lambda *args: None,
-                    "disconnect": lambda *args: None,
-                    "is_server": False,
-                    "is_client": False,
-                    "running": False,
-                },
-            )()
+            self.network_manager = _NetworkManager()
+
+    class _NetworkManager:
+        def __init__(self):
+            self.is_server = False
+            self.is_client = False
+            self.running = False
+        
+        def start_server(self, *args):
+            raise NotImplementedError("Networking features not available in this version")
+        
+        def connect_to_server(self, *args):
+            raise NotImplementedError("Networking features not available in this version")
+        
+        def send_message(self, *args):
+            raise NotImplementedError("Networking features not available in this version")
+        
+        def disconnect(self, *args):
+            raise NotImplementedError("Networking features not available in this version")
 
     class ArduinoController:  # type: ignore[no-redef]
         def connect(self, *args):
@@ -351,13 +364,13 @@ except ImportError:
             return None
 
         def send_device_command(self, *args):
-            return "Not implemented"
+            raise NotImplementedError("IoT device control not available in this version")
 
         def create_device_group(self, *args):
-            pass
+            raise NotImplementedError("IoT device groups not available in this version")
 
         def control_group(self, *args):
-            return "Not implemented"
+            raise NotImplementedError("IoT group control not available in this version")
 
     class SmartHomeHub:  # type: ignore[no-redef]
         def __init__(self):
@@ -370,7 +383,7 @@ except ImportError:
             pass
 
         def activate_scene(self, *args):
-            return "Not implemented"
+            raise NotImplementedError("Smart home scene activation not available - educational simulation only")
 
         def set_environmental_target(self, *args):
             pass
