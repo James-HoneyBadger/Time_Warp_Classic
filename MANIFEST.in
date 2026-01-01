@@ -1,0 +1,8 @@
+include README.md
+include LICENSE
+include CODE_OF_CONDUCT.md
+include SETUP.md
+recursive-include docs *
+recursive-include examples *
+recursive-include core *
+recursive-include scripts *
