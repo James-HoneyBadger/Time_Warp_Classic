@@ -40,14 +40,20 @@ class TwLogoExecutor:
     def execute_command(self, command):
         """Execute a Logo command and return the result"""
         try:
-            prof_start = (
-                time.perf_counter() if self.interpreter.profile_enabled else None
-            )
-
             # Filter out comments (lines starting with semicolon)
             command = command.strip()
             if command.startswith(";"):
                 return "continue"
+
+            # Handle curly-brace comments { ... }
+            if command.startswith("{"):
+                return "continue"
+            # Strip inline curly-brace comments
+            if "{" in command:
+                import re as _re
+                command = _re.sub(r'\{[^}]*\}', '', command).strip()
+                if not command:
+                    return "continue"
 
             parts = command.split()
             if not parts:
@@ -163,7 +169,7 @@ class TwLogoExecutor:
             return self._handle_rect(parts)
         if cmd == "TEXT":
             return self._handle_text(parts)
-        if cmd == "ARC":
+        if cmd in ("ARC", "POLYGON", "FILL", "STAMP", "CLONE"):
             return self._handle_enhanced_turtle(cmd, parts)
         return None
 
@@ -206,8 +212,9 @@ class TwLogoExecutor:
             return self._handle_3d_primitives(cmd, parts)
 
         # UCBLogo advanced features
-        if self._handle_ucblogo_features(cmd, parts) is not None:
-            return self._handle_ucblogo_features(cmd, parts)
+        ucblogo_result = self._handle_ucblogo_features(cmd, parts)
+        if ucblogo_result is not None:
+            return ucblogo_result
 
         return None
 
@@ -619,7 +626,7 @@ class TwLogoExecutor:
             angle = self._eval_argument(angle_arg)
         except Exception:
             angle = 90
-        self.interpreter.turtle_turn(angle)
+        self.interpreter.turtle_turn(-angle)  # Negative angle for LEFT (counter-clockwise)
         self.interpreter.log_output(
             f"Turtle turned left {angle} degrees (heading={self.interpreter.turtle_graphics['heading']})"
         )
@@ -742,7 +749,14 @@ class TwLogoExecutor:
         return "continue"
 
     def _handle_setcolor(self, parts):
-        """Handle SETCOLOR/COLOR/SETPENCOLOR command"""
+        """Handle SETCOLOR/COLOR/SETPENCOLOR command
+
+        Supported formats:
+            SETPENCOLOR [R G B]      - bracketed RGB list
+            SETPENCOLOR R G B        - space-separated RGB values
+            SETPENCOLOR colorname    - named color (red, blue, etc.)
+            SETPENCOLOR #RRGGBB      - hex color code
+        """
         if len(parts) < 2:
             self.interpreter.log_output("Color command requires a color parameter")
             return "continue"
@@ -750,21 +764,35 @@ class TwLogoExecutor:
         # Check if it's an RGB list [R G B]
         command_str = " ".join(parts[1:])
         if "[" in command_str and "]" in command_str:
-            # Parse RGB list
+            # Parse bracketed RGB list
             try:
                 import re
                 match = re.search(r'\[\s*(\d+)\s+(\d+)\s+(\d+)\s*\]', command_str)
                 if match:
                     r, g, b = int(match.group(1)), int(match.group(2)), int(match.group(3))
-                    # Convert to hex color
                     color = f"#{r:02x}{g:02x}{b:02x}"
                     self.interpreter.turtle_set_color(color)
                     self.interpreter.log_output(f"Pen color set to RGB({r}, {g}, {b})")
                 else:
-                    self.interpreter.log_output("Invalid RGB format. Use [R G B]")
+                    self.interpreter.log_output("Invalid RGB format. Use [R G B] or R G B")
             except Exception as e:
                 self.interpreter.debug_output(f"Color parsing error: {e}")
                 self.interpreter.log_output("Invalid color format")
+        elif len(parts) >= 4:
+            # Space-separated RGB values: SETPENCOLOR R G B
+            try:
+                r, g, b = int(parts[1]), int(parts[2]), int(parts[3])
+                r = max(0, min(255, r))
+                g = max(0, min(255, g))
+                b = max(0, min(255, b))
+                color = f"#{r:02x}{g:02x}{b:02x}"
+                self.interpreter.turtle_set_color(color)
+                self.interpreter.log_output(f"Pen color set to RGB({r}, {g}, {b})")
+            except (ValueError, IndexError):
+                # Not numeric — fall through to named color
+                color = parts[1].lower()
+                self.interpreter.turtle_set_color(color)
+                self.interpreter.log_output(f"Pen color set to {color}")
         else:
             # Named color or hex
             color = parts[1].lower()
@@ -1692,6 +1720,9 @@ class TwLogoExecutor:
             "STOP",
         }
 
+        # Commands that take a bracket block as an argument
+        bracket_commands = {"REPEAT", "IF", "WHILE", "UNTIL", "PRINT"}
+
         # Tokenize the input respecting brackets
         tokens = []
         buf = []
@@ -1726,18 +1757,26 @@ class TwLogoExecutor:
             if token in logo_commands or token.startswith("["):
                 # Start building a command
                 cmd_parts = [tokens[i]]
+                cmd_upper = token
                 i += 1
 
                 # Collect arguments until we hit another command or end
                 while i < len(tokens):
                     next_token = tokens[i].upper()
 
+                    # If next token starts with '[', check if the current
+                    # command expects a bracket block argument
+                    if next_token.startswith("["):
+                        if cmd_upper in bracket_commands:
+                            # Include the bracket block as part of this command
+                            cmd_parts.append(tokens[i])
+                            i += 1
+                            break  # Bracket block terminates the command
+                        else:
+                            break  # Not a bracket command — stop
+
                     # If next token is a command, stop collecting args
                     if next_token in logo_commands:
-                        break
-
-                    # If next token starts with '[', it's a nested block - stop
-                    if next_token.startswith("["):
                         break
 
                     cmd_parts.append(tokens[i])
@@ -1900,7 +1939,7 @@ class TwLogoExecutor:
                         result = array[index]
                         self.interpreter.variables["ARRAY_RESULT"] = result
                         self.interpreter.log_output(
-                            f"ITEM {index} of {source} = {result}"
+                            f"ITEM {index + 1} of {source} = {result}"
                         )
                     else:
                         self.interpreter.log_output("Invalid array or index")
@@ -1913,7 +1952,7 @@ class TwLogoExecutor:
                         result = lst[index]
                         self.interpreter.variables["LIST_RESULT"] = result
                         self.interpreter.log_output(
-                            f"ITEM {index} of {source} = {result}"
+                            f"ITEM {index + 1} of {source} = {result}"
                         )
                     else:
                         self.interpreter.log_output("Invalid list or index")
@@ -2040,41 +2079,40 @@ class TwLogoExecutor:
 
     # UCBLogo Advanced Control Structures
     def _handle_apply(self, parts):
-        """Handle APPLY command - apply procedure to arguments"""
-        try:
-            if len(parts) >= 3:
-                proc_name = parts[1]
-                args = parts[2:]
+        """Handle APPLY command — call a procedure with an argument list.
 
-                # This is a simplified implementation
-                # - in real UCBLogo, APPLY would
-                # dynamically call procedures with argument lists
+        Syntax: APPLY "procname [arg1 arg2 ...]
+        """
+        try:
+            if len(parts) < 3:
                 self.interpreter.log_output(
-                    f"APPLY {proc_name} to {args} (simplified implementation)"
+                    "⚠️  APPLY syntax: APPLY \"procname [arg1 arg2 ...]"
                 )
-            else:
-                self.interpreter.log_output(
-                    "APPLY requires procedure name and arguments"
-                )
+                return "continue"
+
+            proc_name = parts[1].strip('"').upper()
+            lists = self._extract_bracket_lists(parts[2:])
+            args = lists[0].split() if lists else parts[2:]
+            return self._call_logo_procedure(proc_name, args)
         except Exception as e:
             self.interpreter.debug_output(f"APPLY error: {e}")
         return "continue"
 
     def _handle_invoke(self, parts):
-        """Handle INVOKE command - invoke procedure with arguments"""
-        try:
-            if len(parts) >= 3:
-                proc_name = parts[1]
-                args = parts[2:]
+        """Handle INVOKE command — call a procedure with individual arguments.
 
-                # Simplified implementation
+        Syntax: INVOKE "procname arg1 arg2 ...
+        """
+        try:
+            if len(parts) < 2:
                 self.interpreter.log_output(
-                    f"INVOKE {proc_name} with {args} (simplified implementation)"
+                    "⚠️  INVOKE syntax: INVOKE \"procname arg1 arg2 ..."
                 )
-            else:
-                self.interpreter.log_output(
-                    "INVOKE requires procedure name and arguments"
-                )
+                return "continue"
+
+            proc_name = parts[1].strip('"').upper()
+            args = parts[2:]
+            return self._call_logo_procedure(proc_name, args)
         except Exception as e:
             self.interpreter.debug_output(f"INVOKE error: {e}")
         return "continue"
@@ -2120,110 +2158,231 @@ class TwLogoExecutor:
         return "continue"
 
     def _handle_cascade(self, parts):
-        """Handle CASCADE command - cascade operations"""
+        """Handle CASCADE command — iterative function application.
+
+        Syntax: CASCADE n [template1] [template2] ... start_value
+        Applies templates *n* times, using ``?`` for the current value.
+        """
         try:
-            if len(parts) >= 2:
-                # Simplified implementation - would
-                # execute operations in sequence
-                operations = parts[1:]
+            lists = self._extract_bracket_lists(parts)
+            # Need at least: CASCADE n [template] start
+            if len(parts) < 4 or not lists:
                 self.interpreter.log_output(
-                    f"CASCADE operations: {operations} (simplified implementation)"
+                    "⚠️  CASCADE syntax: CASCADE n [template] start_value"
                 )
-            else:
-                self.interpreter.log_output("CASCADE requires operations")
+                return "continue"
+            n = int(self._eval_argument(parts[1]))
+            start_val = self._eval_argument(parts[-1])
+            current = start_val
+            for _ in range(n):
+                for tmpl in lists:
+                    cmd = tmpl.replace("?", str(current))
+                    result = self._execute_command_block(cmd)
+                    if result == "stop":
+                        return "stop"
+                    # Attempt to capture the output value for chaining
+                    # (simple: check if a variable '?' was set)
+                    current = self.interpreter.variables.get("?", current)
         except Exception as e:
             self.interpreter.debug_output(f"CASCADE error: {e}")
         return "continue"
 
     def _handle_case(self, parts):
-        """Handle CASE command - case selection"""
-        try:
-            if len(parts) >= 3:
-                value = parts[1]
-                cases = parts[2:]
+        """Handle CASE command — select and execute a matching clause.
 
-                # Simplified case implementation
+        Syntax: CASE value [match1 [action1]] [match2 [action2]] ...
+        """
+        try:
+            if len(parts) < 3:
                 self.interpreter.log_output(
-                    f"CASE {value} with options {cases} (simplified implementation)"
+                    "⚠️  CASE syntax: CASE value [match1 [action1]] ..."
                 )
-            else:
-                self.interpreter.log_output("CASE requires value and case options")
+                return "continue"
+
+            value = str(self._eval_argument(parts[1]))
+            lists = self._extract_bracket_lists(parts[2:])
+            for clause in lists:
+                # Each clause: "match_value action_commands"
+                clause_parts = clause.split(None, 1)
+                if not clause_parts:
+                    continue
+                match_val = clause_parts[0]
+                if match_val.upper() == "ELSE" or match_val == value:
+                    if len(clause_parts) > 1:
+                        result = self._execute_command_block(clause_parts[1])
+                        if result == "stop":
+                            return "stop"
+                    break
         except Exception as e:
             self.interpreter.debug_output(f"CASE error: {e}")
         return "continue"
 
     def _handle_cond(self, parts):
-        """Handle COND command - conditional execution"""
+        """Handle COND command — evaluate condition/action pairs.
+
+        Syntax: COND [[condition1] [action1]] [[condition2] [action2]] ...
+        Evaluates each condition in order; executes the first true action.
+        """
         try:
-            if len(parts) >= 2:
-                # Simplified conditional implementation
-                conditions = parts[1:]
+            lists = self._extract_bracket_lists(parts[1:])
+            if not lists:
                 self.interpreter.log_output(
-                    f"COND with conditions: {conditions} (simplified implementation)"
+                    "⚠️  COND syntax: COND [[condition] [action]] ..."
                 )
-            else:
-                self.interpreter.log_output("COND requires conditions")
+                return "continue"
+
+            for clause in lists:
+                # Each clause is "[condition] [action]" as inner bracket lists
+                inner = self._extract_bracket_lists(["dummy"] + clause.split())
+                if len(inner) >= 2:
+                    cond_str, action_str = inner[0], inner[1]
+                    if self._eval_logo_condition(cond_str):
+                        result = self._execute_command_block(action_str)
+                        if result == "stop":
+                            return "stop"
+                        break
         except Exception as e:
             self.interpreter.debug_output(f"COND error: {e}")
         return "continue"
 
+    # ---- helper for bracket-list extraction ----
+
+    @staticmethod
+    def _extract_bracket_lists(parts: list[str]) -> list[str]:
+        """Extract ``[...]`` bracket-delimited lists from *parts*.
+
+        Returns a list of strings, one per matched bracket group, with the
+        brackets themselves stripped.  Handles nested brackets correctly.
+        """
+        text = " ".join(parts)
+        result = []
+        depth = 0
+        current: list[str] = []
+        for ch in text:
+            if ch == "[":
+                if depth > 0:
+                    current.append(ch)
+                depth += 1
+            elif ch == "]":
+                depth -= 1
+                if depth == 0:
+                    result.append("".join(current).strip())
+                    current = []
+                elif depth > 0:
+                    current.append(ch)
+            elif depth > 0:
+                current.append(ch)
+        return result
+
+    def _eval_logo_condition(self, cond_str):
+        """Evaluate a Logo condition string, returning a Python bool."""
+        import re
+
+        def replace_var(m):
+            var_name = m.group(1).upper()
+            return str(self.interpreter.variables.get(var_name, 0))
+
+        evaluated = re.sub(r":(\w+)", replace_var, cond_str)
+        return bool(eval(evaluated, {"__builtins__": {}}, {}))  # noqa: S307
+
+    # ---- UCBLogo loop constructs ----
+
     def _handle_while(self, parts):
-        """Handle WHILE command - while loop"""
+        """Handle WHILE [condition] [instructions] — repeat while condition is true."""
         try:
-            if len(parts) >= 2:
-                condition = " ".join(parts[1:])
-                # Simplified while loop - would
-                # evaluate condition and execute block
+            lists = self._extract_bracket_lists(parts)
+            if len(lists) < 2:
                 self.interpreter.log_output(
-                    f"WHILE {condition} (simplified implementation)"
+                    "⚠️  WHILE syntax: WHILE [condition] [instructions]"
                 )
-            else:
-                self.interpreter.log_output("WHILE requires condition")
+                return "continue"
+
+            cond_str, body_str = lists[0], lists[1]
+            guard = 0
+            while self._eval_logo_condition(cond_str):
+                guard += 1
+                if guard > 10000:
+                    self.interpreter.log_output("WHILE aborted: iteration limit reached")
+                    break
+                result = self._execute_command_block(body_str)
+                if result == "stop":
+                    return "stop"
         except Exception as e:
             self.interpreter.debug_output(f"WHILE error: {e}")
         return "continue"
 
     def _handle_until(self, parts):
-        """Handle UNTIL command - until loop"""
+        """Handle UNTIL [condition] [instructions] — repeat until condition is true."""
         try:
-            if len(parts) >= 2:
-                condition = " ".join(parts[1:])
-                # Simplified until loop
+            lists = self._extract_bracket_lists(parts)
+            if len(lists) < 2:
                 self.interpreter.log_output(
-                    f"UNTIL {condition} (simplified implementation)"
+                    "⚠️  UNTIL syntax: UNTIL [condition] [instructions]"
                 )
-            else:
-                self.interpreter.log_output("UNTIL requires condition")
+                return "continue"
+
+            cond_str, body_str = lists[0], lists[1]
+            guard = 0
+            while not self._eval_logo_condition(cond_str):
+                guard += 1
+                if guard > 10000:
+                    self.interpreter.log_output("UNTIL aborted: iteration limit reached")
+                    break
+                result = self._execute_command_block(body_str)
+                if result == "stop":
+                    return "stop"
         except Exception as e:
             self.interpreter.debug_output(f"UNTIL error: {e}")
         return "continue"
 
     def _handle_do_while(self, parts):
-        """Handle DO.WHILE command - do-while loop"""
+        """Handle DO.WHILE [instructions] [condition] — execute at least once, then loop while true."""
         try:
-            if len(parts) >= 2:
-                condition = " ".join(parts[1:])
-                # Simplified do-while loop
+            lists = self._extract_bracket_lists(parts)
+            if len(lists) < 2:
                 self.interpreter.log_output(
-                    f"DO.WHILE {condition} (simplified implementation)"
+                    "⚠️  DO.WHILE syntax: DO.WHILE [instructions] [condition]"
                 )
-            else:
-                self.interpreter.log_output("DO.WHILE requires condition")
+                return "continue"
+
+            body_str, cond_str = lists[0], lists[1]
+            guard = 0
+            while True:
+                guard += 1
+                if guard > 10000:
+                    self.interpreter.log_output("DO.WHILE aborted: iteration limit reached")
+                    break
+                result = self._execute_command_block(body_str)
+                if result == "stop":
+                    return "stop"
+                if not self._eval_logo_condition(cond_str):
+                    break
         except Exception as e:
             self.interpreter.debug_output(f"DO.WHILE error: {e}")
         return "continue"
 
     def _handle_do_until(self, parts):
-        """Handle DO.UNTIL command - do-until loop"""
+        """Handle DO.UNTIL [instructions] [condition] — execute at least once, then loop until true."""
         try:
-            if len(parts) >= 2:
-                condition = " ".join(parts[1:])
-                # Simplified do-until loop
+            lists = self._extract_bracket_lists(parts)
+            if len(lists) < 2:
                 self.interpreter.log_output(
-                    f"DO.UNTIL {condition} (simplified implementation)"
+                    "⚠️  DO.UNTIL syntax: DO.UNTIL [instructions] [condition]"
                 )
-            else:
-                self.interpreter.log_output("DO.UNTIL requires condition")
+                return "continue"
+
+            body_str, cond_str = lists[0], lists[1]
+            guard = 0
+            while True:
+                guard += 1
+                if guard > 10000:
+                    self.interpreter.log_output("DO.UNTIL aborted: iteration limit reached")
+                    break
+                result = self._execute_command_block(body_str)
+                if result == "stop":
+                    return "stop"
+                if self._eval_logo_condition(cond_str):
+                    break
         except Exception as e:
             self.interpreter.debug_output(f"DO.UNTIL error: {e}")
         return "continue"
@@ -2360,10 +2519,18 @@ class TwLogoExecutor:
                     result = ~op1
                     self.interpreter.log_output(f"BITNOT {op1} = {result}")
                 elif cmd == "ASHIFT":
-                    result = op1 << op2
+                    # Arithmetic shift: positive op2 shifts left, negative shifts right (sign-preserving)
+                    if op2 >= 0:
+                        result = op1 << op2
+                    else:
+                        result = op1 >> (-op2)
                     self.interpreter.log_output(f"{op1} ASHIFT {op2} = {result}")
                 elif cmd == "LSHIFT":
-                    result = op1 >> op2
+                    # Logical left shift
+                    if op2 >= 0:
+                        result = op1 << op2
+                    else:
+                        result = (op1 & 0xFFFFFFFF) >> (-op2)  # Unsigned right shift
                     self.interpreter.log_output(f"{op1} LSHIFT {op2} = {result}")
 
                 self.interpreter.variables["BITWISE_RESULT"] = result

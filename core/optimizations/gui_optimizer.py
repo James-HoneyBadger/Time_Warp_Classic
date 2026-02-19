@@ -15,7 +15,6 @@ import time
 from typing import Callable, Any, Optional, Dict, List
 from functools import partial
 import tkinter as tk
-from tkinter import ttk
 
 
 class UIThreadManager:
@@ -23,7 +22,7 @@ class UIThreadManager:
 
     def __init__(self, root: tk.Tk):
         self.root = root
-        self.task_queue = queue.Queue()
+        self.task_queue: queue.Queue[tuple[Callable[..., Any], tuple[Any, ...], dict[str, Any]]] = queue.Queue()
         self.worker_thread: Optional[threading.Thread] = None
         self.running = False
         self._lock = threading.RLock()
@@ -72,7 +71,7 @@ class AsyncTextUpdate:
 
     def __init__(self, text_widget: tk.Text, max_buffer_size: int = 1000):
         self.text_widget = text_widget
-        self.update_queue = queue.Queue()
+        self.update_queue: queue.Queue[tuple[str, tuple[Any, ...], dict[str, Any]]] = queue.Queue()
         self.max_buffer_size = max_buffer_size
         self.updating = False
         self._lock = threading.RLock()
@@ -133,7 +132,7 @@ class UIRefreshManager:
     def __init__(self, root: tk.Tk, min_refresh_interval: float = 0.016):  # ~60 FPS
         self.root = root
         self.min_interval = min_refresh_interval
-        self.last_refresh = 0
+        self.last_refresh: float = 0
         self.pending_updates: Dict[str, Callable] = {}
         self.refresh_scheduled = False
         self._lock = threading.RLock()
@@ -354,7 +353,7 @@ class GUIOptimizer:
         for text_widget in self.async_text_widgets.values():
             # Force processing of remaining updates
             while not text_widget.update_queue.empty():
-                text_widget._process_update()
+                text_widget._process_update()  # pylint: disable=protected-access
 
         return {
             'canvases_flushed': len(self.optimized_canvases),
@@ -366,13 +365,15 @@ class GUIOptimizer:
 # Global GUI optimizer instance
 gui_optimizer = None
 
+
 def initialize_gui_optimizer(root: tk.Tk) -> GUIOptimizer:
     """Initialize the global GUI optimizer."""
-    global gui_optimizer
+    global gui_optimizer  # pylint: disable=global-statement
     if gui_optimizer is None:
         gui_optimizer = GUIOptimizer(root)
         gui_optimizer.start()
     return gui_optimizer
+
 
 def get_gui_stats() -> Dict[str, Any]:
     """Get global GUI performance statistics."""

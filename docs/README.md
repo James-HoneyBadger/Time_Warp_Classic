@@ -10,39 +10,48 @@ Welcome to the complete documentation for Time_Warp Classic IDE.
 
 | Document | Description |
 |----------|-------------|
-| **[Quick Start Guide](user/QUICKSTART.md)** | Get up and running in 5 minutes |
-| **[User Manual](user/USER_MANUAL.md)** | Complete guide to using the IDE |
+| **[Quick Start Guide](QUICK_START.md)** | Get up and running in 5 minutes |
+| **[Language Tutorials](user/LANGUAGE_TUTORIALS.md)** | Tutorials for all 9 supported languages |
 | **[Example Programs](../examples/README.md)** | Guided tour of all example programs |
+| **[FAQ](FAQ.md)** | Frequently asked questions |
+| **[Troubleshooting](TROUBLESHOOTING.md)** | Common issues and solutions |
 
 ### For Developers
 
 | Document | Description |
 |----------|-------------|
-| **[Technical Manual](dev/TECHNICAL_MANUAL.md)** | Architecture and implementation details |
-| **[Developer Guide](../README.md#contributing)** | Contributing and extending Time_Warp |
+| **[Technical Reference](dev/TECHNICAL_REFERENCE.md)** | Architecture and implementation details |
+| **[Contributing](../README.md#contributing)** | Contributing and extending Time_Warp |
 
-### Reference Materials
+### Language References
 
 | Document | Description |
 |----------|-------------|
-| **[Main README](../README.md)** | Project overview and quick reference |
-| **[Keyboard Shortcuts](user/USER_MANUAL.md#keyboard-shortcuts)** | Quick reference for key bindings |
+| **[PILOT](languages/PILOT_REFERENCE.md)** | PILOT language reference |
+| **[BASIC](languages/BASIC_REFERENCE.md)** | BASIC language reference |
+| **[Logo](languages/LOGO_REFERENCE.md)** | Logo language reference |
+| **[Pascal](languages/PASCAL_REFERENCE.md)** | Pascal language reference |
+| **[Prolog](languages/PROLOG_REFERENCE.md)** | Prolog language reference |
+| **[Forth](languages/FORTH_REFERENCE.md)** | Forth language reference |
+| **[Perl](languages/PERL_REFERENCE.md)** | Perl language reference |
+| **[Python](languages/PYTHON_REFERENCE.md)** | Python language reference |
+| **[JavaScript](languages/JAVASCRIPT_REFERENCE.md)** | JavaScript language reference |
 
 ---
 
 ## 🎯 Where to Start
 
 ### I'm new to Time_Warp
-👉 Start with **[Quick Start Guide](user/QUICKSTART.md)**
+👉 Start with **[Quick Start Guide](QUICK_START.md)**
 
-### I want to learn the IDE
-👉 Read the **[User Manual](user/USER_MANUAL.md)**
+### I want to learn a language
+👉 Read the **[Language Tutorials](user/LANGUAGE_TUTORIALS.md)**
 
 ### I want to see examples
 👉 Check out **[Example Programs](../examples/README.md)**
 
 ### I want to understand internals
-👉 Study the **[Technical Manual](dev/TECHNICAL_MANUAL.md)**
+👉 Study the **[Technical Reference](dev/TECHNICAL_REFERENCE.md)**
 
 ### I want to contribute
 👉 See **[Contributing](../README.md#contributing)**
@@ -52,19 +61,14 @@ Welcome to the complete documentation for Time_Warp Classic IDE.
 ## 📚 Documentation by Topic
 
 ### Getting Started
-- [Installation](user/QUICKSTART.md#1-install-python-if-needed)
-- [First Launch](user/QUICKSTART.md#4-launch-the-ide)
-- [First Program](user/QUICKSTART.md#5-write-your-first-program)
-- [Loading Examples](user/QUICKSTART.md#6-load-an-example)
-
-### Using the IDE
-- [Interface Overview](user/USER_MANUAL.md#ide-interface)
-- [Working with Files](user/USER_MANUAL.md#working-with-files)
-- [Running Programs](user/USER_MANUAL.md#writing-and-running-programs)
-- [Customizing](user/USER_MANUAL.md#customizing-the-ide)
+- [Installation](QUICK_START.md#1-install-python-if-needed)
+- [First Launch](QUICK_START.md#4-launch-the-ide)
+- [First Program](QUICK_START.md#5-write-your-first-program)
+- [Loading Examples](QUICK_START.md#6-load-an-example)
 
 ### Programming Languages
 - [All 9 Languages](../README.md#-supported-languages)
+- [Language Tutorials](user/LANGUAGE_TUTORIALS.md)
 - [PILOT Programs](../examples/pilot/)
 - [BASIC Programs](../examples/basic/)
 - [Logo Programs](../examples/logo/)
@@ -76,21 +80,19 @@ Welcome to the complete documentation for Time_Warp Classic IDE.
 - [JavaScript Programs](../examples/javascript/)
 
 ### Turtle Graphics
-- [Using Turtle Graphics](user/USER_MANUAL.md#using-turtle-graphics)
-- [Coordinate System](user/USER_MANUAL.md#coordinate-system)
-- [Drawing Examples](user/USER_MANUAL.md#example-drawing-a-square)
-- [Technical Details](dev/TECHNICAL_MANUAL.md#turtle-graphics-engine)
+- [Logo Language Reference](languages/LOGO_REFERENCE.md)
+- [Logo Examples](../examples/logo/)
 
 ### Troubleshooting
-- [Common Issues](user/USER_MANUAL.md#troubleshooting)
-- [Quick Fixes](user/QUICKSTART.md#troubleshooting)
-- [Getting Help](user/USER_MANUAL.md#getting-help)
+- [FAQ](FAQ.md)
+- [Troubleshooting Guide](TROUBLESHOOTING.md)
+- [Quick Start Troubleshooting](QUICK_START.md#troubleshooting)
 
 ### Advanced Topics
-- [Architecture](dev/TECHNICAL_MANUAL.md#architecture-overview)
-- [Core Components](dev/TECHNICAL_MANUAL.md#core-components)
-- [Language System](dev/TECHNICAL_MANUAL.md#language-execution-system)
-- [Extending](dev/TECHNICAL_MANUAL.md#extension-points)
+- [Architecture](dev/TECHNICAL_REFERENCE.md#architecture-overview)
+- [Core Components](dev/TECHNICAL_REFERENCE.md#core-components)
+- [Language Execution System](dev/TECHNICAL_REFERENCE.md#language-execution-system)
+- [Extension Guide](dev/TECHNICAL_REFERENCE.md#adding-a-new-language)
 
 ---
 
@@ -99,28 +101,21 @@ Welcome to the complete documentation for Time_Warp Classic IDE.
 ### I want to...
 
 **...start programming quickly**
-- [Quick Start Guide](user/QUICKSTART.md)
+- [Quick Start Guide](QUICK_START.md)
 
 **...learn a specific language**
+- [Language Tutorials](user/LANGUAGE_TUTORIALS.md)
 - [Load examples](../examples/README.md) in that language
-- Study the code and run it
 
 **...draw graphics**
-- [Turtle Graphics Guide](user/USER_MANUAL.md#using-turtle-graphics)
+- [Logo Language Reference](languages/LOGO_REFERENCE.md)
 - [Logo Examples](../examples/logo/)
 
-**...customize the IDE**
-- [Themes and Fonts](user/USER_MANUAL.md#customizing-the-ide)
-- [Preferences Menu](user/USER_MANUAL.md#preferences-menu)
-
-**...save my programs**
-- [Working with Files](user/USER_MANUAL.md#working-with-files)
-
 **...understand how it works**
-- [Technical Manual](dev/TECHNICAL_MANUAL.md)
+- [Technical Reference](dev/TECHNICAL_REFERENCE.md)
 
 **...add a new language**
-- [Extension Points](dev/TECHNICAL_MANUAL.md#extension-points)
+- [Extension Guide](dev/TECHNICAL_REFERENCE.md#adding-a-new-language)
 
 **...report a bug**
 - [GitHub Issues](https://github.com/James-HoneyBadger/Time_Warp_Classic/issues)
@@ -135,7 +130,7 @@ All Time_Warp documentation follows these principles:
 2. **Examples Included** - Show, don't just tell
 3. **Progressive Difficulty** - Start simple, build up
 4. **Cross-Referenced** - Link to related docs
-5. **Up-to-Date** - Matches current version (1.0.0)
+5. **Up-to-Date** - Matches current version (1.3.0)
 
 ---
 
@@ -160,4 +155,4 @@ Found an error? Want to improve the docs?
 
 **Complete Documentation for Complete Programming** 📚
 
-© 2025 Honey Badger Universe | Documentation
+© 2025–2026 Honey Badger Universe | Documentation

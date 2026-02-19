@@ -117,9 +117,9 @@ FORWARD 100
 - Try each language: BASIC, Python, JavaScript, Pascal, Prolog, Forth, Perl, Logo, PILOT
 
 ### Master the IDE
-- Read [USER_GUIDE.md](user/USER_GUIDE.md) for features
-- Learn [KEYBOARD_SHORTCUTS.md](user/KEYBOARD_SHORTCUTS.md)
-- Customize [THEMES_AND_FONTS.md](user/THEMES_AND_FONTS.md)
+- Read the [README](README.md) documentation index
+- Explore [Language References](languages/) for each language
+- Customize themes via the Preferences menu
 
 ### Run Examples
 ```bash
@@ -140,26 +140,27 @@ If something doesn't work:
 
 ### Main Components
 
-**Editor (Left)**
+**Editor (Left Panel)**
 - Write code here
-- Syntax highlighting
+- Syntax highlighting (via Pygments when available)
 - Line numbers
-- Find & Replace
+- Find & Replace (Ctrl+F / Ctrl+H)
 
-**Output (Bottom)**
+**Output (Top Right)**
 - See program results
 - Error messages
 - Debug information
 
-**Canvas (Right - Logo only)**
-- Turtle graphics
-- Visual output for Logo programs
+**Canvas (Bottom Right)**
+- Turtle graphics display
+- Visual output for Logo programs (also used by BASIC graphics)
 
-**Toolbar**
-- Language selector
-- Run button
-- File operations
-- Settings
+**Bottom Bar**
+- Input field for interactive programs
+- Buttons: Run, Open, Save, Clear Editor, Clear Output, Clear Graphics
+
+**Menu Bar**
+- File, Edit, Program, Debug, Test, Performance, Preferences, About
 
 ### Your First Real Program
 
@@ -228,7 +229,7 @@ A: Yes! Just change language dropdown and paste new code
 
 ## 📞 Need More Help?
 
-- **Full user guide:** [USER_GUIDE.md](user/USER_GUIDE.md)
+- **Full user guide:** [README.md](README.md)
 - **Language tutorials:** [LANGUAGE_TUTORIALS.md](user/LANGUAGE_TUTORIALS.md)
 - **Troubleshooting:** [TROUBLESHOOTING.md](TROUBLESHOOTING.md)
 - **FAQ:** [FAQ.md](FAQ.md)
@@ -245,7 +246,7 @@ A: Yes! Just change language dropdown and paste new code
 → Modify an example
 
 **30 minutes**
-→ Read [USER_GUIDE.md](user/USER_GUIDE.md)
+→ Read [README.md](README.md)
 → Learn IDE features
 → Customize your workspace
 
@@ -266,6 +267,6 @@ A: Yes! Just change language dropdown and paste new code
 [Next: Try your first program →](#super-quick-start-90-seconds)
 
 Or jump to:
-- [Full User Guide](user/USER_GUIDE.md)
+- [Full Documentation Index](README.md)
 - [Language Tutorials](user/LANGUAGE_TUTORIALS.md)
 - [All Documentation](INDEX.md)

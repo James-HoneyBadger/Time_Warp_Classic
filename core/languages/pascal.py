@@ -56,6 +56,39 @@ class TwPascalExecutor:
         self.compiler_directives = {}  # Compiler directives like {$DEFINE}
         self.inline_asm_enabled = False  # For ASM blocks
 
+    # Dispatch table: keyword → handler method name
+    _CMD_HANDLERS = {
+        "PROGRAM": "_handle_program",
+        "UNIT": "_handle_unit",
+        "INTERFACE": "_handle_interface",
+        "IMPLEMENTATION": "_handle_implementation",
+        "USES": "_handle_uses",
+        "BEGIN": "_handle_begin",
+        "END": "_handle_end",
+        "VAR": "_handle_var",
+        "CONST": "_handle_const",
+        "TYPE": "_handle_type",
+        "OBJECT": "_handle_object",
+        "CONSTRUCTOR": "_handle_constructor",
+        "DESTRUCTOR": "_handle_destructor",
+        "IF": "_handle_if",
+        "WHILE": "_handle_while",
+        "FOR": "_handle_for",
+        "REPEAT": "_handle_repeat",
+        "CASE": "_handle_case",
+        "PROCEDURE": "_handle_procedure",
+        "FUNCTION": "_handle_function",
+        "ASM": "_handle_asm",
+        "READLN": "_handle_readln",
+        "WRITELN": "_handle_writeln",
+        "WRITE": "_handle_write",
+    }
+
+    # Keywords that are handled by their parent statement; return "continue" immediately
+    _NO_OP_CMDS = {
+        "INHERITS", "THEN", "ELSE", "DO", "TO", "DOWNTO", "UNTIL", "OF",
+    }
+
     def execute_command(self, command):
         """Execute a Pascal command and return the result"""
         try:
@@ -67,113 +100,35 @@ class TwPascalExecutor:
             if command.endswith(";"):
                 command = command[:-1].strip()
 
-            # Get the base command name (first word or first token before parentheses)
-            # Handle both "WRITELN(args)" and "WRITELN args" syntax
+            # Get the base command name (first word before any parenthesis/space)
             match = re.match(r"(\w+)", command)
             if not match:
                 return "continue"
 
             cmd = match.group(1).upper()
 
-            # Check command type with case-insensitive prefix matching
-            command_upper = command.upper()
+            # No-op keywords (context handled by parent statement)
+            if cmd in self._NO_OP_CMDS:
+                return "continue"
 
-            # Program structure and units
-            if cmd == "PROGRAM":
-                return self._handle_program(command)
-            elif cmd == "UNIT":
-                return self._handle_unit(command)
-            elif cmd == "INTERFACE":
-                return self._handle_interface(command)
-            elif cmd == "IMPLEMENTATION":
-                return self._handle_implementation(command)
-            elif cmd == "USES":
-                return self._handle_uses(command)
-            elif cmd == "BEGIN":
-                return self._handle_begin(command)
-            elif cmd == "END":
-                return self._handle_end(command)
-
-            # Variable declarations
-            elif cmd == "VAR":
-                return self._handle_var(command)
-            elif cmd == "CONST":
-                return self._handle_const(command)
-            elif cmd == "TYPE":
-                return self._handle_type(command)
-
-            # Object-oriented programming
-            elif cmd == "OBJECT":
-                return self._handle_object(command)
-            elif cmd == "INHERITS":
-                return "continue"  # Handled by OBJECT
-            elif cmd == "CONSTRUCTOR":
-                return self._handle_constructor(command)
-            elif cmd == "DESTRUCTOR":
-                return self._handle_destructor(command)
-
-            # Control structures
-            elif cmd == "IF":
-                return self._handle_if(command)
-            elif cmd == "THEN":
-                return "continue"  # Handled by IF
-            elif cmd == "ELSE":
-                return "continue"  # Handled by IF
-            elif cmd == "WHILE":
-                return self._handle_while(command)
-            elif cmd == "DO":
-                return "continue"  # Handled by WHILE/FOR
-            elif cmd == "FOR":
-                return self._handle_for(command)
-            elif cmd == "TO":
-                return "continue"  # Handled by FOR
-            elif cmd == "DOWNTO":
-                return "continue"  # Handled by FOR
-            elif cmd == "REPEAT":
-                return self._handle_repeat(command)
-            elif cmd == "UNTIL":
-                return "continue"  # Handled by REPEAT
-            elif cmd == "CASE":
-                return self._handle_case(command)
-            elif cmd == "OF":
-                return "continue"  # Handled by CASE
-
-            # Procedures and functions
-            elif cmd == "PROCEDURE":
-                return self._handle_procedure(command)
-            elif cmd == "FUNCTION":
-                return self._handle_function(command)
-
-            # Assembly
-            elif cmd == "ASM":
-                return self._handle_asm(command)
-            elif cmd == "END":
-                return "continue"  # Could be end of ASM block
-
-            # I/O operations - check these with prefix matching to handle function calls
-            elif cmd == "READLN" or command_upper.startswith("READLN("):
-                return self._handle_readln(command)
-            elif cmd == "WRITELN" or command_upper.startswith("WRITELN("):
-                return self._handle_writeln(command)
-            elif cmd == "WRITE" or command_upper.startswith("WRITE("):
-                return self._handle_write(command)
+            # Dispatch to dedicated handler via lookup table
+            handler_name = self._CMD_HANDLERS.get(cmd)
+            if handler_name:
+                return getattr(self, handler_name)(command)
 
             # Assignment
-            elif ":=" in command:
+            if ":=" in command:
                 return self._handle_assignment(command)
 
             # Compiler directives
-            elif command.strip().startswith("{$"):
+            if command.strip().startswith("{$"):
                 return self._handle_directive(command)
 
-            # Procedure/function calls
-            else:
-                # Check if it's a procedure or function call
-                if "(" in command and ")" in command:
-                    return self._handle_call(command)
-                # Check if it's a simple procedure call
-                elif command.upper() in self.procedures:
-                    return self._handle_call(command)
+            # Procedure/function calls (fallthrough)
+            if "(" in command and ")" in command:
+                return self._handle_call(command)
+            if command.upper() in self.procedures:
+                return self._handle_call(command)
 
         except Exception as e:
             self.interpreter.debug_output(f"Pascal command error: {e}")
@@ -523,10 +478,10 @@ class TwPascalExecutor:
                 cond_result = self._evaluate_expression(condition)
                 if cond_result:
                     # Execute THEN statement
-                    return self.interpreter.execute_line(then_stmt)
+                    return self.execute_command(then_stmt)
                 elif else_stmt:
                     # Execute ELSE statement
-                    return self.interpreter.execute_line(else_stmt)
+                    return self.execute_command(else_stmt)
         except Exception as e:
             self.interpreter.debug_output(f"IF statement error: {e}")
         return "continue"
@@ -540,14 +495,18 @@ class TwPascalExecutor:
                 condition = match.group(1).strip()
                 statement = match.group(2).strip()
 
-                cond_result = self._evaluate_expression(condition)
-                if cond_result:
-                    # Execute statement and continue loop
-                    result = self.interpreter.execute_line(statement)
-                    if result == "continue":
-                        # Re-execute the WHILE statement to check condition again
-                        return self._handle_while(command)
-                # Condition false, exit loop
+                max_iterations = 10000
+                iterations = 0
+                while iterations < max_iterations:
+                    cond_result = self._evaluate_expression(condition)
+                    if not cond_result:
+                        break
+                    result = self.execute_command(statement)
+                    if result != "continue":
+                        return result
+                    iterations += 1
+                if iterations >= max_iterations:
+                    self.interpreter.log_output("WHILE loop terminated: maximum iterations reached")
         except Exception as e:
             self.interpreter.debug_output(f"WHILE loop error: {e}")
         return "continue"
@@ -572,28 +531,35 @@ class TwPascalExecutor:
                 end_val = int(self._evaluate_expression(end_expr))
 
                 # Initialize loop variable
-                self.variables[var_name] = start_val
-                self.interpreter.variables[var_name] = start_val
+                current_val = start_val
+                self.variables[var_name] = current_val
+                self.interpreter.variables[var_name] = current_val
 
-                # Check if we should continue the loop
-                current_val = self.variables.get(var_name, start_val)
-                if direction == "TO":
-                    should_continue = current_val <= end_val
-                else:  # DOWNTO
-                    should_continue = current_val >= end_val
+                max_iterations = 10000
+                iterations = 0
+                while iterations < max_iterations:
+                    # Check loop condition
+                    if direction == "TO" and current_val > end_val:
+                        break
+                    elif direction == "DOWNTO" and current_val < end_val:
+                        break
 
-                if should_continue:
                     # Execute statement
-                    result = self.interpreter.execute_line(statement)
-                    if result == "continue":
-                        # Increment/decrement and loop
-                        if direction == "TO":
-                            self.variables[var_name] = current_val + 1
-                        else:
-                            self.variables[var_name] = current_val - 1
-                        self.interpreter.variables[var_name] = self.variables[var_name]
-                        # Re-execute FOR to check condition
-                        return self._handle_for(command)
+                    result = self.execute_command(statement)
+                    if result != "continue":
+                        return result
+
+                    # Increment/decrement
+                    if direction == "TO":
+                        current_val += 1
+                    else:
+                        current_val -= 1
+                    self.variables[var_name] = current_val
+                    self.interpreter.variables[var_name] = current_val
+                    iterations += 1
+
+                if iterations >= max_iterations:
+                    self.interpreter.log_output("FOR loop terminated: maximum iterations reached")
         except Exception as e:
             self.interpreter.debug_output(f"FOR loop error: {e}")
         return "continue"
@@ -607,15 +573,20 @@ class TwPascalExecutor:
                 statement = match.group(1).strip()
                 condition = match.group(2).strip()
 
-                # Execute statement
-                result = self.interpreter.execute_line(statement)
-                if result == "continue":
-                    # Check condition
+                max_iterations = 10000
+                iterations = 0
+                while iterations < max_iterations:
+                    # Execute statement
+                    result = self.execute_command(statement)
+                    if result != "continue":
+                        return result
+                    # Check condition - exit when true
                     cond_result = self._evaluate_expression(condition)
-                    if not cond_result:
-                        # Condition false, repeat
-                        return self._handle_repeat(command)
-                # Condition true, exit loop
+                    if cond_result:
+                        break
+                    iterations += 1
+                if iterations >= max_iterations:
+                    self.interpreter.log_output("REPEAT loop terminated: maximum iterations reached")
         except Exception as e:
             self.interpreter.debug_output(f"REPEAT loop error: {e}")
         return "continue"
@@ -637,7 +608,7 @@ class TwPascalExecutor:
                     if ":" in case:
                         value_part, stmt_part = case.split(":", 1)
                         if value_part.strip().upper() == str(selector).upper():
-                            return self.interpreter.execute_line(stmt_part.strip())
+                            return self.execute_command(stmt_part.strip())
         except Exception as e:
             self.interpreter.debug_output(f"CASE statement error: {e}")
         return "continue"
@@ -753,7 +724,7 @@ class TwPascalExecutor:
                     value = self._evaluate_expression(expr)
                     output_parts.append(str(value))
 
-                output = " ".join(output_parts)
+                output = "".join(output_parts)
                 self.interpreter.log_output(output)
             else:
                 # WRITELN without parentheses
@@ -776,7 +747,7 @@ class TwPascalExecutor:
                     value = self._evaluate_expression(expr)
                     output_parts.append(str(value))
 
-                output = " ".join(output_parts)
+                output = "".join(output_parts)
                 # Use debug output to avoid newline, or find another way
                 self.interpreter.log_output(output)
         except Exception as e:
@@ -787,8 +758,12 @@ class TwPascalExecutor:
         """Evaluate Pascal expression"""
         try:
             # Replace Pascal operators with Python equivalents
-            expr = expr.replace("=", "==")
+            # Order matters: replace compound operators BEFORE single-char ones
             expr = expr.replace("<>", "!=")
+            expr = expr.replace(":=", "=")  # Strip assignment operator if present
+            # Replace single = with == only where it's not part of <=, >=, !=
+            import re as _re
+            expr = _re.sub(r'(?<![<>!])=(?!=)', '==', expr)
             expr = expr.replace("AND", "and")
             expr = expr.replace("OR", "or")
             expr = expr.replace("NOT", "not")
@@ -889,9 +864,15 @@ class TwPascalExecutor:
             }
 
             # Create evaluation context
+            # Pascal is case-insensitive: store variables under both original
+            # (uppercase) keys and lowercase versions so eval() resolves either.
             eval_context = {}
-            eval_context.update(self.variables)
-            eval_context.update(self.constants)
+            for k, v in self.variables.items():
+                eval_context[k] = v
+                eval_context[k.lower()] = v
+            for k, v in self.constants.items():
+                eval_context[k] = v
+                eval_context[k.lower()] = v
             eval_context.update(allowed_names)
 
             # Safe evaluation

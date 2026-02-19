@@ -34,8 +34,10 @@ from .forth import TwForthExecutor
 from .perl import PerlExecutor
 from .python_executor import PythonExecutor
 from .javascript_executor import JavaScriptExecutor
+from .base import SubprocessExecutor
 
 __all__ = [
+    "SubprocessExecutor",
     "TwPilotExecutor",
     "TwBasicExecutor",
     "TwLogoExecutor",

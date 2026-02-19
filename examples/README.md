@@ -10,23 +10,33 @@ This directory contains comprehensive example programs demonstrating all feature
 examples/
 ├── README.md                      # This file
 ├── basic/
-│   └── comprehensive_demo.bas     # Complete BASIC feature demo
+│   ├── comprehensive_demo.bas     # Complete BASIC feature demo
+│   ├── hello_basic.bas            # Simple Hello World example
+│   └── INDEX.bas                  # Index of BASIC examples
 ├── forth/
-│   └── comprehensive_demo.fth     # Complete Forth feature demo
+│   ├── comprehensive_demo.fth     # Complete Forth feature demo
+│   └── stack_forth.fth            # Stack operations example
 ├── javascript/
-│   └── comprehensive_demo.js      # Complete JavaScript feature demo
+│   ├── comprehensive_demo.js      # Complete JavaScript feature demo
+│   └── interactive_javascript.js  # Interactive JavaScript example
 ├── logo/
-│   └── comprehensive_demo.logo    # Complete Logo feature demo
+│   ├── comprehensive_demo.logo    # Complete Logo feature demo
+│   └── spiral_logo.logo           # Spiral drawing example
 ├── pascal/
-│   └── comprehensive_demo.pas     # Complete Pascal feature demo
+│   ├── comprehensive_demo.pas     # Complete Pascal feature demo
+│   └── hello_pascal.pas           # Simple Hello World example
 ├── perl/
-│   └── comprehensive_demo.pl      # Complete Perl feature demo
+│   ├── comprehensive_demo.pl      # Complete Perl feature demo
+│   └── patterns_perl.pl           # Pattern matching example
 ├── pilot/
-│   └── comprehensive_demo.pilot   # Complete PILOT feature demo
+│   ├── comprehensive_demo.pilot   # Complete PILOT feature demo
+│   └── quiz_pilot.pilot           # Interactive quiz example
 ├── prolog/
-│   └── comprehensive_demo.pl      # Complete Prolog feature demo
+│   ├── comprehensive_demo.pro     # Complete Prolog feature demo
+│   └── facts_prolog.pro           # Facts and queries example
 └── python/
-    └── comprehensive_demo.py      # Complete Python feature demo
+    ├── comprehensive_demo.py      # Complete Python feature demo
+    └── modern_python.py           # Modern Python features example
 ```
 
 ---
@@ -110,7 +120,7 @@ Each language directory contains a **comprehensive_demo** file that thoroughly d
 
 ---
 
-### 5. Prolog (`prolog/comprehensive_demo.pl`)
+### 5. Prolog (`prolog/comprehensive_demo.pro`)
 
 **Features Demonstrated:**
 - Facts and rules (predicates)
@@ -345,4 +355,4 @@ For more information:
 
 Master multiple programming languages from the 1970s-1990s era!
 
-© 2025 Honey Badger Universe | Example Programs
+© 2025–2026 Honey Badger Universe | Example Programs

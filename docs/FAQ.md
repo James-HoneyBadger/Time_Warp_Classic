@@ -71,17 +71,16 @@ Yes, as long as Python is installed on the target computer.
 
 1. Click in the editor area
 2. Type your code
-3. Select language (or use auto-detect)
-4. Click Execute
+3. Select language from the dropdown
+4. Click Run (or press F5)
 
 ### How do I select a language?
 
-- Use the dropdown menu in the control panel
-- Or enable "Auto-Detect Language"
+- Use the language dropdown above the editor
 
 ### What's the keyboard shortcut to run code?
 
-See [USER_GUIDE.md](user/USER_GUIDE.md) for all shortcuts.
+See [QUICK_START.md](QUICK_START.md) for all shortcuts.
 
 ### Can I undo my changes?
 
@@ -97,15 +96,16 @@ Yes, use File > Save or Ctrl+S to save your programs.
 
 ### What file formats are supported?
 
-Common formats:
+Canonical extensions (one per language):
+- `.pilot` - PILOT
 - `.bas` - BASIC
+- `.logo` - Logo
+- `.pas` - Pascal
+- `.pro` - Prolog
+- `.fth` - Forth
+- `.pl` - Perl
 - `.py` - Python
 - `.js` - JavaScript
-- `.pas` - Pascal
-- `.pl` - Prolog/Perl
-- `.fth` - Forth
-- `.logo` - Logo
-- `.pilot` - PILOT
 
 Or save as `.txt` (universal text)
 
@@ -327,7 +327,7 @@ Yes! Python or JavaScript are good choices. Logo for graphics.
 1. Read [QUICK_START.md](QUICK_START.md)
 2. Run example programs
 3. Try [LANGUAGE_TUTORIALS.md](user/LANGUAGE_TUTORIALS.md)
-4. Read [USER_GUIDE.md](user/USER_GUIDE.md)
+4. Read [README.md](README.md)
 
 ### Where are the complete language references?
 
@@ -362,7 +362,7 @@ See [TECHNICAL_REFERENCE.md](dev/TECHNICAL_REFERENCE.md) for:
 
 ### Can I create custom languages?
 
-Yes, see [LANGUAGE_IMPLEMENTATIONS.md](dev/LANGUAGE_IMPLEMENTATIONS.md) for how to implement a language.
+Yes, see [TECHNICAL_REFERENCE.md](dev/TECHNICAL_REFERENCE.md) for how to implement a language.
 
 ### How does the language detection work?
 
@@ -422,7 +422,7 @@ Time Warp Classic is a modern retro-computing project honoring classic languages
 - [INDEX.md](INDEX.md) - Documentation index
 - [examples/README.md](../examples/README.md) - Program examples
 - [QUICK_START.md](QUICK_START.md) - Get started in 5 minutes
-- [USER_GUIDE.md](user/USER_GUIDE.md) - Complete IDE guide
+- [README.md](README.md) - Complete documentation index
 
 ---
 

@@ -38,7 +38,7 @@ pip install -r requirements.txt
 
 ### Code Won't Run
 
-**Problem:** Click Execute but nothing happens
+**Problem:** Click Run but nothing happens
 
 **Solutions:**
 1. Ensure language is selected correctly
@@ -269,9 +269,9 @@ Look for debug settings in code or check terminal output verbosity.
 ## Getting Help
 
 ### Check Documentation
-- [USER_GUIDE.md](user/USER_GUIDE.md) - Complete user guide
 - [QUICK_START.md](QUICK_START.md) - Quick reference
 - [LANGUAGE_TUTORIALS.md](user/LANGUAGE_TUTORIALS.md) - Learn languages
+- [README.md](README.md) - Documentation index
 
 ### Run Examples
 All working examples in `examples/` directory

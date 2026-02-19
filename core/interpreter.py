@@ -90,7 +90,9 @@ try:
     PERFORMANCE_OPTIMIZATIONS_AVAILABLE = True
 except ImportError:
     # Create dummy mixin if optimizations not available
-    class _OptimizedInterpreterMixin:  # type: ignore[no-redef]
+    class OptimizedInterpreterMixin:  # type: ignore[no-redef]
+        """Stub mixin when performance optimizations are unavailable."""
+
         def optimized_output(self, text):
             return text
 
@@ -100,407 +102,22 @@ except ImportError:
         def get_performance_stats(self):
             return {}
 
-    OptimizedInterpreterMixin: type = _OptimizedInterpreterMixin
-
     def optimize_for_production():
         return {}
 
     performance_optimizer = None
     PERFORMANCE_OPTIMIZATIONS_AVAILABLE = False
 
-# Import supporting classes (will need to be extracted to their own modules later)
-try:
-    # Try to import from actual modules first
-    from games.engine import GameManager  # type: ignore[attr-defined]
-    from .audio import AudioEngine  # type: ignore[attr-defined]
-    from .hardware import (  # type: ignore[attr-defined]
-        RPiController,
-        RobotInterface,
-        GameController,
-        SensorVisualizer,
-    )
-    from .iot import (  # type: ignore[attr-defined]
-        IoTDeviceManager,
-        SmartHomeHub,
-        SensorNetwork,
-    )
-    from .utilities import (  # type: ignore[attr-defined]
-        Mixer,
-        Tween,
-        Timer,
-        Particle,
-    )
-    from .networking import CollaborationManager  # type: ignore[attr-defined]
-
-    class ArduinoController:  # type: ignore[no-redef]
-        """Arduino support not available - stub for future implementation"""
-        def __init__(self, *args, **kwargs):
-            raise NotImplementedError("Arduino support not available in this version")
-
-    class AdvancedRobotInterface:  # type: ignore[no-redef]
-        """Advanced robotics not available - stub for future implementation"""
-        def __init__(self, *args, **kwargs):
-            raise NotImplementedError("Advanced robotics not available in this version")
-
-    # Create MultiplayerGameManager as subclass of GameManager
-    class MultiplayerGameManager(GameManager):  # type: ignore[misc,valid-type]
-        def __init__(self, *args, **kwargs):
-            super().__init__()
-
-except ImportError:
-    # Fallback class definitions for missing modules
-
-    class AudioEngine:  # type: ignore[no-redef]
-        def __init__(self):
-            pass
-
-        def load_audio(self, *args):
-            return False
-
-        def play_sound(self, *args):
-            return None
-
-        def stop_sound(self, *args):
-            return False
-
-        def stop_all_sounds(self):
-            pass
-
-        def play_music(self, *args):
-            return False
-
-        def stop_music(self, *args):
-            return False
-
-        def set_master_volume(self, *args):
-            pass
-
-        def set_sound_volume(self, *args):
-            pass
-
-        def set_music_volume(self, *args):
-            pass
-
-        def get_audio_info(self):
-            return {
-                "mixer_available": False,
-                "loaded_clips": 0,
-                "playing_sounds": 0,
-                "built_in_sounds": [],
-            }
-
-        clips: dict = {}
-        sound_library: dict = {}
-        spatial_audio = type("", (), {"set_listener_position": lambda *args: None})()
-
-    class GameManager:  # type: ignore[no-redef]
-        def __init__(self):
-            pass
-
-        def set_output_callback(self, callback):
-            pass
-
-        def create_object(self, *args):
-            return False
-
-        def move_object(self, *args):
-            return False
-
-        def set_gravity(self, *args):
-            pass
-
-        def set_velocity(self, *args):
-            return False
-
-        def check_collision(self, *args):
-            return False
-
-        def render_scene(self, *args):
-            return False
-
-        def update_physics(self, *args):
-            pass
-
-        def delete_object(self, *args):
-            return False
-
-        def list_objects(self):
-            return []
-
-        def clear_scene(self):
-            pass
-
-        def get_object_info(self, *args):
-            return None
-
-        def get_object(self, *args):
-            return None
-
-        def add_player(self, *args):
-            raise NotImplementedError("Multiplayer mode not available in this version")
-
-        def remove_player(self, *args):
-            raise NotImplementedError("Multiplayer mode not available in this version")
-
-        def start_multiplayer_game(self):
-            raise NotImplementedError("Multiplayer mode not available in this version")
-
-        def end_multiplayer_game(self, *args):
-            raise NotImplementedError("Multiplayer mode not available in this version")
-
-        def get_game_info(self):
-            return {}
-
-        players: dict = {}
-        session_id = None
-        game_mode = "cooperative"
-        max_players = 8
-        is_server = False
-        game_state = "waiting"
-
-    # In except block, define fallback MultiplayerGameManager
-    class MultiplayerGameManager(GameManager):  # type: ignore[misc,no-redef]
-        def __init__(self, *args, **kwargs):
-            super().__init__()
-
-        def add_player(self, *args):
-            raise NotImplementedError("Multiplayer mode not available in this version")
-
-        def remove_player(self, *args):
-            raise NotImplementedError("Multiplayer mode not available in this version")
-
-        def start_multiplayer_game(self):
-            raise NotImplementedError("Multiplayer mode not available in this version")
-
-        def end_multiplayer_game(self, *args):
-            raise NotImplementedError("Multiplayer mode not available in this version")
-
-    class CollaborationManager:  # type: ignore[no-redef]
-        def __init__(self):
-            self.network_manager = _NetworkManager()
-
-    class _NetworkManager:
-        def __init__(self):
-            self.is_server = False
-            self.is_client = False
-            self.running = False
-
-        def start_server(self, *args):
-            raise NotImplementedError("Networking features not available in this version")
-
-        def connect_to_server(self, *args):
-            raise NotImplementedError("Networking features not available in this version")
-
-        def send_message(self, *args):
-            raise NotImplementedError("Networking features not available in this version")
-
-        def disconnect(self, *args):
-            raise NotImplementedError("Networking features not available in this version")
-
-    class ArduinoController:  # type: ignore[no-redef]
-        def connect(self, *args):
-            return False
-
-        def send_command(self, *args):
-            return False
-
-        def read_sensor(self):
-            return None
-
-    class RPiController:  # type: ignore[no-redef]
-        def set_pin_mode(self, *args):
-            return False
-
-        def digital_write(self, *args):
-            return False
-
-        def digital_read(self, *args):
-            return False
-
-    class RobotInterface:  # type: ignore[no-redef]
-        def move_forward(self, *args):
-            pass
-
-        def move_backward(self, *args):
-            pass
-
-        def turn_left(self, *args):
-            pass
-
-        def turn_right(self, *args):
-            pass
-
-        def stop(self):
-            pass
-
-        def read_distance_sensor(self):
-            return 30.0
-
-        def read_light_sensor(self):
-            return 50.0
-
-    class GameController:  # type: ignore[no-redef]
-        def update(self):
-            return False
-
-        def get_button(self, *args):
-            return False
-
-        def get_axis(self, *args):
-            return 0.0
-
-    class SensorVisualizer:  # type: ignore[no-redef]
-        def __init__(self, canvas):
-            pass
-
-        def draw_chart(self, *args):
-            pass
-
-        def add_data_point(self, *args):
-            pass
-
-    class IoTDeviceManager:  # type: ignore[no-redef]
-        def __init__(self):
-            self.simulation_mode = True
-
-        def discover_devices(self):
-            return 0
-
-        def connect_device(self, *args):
-            return False
-
-        def connect_all(self):
-            return 0
-
-        def get_device_data(self, *args):
-            return None
-
-        def send_device_command(self, *args):
-            raise NotImplementedError("IoT device control not available in this version")
-
-        def create_device_group(self, *args):
-            raise NotImplementedError("IoT device groups not available in this version")
-
-        def control_group(self, *args):
-            raise NotImplementedError("IoT group control not available in this version")
-
-    class SmartHomeHub:  # type: ignore[no-redef]
-        def __init__(self):
-            self.simulation_mode = True
-
-        def setup_home(self):
-            return {"discovered": 0, "connected": 0}
-
-        def create_scene(self, *args):
-            pass
-
-        def activate_scene(self, *args):
-            raise NotImplementedError("Smart home scene activation not available - educational simulation only")
-
-        def set_environmental_target(self, *args):
-            pass
-
-        def monitor_environment(self):
-            return []
-
-    class SensorNetwork:  # type: ignore[no-redef]
-        def __init__(self):
-            self.simulation_mode = True
-
-        def add_sensor(self, *args):
-            pass
-
-        def collect_data(self):
-            return {}
-
-        def analyze_trends(self, *args):
-            return None
-
-        def predict_values(self, *args):
-            return None
-
-    class AdvancedRobotInterface:  # type: ignore[no-redef]
-        def __init__(self):
-            self.simulation_mode = True
-            self.mission_status = "idle"
-
-        def plan_path(self, *args):
-            return []
-
-        def execute_mission(self, *args):
-            return []
-
-        def scan_environment(self):
-            return {"lidar": {"range": 10.0}, "camera": {"objects": []}}
-
-        def avoid_obstacle(self):
-            return "no_obstacle"
-
-        def learn_environment(self):
-            return {"obstacles_detected": 0}
-
-        def move_to_position(self, *args):
-            pass
-
-    class Mixer:  # type: ignore[no-redef]
-        def __init__(self):
-            self.registry = {}
-
-        def snd(self, name, path, vol=0.8):
-            self.registry[name] = path
-
-        def play_snd(self, name):
-            print(f"Playing sound: {name}")
-
-    class Tween:  # type: ignore[no-redef]
-        def __init__(self, store, key, a, b, dur_ms, ease="linear"):
-            self.store = store
-            self.key = key
-            self.a = float(a)
-            self.b = float(b)
-            self.dur = max(1, int(dur_ms))
-            self.t = 0
-            self.done = False
-
-        def step(self, dt):
-            if self.done:
-                return
-            self.t += dt
-            u = min(1.0, self.t / self.dur)
-            self.store[self.key] = self.a + (self.b - self.a) * u
-            if self.t >= self.dur:
-                self.store[self.key] = self.b
-                self.done = True
-
-    class Timer:  # type: ignore[no-redef]
-        def __init__(self, delay_ms, label):
-            self.delay = max(0, int(delay_ms))
-            self.label = label
-            self.t = 0
-            self.done = False
-
-    class Particle:  # type: ignore[no-redef]
-        def __init__(self, x, y, vx, vy, life):
-            self.x = x
-            self.y = y
-            self.vx = vx
-            self.vy = vy
-            self.life = life
-            self.size = 2
-            self.color = "white"
-
-        def step(self, dt):
-            if self.life <= 0:
-                return
-            self.x += self.vx * dt / 1000.0
-            self.y += self.vy * dt / 1000.0
-            self.life -= dt
-
-
-class Vector2D:
-    def __init__(self, x, y):
-        self.x = x
-        self.y = y
+# Import stub/placeholder classes for optional features.
+# These provide no-op implementations so the interpreter can run
+# even without games, audio, hardware, IoT, or networking packages.
+from .stubs import (  # noqa: E402,F401
+    AudioEngine, GameManager, MultiplayerGameManager,
+    CollaborationManager, ArduinoController, RPiController,
+    RobotInterface, GameController, SensorVisualizer,
+    IoTDeviceManager, SmartHomeHub, SensorNetwork,
+    AdvancedRobotInterface, Mixer, Tween, Timer, Particle,
+)
 
 
 class Time_WarpInterpreter:  # pylint: disable=too-many-public-methods
@@ -652,11 +269,13 @@ class Time_WarpInterpreter:  # pylint: disable=too-many-public-methods
         if self.iot_devices:
             self.iot_devices.simulation_mode = True
 
-        self.smart_home = SmartHomeHub() if SmartHomeHub else None
+        self.smart_home = SmartHomeHub() if isinstance(SmartHomeHub, type) else None
         if self.smart_home:
             self.smart_home.simulation_mode = True
 
-        self.sensor_network = SensorNetwork() if SensorNetwork else None
+        self.sensor_network = (
+            SensorNetwork() if isinstance(SensorNetwork, type) else None
+        )
         if self.sensor_network:
             self.sensor_network.simulation_mode = True
 
@@ -676,6 +295,9 @@ class Time_WarpInterpreter:  # pylint: disable=too-many-public-methods
         self.perl_executor = PerlExecutor(self)
         self.python_executor = PythonExecutor(self)
         self.javascript_executor = JavaScriptExecutor(self)
+
+        # Error tracking
+        self.error_history = []
 
         # Language mode (optional explicit setting)
         self.current_language_mode = None
@@ -723,7 +345,7 @@ class Time_WarpInterpreter:  # pylint: disable=too-many-public-methods
         else:
             self.log_output(f"Invalid language mode: {mode}")
 
-    def init_turtle_graphics(self):
+    def init_turtle_graphics(self):  # noqa: C901
         """Initialize turtle graphics system"""
         if self.turtle_graphics:
             return  # Already initialized
@@ -860,8 +482,6 @@ class Time_WarpInterpreter:  # pylint: disable=too-many-public-methods
         """
         if not self.turtle_graphics:
             self.init_turtle_graphics()
-
-        import math
 
         # Convert Logo heading to math radians
         # Logo: 0° = North (up), clockwise
@@ -1006,8 +626,6 @@ class Time_WarpInterpreter:  # pylint: disable=too-many-public-methods
 
         # Draw new turtle if visible
         if self.turtle_graphics["visible"]:
-            import math
-
             # Get canvas coordinates (Y flipped from turtle coordinates)
             x = self.turtle_graphics["x"] + self.turtle_graphics["center_x"]
             y = self.turtle_graphics["center_y"] - self.turtle_graphics["y"]
@@ -1100,6 +718,12 @@ class Time_WarpInterpreter:  # pylint: disable=too-many-public-methods
         else:
             print(text)
 
+    @staticmethod
+    def get_current_time():
+        """Return the current timestamp as an ISO-8601 string."""
+        from datetime import datetime
+        return datetime.now().isoformat()
+
     def log_error(self, error_msg, line_num=None):
         """Log error with enhanced formatting and line number information"""
         if line_num is not None:
@@ -1108,12 +732,10 @@ class Time_WarpInterpreter:  # pylint: disable=too-many-public-methods
             formatted_error = f"❌ ERROR: {error_msg}"
 
         # Add error to error history for debugging
-        if not hasattr(self, 'error_history'):
-            self.error_history = []
         self.error_history.append({
             'message': error_msg,
             'line': line_num,
-            'timestamp': self.get_current_time() if hasattr(self, 'get_current_time') else None
+            'timestamp': self.get_current_time(),
         })
 
         self.log_output(formatted_error)
@@ -1138,8 +760,6 @@ class Time_WarpInterpreter:  # pylint: disable=too-many-public-methods
             return text
 
         # Handle variables marked with *VARIABLE* syntax first
-        import re
-
         def replace_var(match):
             var_name = match.group(1).upper()
             return str(self.variables.get(var_name, ""))
@@ -1210,7 +830,7 @@ class Time_WarpInterpreter:  # pylint: disable=too-many-public-methods
         # Call original implementation
         return self._evaluate_expression_original(expr)
 
-    def _evaluate_expression_original(self, expr):
+    def _evaluate_expression_original(self, expr):  # noqa: C901
         """Original expression evaluation implementation"""
         # Replace variables.
         # First substitute explicit *VAR* interpolation (used in many programs).
@@ -1255,11 +875,7 @@ class Time_WarpInterpreter:  # pylint: disable=too-many-public-methods
             "LEFT$": lambda s, n: str(s)[: int(n)],
             "RIGHT$": lambda s, n: str(s)[-int(n) :] if int(n) > 0 else "",
             # Turbo BASIC enhanced functions
-            "CEIL": lambda x: (
-                int(-(-float(x) // 1))
-                if float(x) < 0
-                else int(float(x) + 0.999999) if float(x) % 1 != 0 else int(float(x))
-            ),
+            "CEIL": lambda x: math.ceil(float(x)),
             "FIX": lambda x: int(float(x)) if float(x) >= 0 else -int(-float(x)),
             "EXP2": lambda x: 2 ** float(x),
             "EXP10": lambda x: 10 ** float(x),
@@ -1274,8 +890,6 @@ class Time_WarpInterpreter:  # pylint: disable=too-many-public-methods
         }
 
         # Handle array access first (e.g., BULLETS(I,0) -> array value)
-        import re
-
         array_pattern = r"([A-Za-z_][A-Za-z0-9_]*)\(([^)]+)\)"
 
         def replace_array_access(match):
@@ -1289,7 +903,7 @@ class Time_WarpInterpreter:  # pylint: disable=too-many-public-methods
 
                 if array_name in self.variables:
                     array_var = self.variables[array_name]
-                    if isinstance(array_var, dict):
+                    if isinstance(array_var, (dict, list)):
                         # Evaluate each index
                         indices = [
                             int(self.evaluate_expression(idx.strip()))
@@ -1300,6 +914,8 @@ class Time_WarpInterpreter:  # pylint: disable=too-many-public-methods
                         current = array_var
                         for idx in indices:
                             if isinstance(current, dict) and idx in current:
+                                current = current[idx]
+                            elif isinstance(current, list) and 0 <= idx < len(current):
                                 current = current[idx]
                             else:
                                 return "0"  # Default value for uninitialized array elements
@@ -1346,10 +962,10 @@ class Time_WarpInterpreter:  # pylint: disable=too-many-public-methods
         # Convert BASIC operators to Python equivalents
         expr = re.sub(r"\bMOD\b", "%", expr, flags=re.IGNORECASE)  # MOD -> %
         expr = re.sub(r"<>", "!=", expr)  # <> -> !=
+        # Convert single = to == for equality (but not <=, >=, !=, ==)
+        expr = re.sub(r"(?<![<>!=])=(?!=)", "==", expr)
 
         # Handle BASIC functions with $ in the name
-        import re
-
         # STR$(x) function
         def replace_str_func(match):
             arg = match.group(1)
@@ -1759,8 +1375,11 @@ class Time_WarpInterpreter:  # pylint: disable=too-many-public-methods
     def execute_line(self, line):
         """Execute a single line of code"""
         # Use optimized execution if available and enabled
-        if (hasattr(self, 'optimized_execute_line') and
-            hasattr(self, 'enable_profiling') and self.enable_profiling):
+        if (
+            hasattr(self, 'optimized_execute_line')
+            and hasattr(self, 'enable_profiling')
+            and self.enable_profiling
+        ):
             return self.optimized_execute_line(line)
 
         # Call original implementation
@@ -1819,8 +1438,6 @@ class Time_WarpInterpreter:  # pylint: disable=too-many-public-methods
                 self.log_error(error_msg, line_num)
                 return "error"
 
-            return "continue"
-
         except Exception as e:
             error_msg = f"Execution error in line {line_num or self.current_line}: {str(e)}"
             self.log_error(error_msg, line_num)
@@ -1866,7 +1483,13 @@ class Time_WarpInterpreter:  # pylint: disable=too-many-public-methods
 
         return True
 
-    def run_program(
+    # Languages whose executors run code via an external subprocess.
+    # These need the entire program sent as a single script rather than
+    # being dispatched line-by-line (which would spawn a new process per
+    # line with no shared state).
+    _SUBPROCESS_LANGUAGES = {"javascript", "python", "perl"}
+
+    def run_program(  # noqa: C901
         self, program_text, language=None
     ):  # pylint: disable=too-many-branches
         """Run a complete program
@@ -1876,10 +1499,22 @@ class Time_WarpInterpreter:  # pylint: disable=too-many-public-methods
             language (str, optional): The programming language ('pilot', 'basic', 'logo', etc.)
                                      Defaults to auto-detection
         """
+        # Reset per-run error history so stale errors from a previous run
+        # do not pollute the completion message for this run.
+        self.error_history = []
+
         # Store language preference
         if language:
             self.current_language = language.lower()
             self.current_language_mode = language.lower()
+
+        # External-process languages (JavaScript, Python, Perl) must be
+        # executed as a single script so that variables, functions, etc.
+        # persist across lines.  Delegate to the appropriate executor and
+        # skip the line-by-line interpreter loop.
+        lang_lower = (language or "").lower()
+        if lang_lower in self._SUBPROCESS_LANGUAGES:
+            return self._run_subprocess_program(program_text, lang_lower)
 
         # Preprocess Logo programs to handle multi-line REPEAT blocks
         if language and language.lower() == "logo":
@@ -1958,18 +1593,74 @@ class Time_WarpInterpreter:  # pylint: disable=too-many-public-methods
             self.log_error(error_msg, self.current_line + 1)
         finally:
             self.running = False
-            if hasattr(self, 'error_history') and self.error_history:
+            if self.error_history:
                 self.log_output(f"📊 Execution completed with {len(self.error_history)} error(s)")
             else:
                 self.log_output("✅ Program execution completed successfully")
 
         return True
 
+    def _run_subprocess_program(self, program_text, lang):
+        """Execute an entire program as a single subprocess script.
+
+        External-process languages (JavaScript, Python, Perl) need the full
+        source sent to their runtime in one invocation so that variables,
+        functions, classes, etc. are visible across lines.
+        """
+        executors = {
+            "javascript": self.javascript_executor,
+            "python": self.python_executor,
+            "perl": self.perl_executor,
+        }
+        executor = executors.get(lang)
+        if executor is None:
+            self.log_output(f"❌ No executor found for language: {lang}")
+            return False
+
+        try:
+            result = executor.execute_command(program_text)
+            if result == "error":
+                self.log_output("🛑 Program terminated due to error")
+            else:
+                self.log_output("✅ Program execution completed successfully")
+        except Exception as e:  # noqa: BLE001
+            self.log_output(f"❌ Critical runtime error: {e}")
+        return True
+
     # Additional methods for debugger control, etc.
     def step(self):
-        """Execute a single line and pause"""
-        # Implementation would go here
-        pass  # pylint: disable=unnecessary-pass
+        """Execute a single line and pause (single-step debugger)."""
+        if not self.program_lines:
+            return
+        if self.current_line >= len(self.program_lines):
+            self.log_output("✅ End of program reached.")
+            self.running = False
+            return
+
+        _line_num, command = self.program_lines[self.current_line]
+        if command.strip():
+            if self.debug_mode:
+                self.debug_output(
+                    f"Step line {self.current_line + 1}: {command[:50]}"
+                    f"{'...' if len(command) > 50 else ''}"
+                )
+            try:
+                result = self.execute_line(command)
+            except Exception as e:
+                self.log_error(str(e), self.current_line + 1)
+                result = None
+
+            if result == "end":
+                self.running = False
+                return
+            if isinstance(result, str) and result.startswith("jump:"):
+                try:
+                    self.current_line = int(result.split(":")[1])
+                except (ValueError, IndexError):
+                    self.current_line += 1
+                return
+
+        self.current_line += 1
 
     def stop_program(self):
         """Stop program execution"""

@@ -1,7 +1,7 @@
 #!/bin/bash
 # Time Warp Classic Launch Script
 # This script launches Time Warp Classic GUI
-# Copyright © 2025 Honey Badger Universe
+# Copyright © 2025–2026 Honey Badger Universe
 
 echo "🚀 Launching Time Warp Classic..."
 
@@ -10,6 +10,14 @@ SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 
 # Change to the project root directory (parent of scripts)
 cd "$SCRIPT_DIR/.."
+
+# Activate virtual environment if it exists
+if [ -f "venv/bin/activate" ]; then
+    source venv/bin/activate
+    echo "✅ Virtual environment activated"
+elif [ ! -d "venv" ]; then
+    echo "⚠️  No virtual environment found. Run ./run.sh first for full setup."
+fi
 
 # Check if Python 3 is available
 if command -v python3 >/dev/null 2>&1; then

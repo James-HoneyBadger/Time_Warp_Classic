@@ -1,7 +1,10 @@
-PROGRAM ComprehensiveLogo;
-{ COMPREHENSIVE LOGO DEMO - Time Warp Classic IDE
-  Demonstrates all major Logo language features }
+; ====================================
+; Comprehensive Logo Demo
+; Time Warp Classic IDE
+; Demonstrates all major Logo features
+; ====================================
 
+; --- Draw an initial square then clear ---
 FORWARD 100
 RIGHT 90
 FORWARD 100
@@ -12,60 +15,61 @@ FORWARD 100
 
 CLEARSCREEN
 
-{ Draw a filled square }
+; --- Draw a blue square ---
 PENDOWN
 SETPENSIZE 2
-SETPENCOLOR 0 0 255
-REPEAT 4
-    FORWARD 50
-    RIGHT 90
-ENDREPEAT
+SETPENCOLOR [0 0 255]
+REPEAT 4 [
+  FORWARD 50
+  RIGHT 90
+]
 PENUP
 
-{ Draw a circle }
+; --- Draw a circle (polygon approximation) ---
 FORWARD 80
 PENDOWN
-REPEAT 36
-    FORWARD 5
-    RIGHT 10
-ENDREPEAT
+REPEAT 36 [
+  FORWARD 5
+  RIGHT 10
+]
 PENUP
 
-{ Draw a star }
+; --- Draw a red star ---
 FORWARD 100
 PENDOWN
-SETPENCOLOR 255 0 0
-REPEAT 5
-    FORWARD 60
-    RIGHT 144
-ENDREPEAT
+SETPENCOLOR [255 0 0]
+REPEAT 5 [
+  FORWARD 60
+  RIGHT 144
+]
 PENUP
 
-{ Draw nested squares }
+; --- Draw nested rotated squares (green) ---
 BACKWARD 200
-SETPENCOLOR 0 255 0
+SETPENCOLOR [0 255 0]
 PENDOWN
-REPEAT 4
-    REPEAT 4
-        FORWARD 30
-        RIGHT 90
-    ENDREPEAT
-    RIGHT 10
-    FORWARD 5
-ENDREPEAT
+REPEAT 4 [
+  REPEAT 4 [
+    FORWARD 30
+    RIGHT 90
+  ]
+  RIGHT 10
+  FORWARD 5
+]
 PENUP
 
-{ Draw a spiral }
+; --- Draw a yellow spiral ---
 FORWARD 150
-SETPENCOLOR 255 255 0
+SETPENCOLOR [255 255 0]
 PENDOWN
-REPEAT 30
-    FORWARD 20
-    RIGHT 12
-ENDREPEAT
+MAKE "DIST 5
+REPEAT 30 [
+  FORWARD :DIST
+  RIGHT 15
+  MAKE "DIST :DIST + 2
+]
 PENUP
 
-{ Demo complete }
-CLEARSCREEN
-PENUP
+; --- Return home ---
 HOME
+PRINT [Comprehensive demo complete!]

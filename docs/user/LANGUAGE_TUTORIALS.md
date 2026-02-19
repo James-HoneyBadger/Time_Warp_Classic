@@ -576,7 +576,7 @@ beverage(X) :- likes(alice, X).
 ```
 
 ### Learn More
-- See: `examples/prolog/comprehensive_demo.pl`
+- See: `examples/prolog/comprehensive_demo.pro`
 - Reference: [PROLOG_REFERENCE.md](../languages/PROLOG_REFERENCE.md)
 
 ---

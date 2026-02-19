@@ -113,6 +113,9 @@ class TwForthExecutor:
                 "<=": lambda: self._less_equal(),
                 ">=": lambda: self._greater_equal(),
                 "<>": lambda: self._not_equal(),
+                "0=": lambda: self._zero_equal(),
+                "0<": lambda: self._zero_less(),
+                "0>": lambda: self._zero_greater(),
                 # Logic
                 "AND": lambda: self._and(),
                 "OR": lambda: self._or(),
@@ -210,7 +213,7 @@ class TwForthExecutor:
 
             for word in words:
                 if not self._execute_word(word):
-                    return "continue"
+                    return "error"
 
             # If we're compiling and haven't seen the semicolon yet,
             # return a special value to indicate continuation needed
@@ -262,9 +265,19 @@ class TwForthExecutor:
 
         return tokens
 
-    def _execute_word(self, word):
+    def _execute_word(self, word):  # noqa: C901
         """Execute a single Forth word"""
         try:
+            # Enforce IF_SKIP: when inside a false IF branch, skip all words
+            # except ELSE, THEN and REPEAT which manage the branch state.
+            if (
+                self.return_stack
+                and isinstance(self.return_stack[-1], str)
+                and self.return_stack[-1].endswith("_SKIP")
+                and word not in ("ELSE", "THEN", "REPEAT")
+            ):
+                return True  # silently skip this word
+
             # Handle tokens that are expected to be names for VARIABLE/CONSTANT
             if self.expecting_variable_name:
                 name = word
@@ -338,10 +351,19 @@ class TwForthExecutor:
 
             # Handle control structures
             if word == "IF":
+                if self.compiling:
+                    self.word_definition.append(word)
+                    return True
                 return self._handle_if()
             elif word == "THEN":
+                if self.compiling:
+                    self.word_definition.append(word)
+                    return True
                 return self._handle_then()
             elif word == "ELSE":
+                if self.compiling:
+                    self.word_definition.append(word)
+                    return True
                 return self._handle_else()
             elif word == "BEGIN":
                 if self.compiling:
@@ -452,7 +474,7 @@ class TwForthExecutor:
         """End word definition and store it"""
         if self.compiling and self.current_word:
             self.dictionary[self.current_word] = self._create_word_function(
-                self.word_definition
+                self.word_definition, self.current_word
             )
             self.interpreter.log_output(f"Defined word: {self.current_word}")
             self.compiling = False
@@ -461,7 +483,7 @@ class TwForthExecutor:
         else:
             self.interpreter.log_output("Error: Not in word definition")
 
-    def _create_word_function(self, definition):
+    def _create_word_function(self, definition, word_name=None):  # noqa: C901
         """Create a function from word definition"""
 
         def word_func():
@@ -469,6 +491,14 @@ class TwForthExecutor:
             # execute with instruction pointer so DO/LOOP can jump
             while i < len(definition):
                 word = definition[i]
+
+                # Handle RECURSE sentinel – resolves to a self-recursive call
+                # using the word's name captured at definition time.
+                if word == "__RECURSE__":
+                    if word_name and word_name in self.dictionary:
+                        self.dictionary[word_name]()
+                    i += 1
+                    continue
 
                 # Handle DO/LOOP compiled control
                 if word == "DO":
@@ -669,7 +699,8 @@ class TwForthExecutor:
         if b == 0:
             self.interpreter.log_output("Division by zero")
             return False
-        self.data_stack.append(a / b)
+        # Forth uses truncated integer division, not float division
+        self.data_stack.append(int(a / b))
         return True
 
     def _mod(self):
@@ -677,6 +708,9 @@ class TwForthExecutor:
             self.interpreter.log_output("Stack underflow in MOD")
             return False
         b, a = self.data_stack.pop(), self.data_stack.pop()
+        if b == 0:
+            self.interpreter.log_output("Division by zero in MOD")
+            return False
         self.data_stack.append(a % b)
         return True
 
@@ -692,6 +726,30 @@ class TwForthExecutor:
             self.interpreter.log_output("Stack underflow in ABS")
             return False
         self.data_stack[-1] = abs(self.data_stack[-1])
+        return True
+
+    def _zero_equal(self):
+        """0= ( n -- flag ) Push -1 (true) if top of stack is zero, else 0"""
+        if len(self.data_stack) < 1:
+            self.interpreter.log_output("Stack underflow in 0=")
+            return False
+        self.data_stack.append(-1 if self.data_stack.pop() == 0 else 0)
+        return True
+
+    def _zero_less(self):
+        """0< ( n -- flag ) Push -1 (true) if top of stack is negative"""
+        if len(self.data_stack) < 1:
+            self.interpreter.log_output("Stack underflow in 0<")
+            return False
+        self.data_stack.append(-1 if self.data_stack.pop() < 0 else 0)
+        return True
+
+    def _zero_greater(self):
+        """0> ( n -- flag ) Push -1 (true) if top of stack is positive"""
+        if len(self.data_stack) < 1:
+            self.interpreter.log_output("Stack underflow in 0>")
+            return False
+        self.data_stack.append(-1 if self.data_stack.pop() > 0 else 0)
         return True
 
     def _one_plus(self):
@@ -873,9 +931,13 @@ class TwForthExecutor:
         return True
 
     def _dot_quote(self):
-        """Print string literal (.")"""
-        # This is handled during tokenization - strings are already processed
-        self.interpreter.log_output("." + " not implemented in this context")
+        """Print string literal (.")
+
+        Note: ."string" tokens are handled inline by _execute_word.
+        This fallback handles the edge case of a bare ." token.
+        """
+        # The tokenizer bundles ."text" into a single token processed in
+        # _execute_word.  A standalone ." is malformed — do nothing.
         return True
 
     def _spaces(self):
@@ -990,7 +1052,11 @@ class TwForthExecutor:
 
     def _handle_then(self):
         """Handle THEN"""
-        if self.return_stack and self.return_stack[-1].startswith("IF"):
+        if (
+            self.return_stack
+            and isinstance(self.return_stack[-1], str)
+            and self.return_stack[-1].startswith("IF")
+        ):
             self.return_stack.pop()
         return True
 
@@ -1021,7 +1087,8 @@ class TwForthExecutor:
 
     def _handle_loop(self):
         """Handle LOOP in interactive mode"""
-        if not self.return_stack or self.return_stack[-1].get("type") != "DO":
+        top = self.return_stack[-1] if self.return_stack else None
+        if not isinstance(top, dict) or top.get("type") != "DO":
             self.interpreter.log_output("LOOP without matching DO")
             return False
         frame = self.return_stack[-1]
@@ -1031,18 +1098,26 @@ class TwForthExecutor:
         return True
 
     def _handle_until(self):
-        """Handle UNTIL"""
+        """Handle UNTIL in interactive mode.
+
+        Note: BEGIN...UNTIL loops work correctly inside compiled word
+        definitions (: word ... ;).  In interactive mode the interpreter
+        cannot replay the tokens between BEGIN and UNTIL, so the loop
+        body executes only once.
+        """
         if len(self.data_stack) < 1:
             self.interpreter.log_output("Stack underflow in UNTIL")
             return False
 
         condition = self.data_stack.pop()
-        if condition == 0:  # False, continue loop
-            # Would need to jump back to BEGIN - simplified for now
-            pass
-        else:  # True, exit loop
-            if self.return_stack and self.return_stack[-1] == "BEGIN":
-                self.return_stack.pop()
+        if condition == 0:  # False → would loop, but interactive mode can't replay
+            self.interpreter.log_output(
+                "⚠️  BEGIN...UNTIL loops only execute once in interactive mode. "
+                "Use a word definition (: name ... ;) for full looping."
+            )
+        # In either case, pop the BEGIN marker
+        if self.return_stack and self.return_stack[-1] == "BEGIN":
+            self.return_stack.pop()
         return True
 
     def _handle_while(self):
@@ -1061,19 +1136,23 @@ class TwForthExecutor:
 
     def _handle_repeat(self):
         """Handle REPEAT"""
-        if self.return_stack and self.return_stack[-1].startswith("WHILE"):
+        if (
+            self.return_stack
+            and isinstance(self.return_stack[-1], str)
+            and self.return_stack[-1].startswith("WHILE")
+        ):
             self.return_stack.pop()
         return True
 
     def _recurse(self):
         """Handle RECURSE - call the current word being defined"""
-        if (
-            self.compiling
-            and self.current_word
-            and self.current_word in self.dictionary
-        ):
-            # Call the current word recursively
-            return self.dictionary[self.current_word]()
+        if self.compiling and self.current_word:
+            # Append a sentinel token that _create_word_function resolves to
+            # a self-recursive call at execution time, avoiding the
+            # chicken-and-egg problem of the word not yet being in the
+            # dictionary during compilation.
+            self.word_definition.append("__RECURSE__")
+            return True
         else:
             self.interpreter.log_output(
                 "RECURSE can only be used inside word definitions"
@@ -1304,7 +1383,7 @@ class TwForthExecutor:
         if len(self.data_stack) < 4:
             self.interpreter.log_output("Stack underflow in D+")
             return False
-        d2_low, d2_high, d1_low, d1_high = (
+        d2_high, d2_low, d1_high, d1_low = (
             self.data_stack.pop(),
             self.data_stack.pop(),
             self.data_stack.pop(),
@@ -1320,7 +1399,7 @@ class TwForthExecutor:
         if len(self.data_stack) < 4:
             self.interpreter.log_output("Stack underflow in D-")
             return False
-        d2_low, d2_high, d1_low, d1_high = (
+        d2_high, d2_low, d1_high, d1_low = (
             self.data_stack.pop(),
             self.data_stack.pop(),
             self.data_stack.pop(),
@@ -1336,7 +1415,7 @@ class TwForthExecutor:
         if len(self.data_stack) < 4:
             self.interpreter.log_output("Stack underflow in D*")
             return False
-        d2_low, d2_high, d1_low, d1_high = (
+        d2_high, d2_low, d1_high, d1_low = (
             self.data_stack.pop(),
             self.data_stack.pop(),
             self.data_stack.pop(),
@@ -1352,7 +1431,7 @@ class TwForthExecutor:
         if len(self.data_stack) < 4:
             self.interpreter.log_output("Stack underflow in D/")
             return False
-        d2_low, d2_high, d1_low, d1_high = (
+        d2_high, d2_low, d1_high, d1_low = (
             self.data_stack.pop(),
             self.data_stack.pop(),
             self.data_stack.pop(),
@@ -1373,7 +1452,7 @@ class TwForthExecutor:
         if len(self.data_stack) < 2:
             self.interpreter.log_output("Stack underflow in D.")
             return False
-        low, high = self.data_stack.pop(), self.data_stack.pop()
+        high, low = self.data_stack.pop(), self.data_stack.pop()
         value = (high << 32) | low
         self.interpreter.log_output(f"{value}")
         return True
@@ -1642,11 +1721,13 @@ class TwForthExecutor:
 
     # Value (mutable constants)
     def _value(self):
-        """Create a mutable constant"""
-        if not self.compiling:
-            self.interpreter.log_output("VALUE can only be used in definitions")
+        """Create a mutable constant (VALUE works like CONSTANT but is mutable via TO)"""
+        if not self.data_stack:
+            self.interpreter.log_output("Stack underflow in VALUE")
             return False
-        # Next word will be the value name
+        # Pop the value and wait for the next token to be the name
+        self.pending_constant_value = self.data_stack.pop()
+        self.expecting_constant_name = True
         return True
 
     def _to(self):

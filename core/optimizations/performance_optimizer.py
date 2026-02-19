@@ -10,9 +10,7 @@ This module provides various performance enhancements including:
 """
 
 import time
-import weakref
-from functools import lru_cache
-from typing import Dict, Any, Optional, Callable
+from typing import Dict, Any, Callable
 import threading
 import gc
 
@@ -27,14 +25,14 @@ class ExpressionCache:
         self.misses = 0
         self._lock = threading.RLock()
 
-    def get(self, key: str) -> Optional[Any]:
-        """Get cached value for key."""
+    def get(self, key: str):
+        """Get cached value for key. Returns _CACHE_MISS sentinel if not cached."""
         with self._lock:
             if key in self.cache:
                 self.hits += 1
                 return self.cache[key]
             self.misses += 1
-            return None
+            return _CACHE_MISS
 
     def put(self, key: str, value: Any) -> None:
         """Store value in cache."""
@@ -150,9 +148,8 @@ class PerformanceProfiler:
         """Get performance statistics."""
         with self._lock:
             stats = {}
-            for operation in self.total_times:
+            for operation, total in self.total_times.items():
                 count = self.execution_counts.get(operation, 0)
-                total = self.total_times[operation]
                 avg = total / count if count > 0 else 0
                 stats[operation] = {
                     'count': count,
@@ -176,12 +173,14 @@ class MemoryOptimizer:
     @staticmethod
     def optimize_variable_storage(variables: Dict[str, Any]) -> None:
         """Optimize variable storage to reduce memory usage."""
-        # Convert large strings to interned strings where possible
+        import sys as _sys
+        # Intern strings to reduce memory for repeated string values
         for key, value in variables.items():
-            if isinstance(value, str) and len(value) > 100:
-                # Only intern if it's a repeated string pattern
-                # This is a simple heuristic - could be made more sophisticated
-                variables[key] = value
+            if isinstance(value, str):
+                try:
+                    variables[key] = _sys.intern(value)
+                except TypeError:
+                    pass  # Non-internable strings (subclasses) are skipped
 
     @staticmethod
     def cleanup_unused_objects() -> int:
@@ -214,6 +213,10 @@ class MemoryOptimizer:
             }
 
 
+# Sentinel for cache misses (distinguishes None results from missing entries)
+_CACHE_MISS = object()
+
+
 class OptimizedInterpreterMixin:
     """Mixin class providing performance optimizations for interpreters."""
 
@@ -244,8 +247,14 @@ class OptimizedInterpreterMixin:
             except ImportError:
                 # Return dummy implementation
                 class DummyAudioEngine:
-                    def play_sound(self, *args): pass
-                    def stop_sound(self, *args): pass
+                    """No-op audio engine fallback."""
+
+                    def play_sound(self, *args):
+                        """No-op play."""
+
+                    def stop_sound(self, *args):
+                        """No-op stop."""
+
                 return DummyAudioEngine()
 
         def load_game_manager():
@@ -254,8 +263,16 @@ class OptimizedInterpreterMixin:
                 return GameManager()
             except ImportError:
                 class DummyGameManager:
-                    def create_object(self, *args): return False
-                    def move_object(self, *args): return False
+                    """No-op game manager fallback."""
+
+                    def create_object(self, *args):
+                        """No-op create."""
+                        return False
+
+                    def move_object(self, *args):
+                        """No-op move."""
+                        return False
+
                 return DummyGameManager()
 
         self.lazy_loader.register_loader('audio_engine', load_audio_engine)
@@ -264,22 +281,26 @@ class OptimizedInterpreterMixin:
     def optimized_evaluate_expression(self, expr: str) -> Any:
         """Optimized expression evaluation with caching."""
         if not self.enable_caching:
-            return self.interpreter._evaluate_expression_original(expr)
+            return self.interpreter._evaluate_expression_original(expr)  # pylint: disable=protected-access
 
         # Create cache key from expression and current variables
-        var_hash = hash(frozenset(self.interpreter.variables.items()))
+        try:
+            var_hash = hash(frozenset(self.interpreter.variables.items()))
+        except TypeError:
+            # Variables contain unhashable values (lists, dicts); skip caching
+            return self.interpreter._evaluate_expression_original(expr)  # pylint: disable=protected-access
         cache_key = f"{expr}:{var_hash}"
 
         # Check cache first
         cached_result = self.expression_cache.get(cache_key)
-        if cached_result is not None:
+        if cached_result is not _CACHE_MISS:
             return cached_result
 
         # Evaluate and cache result
         if self.enable_profiling:
             self.profiler.start_operation('expression_evaluation')
 
-        result = self.interpreter._evaluate_expression_original(expr)
+        result = self.interpreter._evaluate_expression_original(expr)  # pylint: disable=protected-access
 
         if self.enable_profiling:
             self.profiler.end_operation('expression_evaluation')
@@ -295,7 +316,7 @@ class OptimizedInterpreterMixin:
         if self.enable_profiling:
             self.profiler.start_operation('line_execution')
 
-        result = self.interpreter._execute_line_original(line)
+        result = self.interpreter._execute_line_original(line)  # pylint: disable=protected-access
 
         if self.enable_profiling:
             self.profiler.end_operation('line_execution')
@@ -325,7 +346,7 @@ class OptimizedInterpreterMixin:
         collected = self.memory_optimizer.cleanup_unused_objects()
 
         # Optimize variable storage
-        self.memory_optimizer.optimize_variable_storage(self.variables)
+        self.memory_optimizer.optimize_variable_storage(self.interpreter.variables)
 
         return {
             'cache_cleared': True,
@@ -359,6 +380,7 @@ class OptimizedInterpreterMixin:
 
 # Global performance optimizer instance
 performance_optimizer = None
+
 
 def optimize_for_production():
     """Global production optimization function."""

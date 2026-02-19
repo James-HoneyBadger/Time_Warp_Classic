@@ -8,20 +8,16 @@ Uses pygments for syntax highlighting and custom tkinter widgets for line number
 """
 
 import tkinter as tk
-from tkinter import scrolledtext
 import re
-from typing import Dict, List, Tuple, Optional
+from typing import Dict, Tuple, Optional
 
 try:
-    from pygments import highlight
     from pygments.lexers import (
-        get_lexer_by_name, PythonLexer, JavascriptLexer, PerlLexer,
+        PythonLexer, JavascriptLexer, PerlLexer,
         DelphiLexer as PascalLexer, PrologLexer, CLexer, TextLexer
     )
-    from pygments.formatters import RawTokenFormatter
     from pygments.token import Token
     PYGMENTS_AVAILABLE = True
-    print("✅ Pygments loaded successfully - syntax highlighting enabled")
 except ImportError as e:
     PYGMENTS_AVAILABLE = False
     print(f"⚠️  Pygments not available - syntax highlighting disabled: {e}")
@@ -231,7 +227,6 @@ class SyntaxHighlightingText(tk.Frame):
 
         try:
             # Get tokens from pygments
-            formatter = RawTokenFormatter()
             tokens = self.lexer.get_tokens(current_text)
 
             # Apply highlighting
@@ -244,9 +239,9 @@ class SyntaxHighlightingText(tk.Frame):
                 lines = value.count('\n')
                 if lines > 0:
                     last_line_chars = len(value.split('\n')[-1])
-                    end_pos = f"{int(pos.split('.')[0]) + lines}.{last_line_chars}"
+                    end_pos = f"{int(pos.split('.', maxsplit=1)[0]) + lines}.{last_line_chars}"
                 else:
-                    end_pos = f"{pos.split('.')[0]}.{int(pos.split('.')[1]) + len(value)}"
+                    end_pos = f"{pos.split('.', maxsplit=1)[0]}.{int(pos.split('.', maxsplit=1)[1]) + len(value)}"
 
                 # Map token type to tag
                 tag = self._get_tag_for_token(token_type)
@@ -314,11 +309,9 @@ class SyntaxHighlightingText(tk.Frame):
 
         # Get text widget dimensions
         text_widget = self.text
-        first_visible_line = int(text_widget.index('@0,0').split('.')[0])
-        last_visible_line = int(text_widget.index('@0,10000').split('.')[0])
+        first_visible_line = int(text_widget.index('@0,0').split('.', maxsplit=1)[0])
+        last_visible_line = int(text_widget.index('@0,10000').split('.', maxsplit=1)[0])
 
-        # Get theme colors
-        theme_colors = self._get_theme_colors()
         bg_color = {'dark': '#1e1e1e', 'light': '#f0f0f0', 'monokai': '#272822'}.get(self.theme, '#1e1e1e')
         fg_color = {'dark': '#858585', 'light': '#237893', 'monokai': '#90908a'}.get(self.theme, '#858585')
 
@@ -349,43 +342,45 @@ class SyntaxHighlightingText(tk.Frame):
         """Set the font for the text widget."""
         self.text.config(font=font_tuple)
 
-    def find_text(self, search_term: str, start_pos: str = '1.0', case_sensitive: bool = False, 
+    def find_text(self, search_term: str, start_pos: str = '1.0', case_sensitive: bool = False,
                   whole_word: bool = False, regex: bool = False) -> Optional[Tuple[str, str]]:
         """
         Find the next occurrence of search_term starting from start_pos.
-        
+
         Args:
             search_term: Text to search for
             start_pos: Starting position (tkinter text index)
             case_sensitive: Whether search is case sensitive
             whole_word: Whether to match whole words only
             regex: Whether search_term is a regex pattern
-            
+
         Returns:
             Tuple of (start_index, end_index) if found, None otherwise
         """
         if not search_term:
             return None
-            
+
         text_content = self.text.get('1.0', tk.END)
-        
+
         # Get the character position from start_pos
         start_line, start_col = map(int, start_pos.split('.'))
         start_char = 0
-        
+
         # Calculate character offset for start_pos
         lines = text_content.split('\n')
         for i in range(min(start_line - 1, len(lines))):
             start_char += len(lines[i]) + 1  # +1 for newline
         start_char += start_col
-        
+
         search_text = text_content[start_char:]
-        
+
         if regex:
-            import re as re_module
-            flags = 0 if case_sensitive else re_module.IGNORECASE
-            pattern = search_term if whole_word else f'(?<!\\w){re.escape(search_term)}(?!\\w)' if whole_word else search_term
-            match = re_module.search(pattern, search_text, flags)
+            flags = 0 if case_sensitive else re.IGNORECASE
+            if whole_word:
+                pattern = r'\b' + search_term + r'\b'
+            else:
+                pattern = search_term
+            match = re.search(pattern, search_text, flags)
             if match:
                 match_start = start_char + match.start()
                 match_end = start_char + match.end()
@@ -394,13 +389,12 @@ class SyntaxHighlightingText(tk.Frame):
             if not case_sensitive:
                 search_text = search_text.lower()
                 search_term = search_term.lower()
-            
+
             if whole_word:
                 # Simple whole word matching
-                import re as re_module
                 pattern = r'\b' + re.escape(search_term) + r'\b'
-                flags = 0 if case_sensitive else re_module.IGNORECASE
-                match = re_module.search(pattern, search_text, flags)
+                flags = 0 if case_sensitive else re.IGNORECASE
+                match = re.search(pattern, search_text, flags)
                 if match:
                     match_start = start_char + match.start()
                     match_end = start_char + match.end()
@@ -411,15 +405,15 @@ class SyntaxHighlightingText(tk.Frame):
                     match_start = start_char + pos
                     match_end = start_char + pos + len(search_term)
                     return self._char_to_index(match_start), self._char_to_index(match_end)
-        
+
         return None
 
     def replace_text(self, search_term: str, replace_term: str, start_pos: str = '1.0',
-                     case_sensitive: bool = False, whole_word: bool = False, 
+                     case_sensitive: bool = False, whole_word: bool = False,
                      regex: bool = False) -> bool:
         """
         Replace the next occurrence of search_term with replace_term.
-        
+
         Args:
             search_term: Text to search for
             replace_term: Text to replace with
@@ -427,7 +421,7 @@ class SyntaxHighlightingText(tk.Frame):
             case_sensitive: Whether search is case sensitive
             whole_word: Whether to match whole words only
             regex: Whether search_term is a regex pattern
-            
+
         Returns:
             True if replacement was made, False otherwise
         """
@@ -445,62 +439,61 @@ class SyntaxHighlightingText(tk.Frame):
                     whole_word: bool = False, regex: bool = False) -> int:
         """
         Replace all occurrences of search_term with replace_term.
-        
+
         Args:
             search_term: Text to search for
             replace_term: Text to replace with
             case_sensitive: Whether search is case sensitive
             whole_word: Whether to match whole words only
             regex: Whether search_term is a regex pattern
-            
+
         Returns:
             Number of replacements made
         """
         count = 0
         start_pos = '1.0'
-        
+
         while True:
             match = self.find_text(search_term, start_pos, case_sensitive, whole_word, regex)
             if not match:
                 break
-                
+
             start_idx, end_idx = match
             self.text.delete(start_idx, end_idx)
             self.text.insert(start_idx, replace_term)
             count += 1
-            
+
             # Move start_pos to after the replacement
             start_pos = self.text.index(f"{start_idx}+{len(replace_term)}c")
-        
+
         if count > 0:
             self.text.see('1.0')
             self._highlight_text()  # Re-highlight after replacements
-        
+
         return count
 
     def highlight_search_results(self, search_term: str, case_sensitive: bool = False,
-                               whole_word: bool = False, regex: bool = False):
+                                 whole_word: bool = False, regex: bool = False):
         """
         Highlight all search results with a special tag.
         """
         # Remove existing search highlights
         self.text.tag_remove('search_highlight', '1.0', tk.END)
-        
+
         if not search_term:
             return
-            
+
         start_pos = '1.0'
         while True:
             match = self.find_text(search_term, start_pos, case_sensitive, whole_word, regex)
             if not match:
                 break
-                
+
             start_idx, end_idx = match
             self.text.tag_add('search_highlight', start_idx, end_idx)
             start_pos = end_idx
-        
+
         # Configure the search highlight tag
-        theme_colors = self._get_theme_colors()
         bg_color = {'dark': '#264f78', 'light': '#a6d2ff', 'monokai': '#49483e'}.get(self.theme, '#264f78')
         self.text.tag_configure('search_highlight', background=bg_color)
 
@@ -512,7 +505,7 @@ class SyntaxHighlightingText(tk.Frame):
         """Convert character position to tkinter text index."""
         text_content = self.text.get('1.0', tk.END)
         lines = text_content.split('\n')
-        
+
         current_char = 0
         for line_num, line in enumerate(lines, 1):
             line_len = len(line) + 1  # +1 for newline
@@ -520,7 +513,7 @@ class SyntaxHighlightingText(tk.Frame):
                 col = char_pos - current_char
                 return f"{line_num}.{col}"
             current_char += line_len
-        
+
         # If we get here, position is at or beyond end
         return f"{len(lines)}.{len(lines[-1])}"
 
@@ -583,8 +576,8 @@ class LineNumberedText(tk.Frame):
 
         # Get text widget dimensions
         text_widget = self.text
-        first_visible_line = int(text_widget.index('@0,0').split('.')[0])
-        last_visible_line = int(text_widget.index('@0,10000').split('.')[0])
+        first_visible_line = int(text_widget.index('@0,0').split('.', maxsplit=1)[0])
+        last_visible_line = int(text_widget.index('@0,10000').split('.', maxsplit=1)[0])
 
         # Theme-aware colors
         bg_color = "#1e1e1e"

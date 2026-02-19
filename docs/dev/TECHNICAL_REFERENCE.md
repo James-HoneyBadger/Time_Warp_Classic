@@ -20,35 +20,37 @@ Complete technical documentation for developers extending Time Warp Classic.
 ### High-Level Design
 
 Time Warp Classic uses a **modular interpreter architecture** where:
-- A central interpreter engine parses and executes code
-- Language-specific modules handle syntax and semantics
-- A tkinter GUI provides the IDE interface
-- Utility modules handle optimization, highlighting, and templates
+- A thin entry-point (`Time_Warp.py`) launches the application
+- The `gui/` package provides the tkinter IDE interface
+- A central interpreter engine (`core/interpreter.py`) routes code to language executors
+- Language-specific modules in `core/languages/` handle syntax and semantics
+- Utility modules handle syntax highlighting and performance optimization
 
 ### Design Philosophy
 
-1. **Language Modularity:** Each language is independent, can be added/removed
-2. **Clean Separation:** UI, interpreter logic, and languages are separate layers
-3. **Extensibility:** Adding new languages requires only a new module
-4. **Performance:** Built-in optimization and caching mechanisms
+1. **Language Modularity:** Each language is an independent executor, can be added/removed
+2. **Clean Separation:** GUI (`gui/`), interpreter logic (`core/`), and languages (`core/languages/`) are separate layers
+3. **Extensibility:** Adding new languages requires only a new module and a one-line registration
+4. **Performance:** Built-in optimization and caching via `core/optimizations/`
 
 ### Component Relationships
 
 ```
 ┌─────────────────────────────────────────────┐
-│           GUI Frontend (tkinter)            │
+│   Entry Point (Time_Warp.py — thin launcher)│
 ├─────────────────────────────────────────────┤
-│              IDE Features                    │
-│  - Editor  - Output - Buttons - Menu        │
+│         GUI Frontend  (gui/ package)        │
+│  app.py  menus.py  dialogs.py  themes.py   │
 ├─────────────────────────────────────────────┤
-│          Core Interpreter Engine             │
-│  - Parse code - Detect language - Execute   │
+│     Core Interpreter Engine (core/)         │
+│  interpreter.py  stubs.py  optimizations/   │
 ├─────────────────────────────────────────────┤
-│    Language Modules (9 languages)           │
-│  - Parser - Validator - Executor            │
+│     Language Modules (core/languages/)      │
+│  base.py  pilot  basic  logo  pascal        │
+│  prolog  forth  perl  python  javascript    │
 ├─────────────────────────────────────────────┤
 │         Support Modules                      │
-│  - Syntax Highlighting - Templates - Utils  │
+│  Syntax Highlighting · Performance Optimizer │
 └─────────────────────────────────────────────┘
 ```
 
@@ -60,162 +62,173 @@ Time Warp Classic uses a **modular interpreter architecture** where:
 
 ```
 Time_Warp_Classic/
-├── Time_Warp.py              # Main entry point
-├── core/                     # Core interpreter
+├── Time_Warp.py              # Thin entry-point (launches gui.app.TimeWarpApp)
+├── run.py                    # Alternative launcher with venv/dependency handling
+├── gui/                      # GUI package (tkinter IDE)
+│   ├── __init__.py           # Exports TimeWarpApp
+│   ├── app.py                # TimeWarpApp class — main IDE window
+│   ├── menus.py              # Menu bar construction, language detection
+│   ├── dialogs.py            # Find/Replace, Error History, About dialogs
+│   └── themes.py             # Themes, fonts, EXT_TO_LANG mapping
+├── core/                     # Core interpreter engine
 │   ├── __init__.py
-│   ├── interpreter.py        # Main interpreter class
+│   ├── interpreter.py        # Time_WarpInterpreter class
+│   ├── stubs.py              # Placeholder classes for optional features
 │   ├── features/             # IDE features
-│   │   ├── code_templates.py
 │   │   └── syntax_highlighting.py
-│   ├── languages/            # Language implementations
+│   ├── languages/            # Language executor modules
+│   │   ├── __init__.py       # Exports all executors
+│   │   ├── base.py           # SubprocessExecutor base class
+│   │   ├── pilot.py          # TwPilotExecutor
+│   │   ├── basic.py          # TwBasicExecutor
+│   │   ├── logo.py           # TwLogoExecutor
+│   │   ├── pascal.py         # TwPascalExecutor
+│   │   ├── prolog.py         # TwPrologExecutor
+│   │   ├── forth.py          # TwForthExecutor
+│   │   ├── perl.py           # PerlExecutor (SubprocessExecutor)
+│   │   ├── python_executor.py # PythonExecutor (SubprocessExecutor)
+│   │   └── javascript_executor.py # JavaScriptExecutor (SubprocessExecutor)
+│   ├── optimizations/        # Performance optimization
 │   │   ├── __init__.py
-│   │   ├── basic.py
-│   │   ├── python_executor.py
-│   │   ├── python.py
-│   │   ├── javascript.py
-│   │   ├── javascript_executor.py
-│   │   ├── pascal.py
-│   │   ├── prolog.py
-│   │   ├── forth.py
-│   │   ├── perl.py
-│   │   ├── logo.py
-│   │   └── pilot.py
-│   └── optimizations/        # Performance optimization
-│       ├── __init__.py
-│       ├── performance_optimizer.py
-│       ├── memory_manager.py
-│       └── gui_optimizer.py
-└── docs/                     # Documentation
+│   │   ├── performance_optimizer.py
+│   │   ├── memory_manager.py
+│   │   └── gui_optimizer.py
+│   └── utilities/
+│       └── __init__.py
+├── docs/                     # Documentation
+├── examples/                 # Example programs (one dir per language)
+├── scripts/                  # Launch and test scripts
+└── tests/                    # Test suite
 ```
 
 ### Core Module Descriptions
 
-#### interpreter.py
-Central interpreter engine
+#### core/interpreter.py
+Central interpreter engine.
 
-**Key Classes:**
-- `Interpreter` - Main interpreter class
-- Handles code execution, language detection, error handling
+**Key Class:**
+- `Time_WarpInterpreter` — Main interpreter class
 
 **Key Methods:**
-- `execute()` - Run code, return output
-- `detect_language()` - Identify language from syntax
-- `format_output()` - Process execution results
-- `register_language()` - Add new language support
+- `execute_line(command)` — Execute a single line of code
+- `run_program(code)` — Parse and execute a full program
+- `step()` — Execute a single line and pause (debugger)
+- `log_output(text)` — Send output to the IDE's output widget
+- `log_error(msg, line_num)` — Log an error with formatting and history
+- `get_current_time()` — Return ISO-8601 timestamp
+- `init_turtle_graphics()` — Set up the turtle graphics system
+- `resolve_variables(text)` — Resolve `*VAR*` and `%SYSVAR%` references
 
-#### Language Modules (basic.py, python.py, javascript.py, etc.)
+**Key Attributes:**
+- `variables` — Global variable storage shared across all languages
+- `program_lines` — Parsed program lines
+- `current_line` — Current execution position
+- `error_history` — List of logged errors with timestamps
+- `running` — Whether a program is currently executing
+- `debug_mode` — Whether debug output is enabled
+- `turtle_graphics` — State of the turtle graphics system
 
-**Pattern:** Each language has:
-- `[Language]Executor` class - Main execution engine
-- `validate()` - Syntax validation
-- `execute()` - Code execution
-- Language-specific parsing and validation logic
+#### core/stubs.py
+Centralized placeholder classes for optional features (audio, games, hardware, IoT, networking).  These provide no-op implementations so the interpreter can run even without specialized packages like pygame, RPi.GPIO, etc.
 
-**Example Structure:**
+**Classes:** `AudioEngine`, `GameManager`, `MultiplayerGameManager`, `CollaborationManager`, `ArduinoController`, `RPiController`, `RobotInterface`, `GameController`, `SensorVisualizer`, `IoTDeviceManager`, `SmartHomeHub`, `SensorNetwork`, `AdvancedRobotInterface`, `Mixer`, `Tween`, `Timer`, `Particle`
+
+#### core/languages/base.py
+Base class for language executors that run code via an external subprocess.
+
+**Key Class:**
+- `SubprocessExecutor` — Provides temp-file creation, subprocess execution, output capture, cleanup, and executable discovery.
+
+**Subclass Configuration:**
 ```python
-class BASICExecutor:
-    def validate(self, code):
-        """Validate BASIC syntax"""
-        
-    def execute(self, code):
-        """Execute BASIC code"""
-        
-    def _parse_line(self, line):
-        """Parse a line of BASIC code"""
+class YourExecutor(SubprocessExecutor):
+    lang_name = "YourLang"
+    file_suffix = ".ext"
+    executable_candidates = ["yourexe", "yourexe2"]
 ```
 
+#### Language Modules (pilot.py, basic.py, logo.py, etc.)
+
+**Internal executors** (PILOT, BASIC, Logo, Pascal, Prolog, Forth) interpret code in-process. Each has:
+- `execute_command(command)` — Execute a single command, return status string
+
+**External executors** (Python, JavaScript, Perl) extend `SubprocessExecutor` and run code as a subprocess:
+- `execute_command(command)` — Write to temp file, execute, capture output
+- `execute_file(filepath)` — Run an existing source file
+- `get_version()` — Return runtime version string
+
 #### features/syntax_highlighting.py
-Syntax highlighting and styling
+Syntax highlighting and styling.
 
 **Key Classes:**
-- `SyntaxHighlighter` - Text coloring based on syntax
-- Language-specific highlighting patterns
+- `SyntaxHighlighter` — Text coloring based on language-specific patterns
 
-#### features/code_templates.py
-Code templates and snippets
+#### optimizations/
+Performance optimization modules.
 
-**Key Functions:**
-- `get_template(language)` - Get starter template for language
-- Pre-built templates for each language
-
-#### optimizations/performance_optimizer.py
-Performance optimization
-
-**Optimizations:**
-- Code caching
-- Compiled code reuse
-- Statement optimization
-
-#### optimizations/memory_manager.py
-Memory and resource management
-
-**Features:**
-- Variable scope management
-- Garbage collection tracking
-- Memory limit enforcement
-
-#### optimizations/gui_optimizer.py
-GUI performance optimization
-
-**Features:**
-- Output buffering
-- Refresh rate optimization
-- Widget optimization
+- `performance_optimizer.py` — Code caching, expression optimization, profiling
+- `memory_manager.py` — Variable scope management, memory limits
+- `gui_optimizer.py` — Output buffering, refresh rate optimization
 
 ---
 
 ## Core Interpreter
 
-### Interpreter Class Overview
+### Time_WarpInterpreter Class
 
 ```python
-class Interpreter:
-    def __init__(self):
-        self.languages = {}      # Registered language executors
-        self.output = []         # Execution output
-        self.variables = {}      # Global variables
-        self.last_language = None # Cached language
-        
-    def execute(self, code, language=None):
-        """Main execution method"""
-        
-    def detect_language(self, code):
-        """Automatic language detection"""
-        
-    def register_language(self, name, executor):
-        """Register new language support"""
+class Time_WarpInterpreter:
+    def __init__(self, output_widget=None):
+        self.variables = {}        # Global variable storage
+        self.program_lines = []    # Parsed program lines
+        self.current_line = 0      # Current execution position
+        self.error_history = []    # Error tracking
+        self.running = False       # Execution state
+        self.debug_mode = False    # Debug output toggle
+        self.turtle_graphics = None # Lazy-initialized graphics
+
+        # Language executors (one per language)
+        self.pilot_executor = TwPilotExecutor(self)
+        self.basic_executor = TwBasicExecutor(self)
+        self.logo_executor = TwLogoExecutor(self)
+        self.pascal_executor = TwPascalExecutor(self)
+        self.prolog_executor = TwPrologExecutor(self)
+        self.forth_executor = TwForthExecutor(self)
+        self.perl_executor = PerlExecutor(self)
+        self.python_executor = PythonExecutor(self)
+        self.javascript_executor = JavaScriptExecutor(self)
 ```
 
 ### Execution Flow
 
-1. **Code Input:** User submits code and optional language
-2. **Language Detection:** If not specified, detect from syntax
-3. **Validation:** Check syntax using language module
-4. **Execution:** Run code in language-specific executor
-5. **Output Processing:** Format and display results
-6. **Error Handling:** Catch and display exceptions
+1. **Code Input:** User submits code via the GUI editor
+2. **Parsing:** `run_program()` splits code into lines
+3. **Language Detection:** Each line is routed based on syntax patterns or explicit language mode
+4. **Execution:** The appropriate language executor's `execute_command()` is called
+5. **Output Capture:** Results routed through `log_output()` to the IDE output widget
+6. **Error Handling:** Errors logged via `log_error()` with line numbers and timestamps
 
 ### Language Detection Strategy
 
 Detects language by looking for:
-- Keywords specific to each language
-- Syntax patterns
-- File extensions (if applicable)
-- User selection (if provided)
+- Keywords specific to each language (e.g., `T:` for PILOT, `FORWARD` for Logo)
+- Line number prefixes (BASIC)
+- Stack notation (Forth)
+- User selection via language dropdown (highest priority)
 
-**Priority Order:** User selection > Detected > Default (BASIC)
+**Priority Order:** User selection > Explicit mode > Syntax detection > Default (BASIC)
 
 ### Error Handling
 
-- **Syntax Errors:** Invalid syntax, caught during validation
-- **Runtime Errors:** Execution errors, caught during execution
-- **System Errors:** OS-level errors, wrapped with context
+- **Syntax Errors:** Invalid syntax, caught during parsing
+- **Runtime Errors:** Execution errors, caught per-line with `try/except`
+- **Timeout Errors:** External scripts that exceed the 30-second timeout
 
 All errors display:
-- Error message
+- Error message with ❌ prefix
 - Line number (if available)
-- Language context
-- Suggestion for fix (where applicable)
+- Timestamp (stored in `error_history`)
+- Summary at end of execution (error count or success message)
 
 ---
 
@@ -223,147 +236,130 @@ All errors display:
 
 ### Adding a New Language
 
-1. **Create language module:** `core/languages/[language].py`
+#### For External-Process Languages (recommended for existing runtimes)
 
-2. **Implement executor class:**
+1. **Create language module:** `core/languages/your_lang.py`
+
+2. **Extend `SubprocessExecutor`:**
 ```python
-class YourLanguageExecutor:
-    def validate(self, code):
-        """Validate syntax, raise SyntaxError if invalid"""
-        
-    def execute(self, code):
-        """Execute code, return output string"""
+from .base import SubprocessExecutor
+
+class YourLangExecutor(SubprocessExecutor):
+    lang_name = "YourLang"
+    file_suffix = ".yl"
+    executable_candidates = ["yourlang", "yl"]
 ```
 
-3. **Register in interpreter:**
+3. **Register in `core/languages/__init__.py`:**
 ```python
-# In interpreter.py __init__
-from core.languages.your_language import YourLanguageExecutor
-self.languages['yourlang'] = YourLanguageExecutor()
+from .your_lang import YourLangExecutor
+# Add to __all__ list
 ```
 
-4. **Add to language detection:**
+4. **Add executor in `core/interpreter.py` `__init__`:**
 ```python
-# In detect_language() method
-if self._detect_yourlang(code):
-    return 'yourlang'
+self.yourlang_executor = YourLangExecutor(self)
 ```
 
-5. **Add syntax highlighting (optional):**
+#### For In-Process Interpreters
+
+1. **Create module** with an executor class accepting `interpreter` reference
+2. **Implement `execute_command(command)`** returning `"continue"`, `"error"`, or `"end"`
+3. **Register** as above
+
+### Language Architecture Patterns
+
+**Internal executors** (interpret in-process):
 ```python
-# In features/syntax_highlighting.py
-'yourlang': {
-    'keywords': [...],
-    'patterns': {...}
-}
+class TwYourLangExecutor:
+    def __init__(self, interpreter):
+        self.interpreter = interpreter
+
+    def execute_command(self, command):
+        """Execute a single command. Returns status string."""
+        # Parse and execute
+        self.interpreter.log_output("result")
+        return "continue"
 ```
 
-### Language Architecture Pattern
-
-Each language module follows this pattern:
-
+**External executors** (delegate to subprocess via `SubprocessExecutor`):
 ```python
-class [Language]Executor:
-    def __init__(self):
-        self.output = ""
-        self.variables = {}
-        self.state = {}
-        
-    def validate(self, code):
-        """Check syntax validity"""
-        
-    def execute(self, code):
-        """Execute and return output"""
-        
-    def _initialize(self):
-        """Reset state before execution"""
-        
-    def _parse(self, code):
-        """Parse code into statements"""
-        
-    def _execute_statement(self, statement):
-        """Execute single statement"""
-        
-    def _print(self, value):
-        """Handle output"""
+class YourLangExecutor(SubprocessExecutor):
+    lang_name = "YourLang"
+    file_suffix = ".yl"
+    executable_candidates = ["yourlang"]
+
+    def execute_command(self, command):
+        # Optional: preprocess before execution
+        return super().execute_command(command)
 ```
 
 ### Current Language Implementations
 
-| Language   | File | Executor | Features |
-|-----------|------|----------|----------|
-| BASIC | basic.py | BASICExecutor | Variables, loops, arrays, subroutines |
-| Python | python_executor.py | PythonExecutor | Exec-based with safety |
-| JavaScript | javascript_executor.py | JavaScriptExecutor | Node.js based |
-| Pascal | pascal.py | PascalExecutor | Types, procedures, functions |
-| Prolog | prolog.py | PrologExecutor | Facts, rules, unification |
-| Forth | forth.py | ForthExecutor | Stack operations |
-| Perl | perl.py | PerlExecutor | Regex, strings, arrays |
-| Logo | logo.py | LogoExecutor | Turtle graphics |
-| PILOT | pilot.py | PILOTExecutor | Conditional logic |
+| Language   | File | Executor Class | Type | Features |
+|-----------|------|----------------|------|----------|
+| PILOT | pilot.py | TwPilotExecutor | Internal | Conditional logic, pattern matching |
+| BASIC | basic.py | TwBasicExecutor | Internal | Variables, loops, arrays, subroutines |
+| Logo | logo.py | TwLogoExecutor | Internal | Turtle graphics, procedures |
+| Pascal | pascal.py | TwPascalExecutor | Internal | Types, procedures, functions |
+| Prolog | prolog.py | TwPrologExecutor | Internal | Facts, rules, unification |
+| Forth | forth.py | TwForthExecutor | Internal | Stack operations, word definitions |
+| Python | python_executor.py | PythonExecutor | External | Full Python 3 via subprocess |
+| JavaScript | javascript_executor.py | JavaScriptExecutor | External | Node.js via subprocess |
+| Perl | perl.py | PerlExecutor | External | Full Perl via subprocess |
 
 ---
 
 ## GUI System
 
-### Main Window Structure
+### Package Structure
+
+The GUI is organized in the `gui/` package:
 
 ```
-Time_Warp.py
-├── Root Window (tk.Tk)
-├── Menu Bar
-│   ├── File Menu
-│   ├── Edit Menu
-│   └── Help Menu
-├── Control Panel (Frame)
-│   ├── Language Dropdown
-│   └── Execute Button
-├── Editor (Text Widget)
-│   ├── Text content
-│   └── Line numbers
-├── Output Area (Frame)
-│   ├── Output Text
-│   ├── Error Display
-│   └── Clear Button
-└── Status Bar
-    ├── Line/Column
-    └── Language indicator
+gui/
+├── __init__.py     # Exports TimeWarpApp
+├── app.py          # TimeWarpApp — main IDE window and logic
+├── menus.py        # build_menu_bar(), detect_language_from_extension()
+├── dialogs.py      # FindDialog, ReplaceDialog, show_error_history(), show_about()
+└── themes.py       # THEMES, FONT_SIZES, EXT_TO_LANG, SUPPORTED_LANGUAGES
 ```
 
-### Key GUI Components
+### TimeWarpApp (gui/app.py)
 
-#### Editor Widget
-- Text input with line numbers
-- Syntax highlighting
-- Find & Replace
-- Keyboard shortcuts
+The main application class owns the `tk.Tk` root window and orchestrates:
+- Editor widget with line numbers and syntax highlighting
+- Output display area
+- Turtle graphics canvas
+- Language selector dropdown
+- Settings persistence (recent files, theme, font)
 
-#### Output Widget
-- Scrollable text display
-- Automatic scrolling
-- Clear button
-- Error highlighting
+### Menu Bar (gui/menus.py)
 
-#### Language Selector
-- Dropdown menu
-- Auto-detection checkbox
-- Current language display
+`build_menu_bar(app)` constructs all menus:
+- **File:** New, Open, Save, Save As, Recent Files, Examples, Exit
+- **Edit:** Undo, Redo, Cut, Copy, Paste, Select All, Find, Replace
+- **View:** Themes, Fonts, Font Sizes
+- **Run:** Execute, Clear Output, Clear Canvas
+- **Tools:** Performance Stats, Profiling, Optimization
+- **Test:** Smoke Test, Full Test Suite
+- **Help:** About, Documentation, FAQ
 
-### GUI Event Handlers
+### Dialogs (gui/dialogs.py)
 
-- **Execute Button:** Runs current code
-- **Clear Button:** Clears output
-- **File Operations:** Open, save, new
-- **Edit Operations:** Undo, redo, cut, copy, paste
-- **Find & Replace:** Search and modify text
+- `FindDialog` — Ctrl+F search with Next/Previous navigation
+- `ReplaceDialog` — Ctrl+H search and replace
+- `show_error_history()` — Display logged errors from interpreter
+- `show_about()` — Version and credits dialog
 
-### Customization
+### Themes & Configuration (gui/themes.py)
 
-Users can customize:
-- Font (size, family)
-- Colors (theme)
-- Window layout
-- Keyboard shortcuts
+Single source of truth for:
+- `THEMES` — 9 color themes (Light, Dark, Solarized, Monokai, etc.)
+- `FONT_SIZES` — Named size presets (Small, Medium, Large, Extra Large)
+- `EXT_TO_LANG` — File extension to language mapping (unified, no duplicates)
+- `SUPPORTED_LANGUAGES` — Ordered list of all supported languages
+- `LINE_NUMBER_BG` — Per-theme line number background colors
 
 ---
 
@@ -372,54 +368,37 @@ Users can customize:
 ### Execution Pipeline
 
 ```
-User Input Code
+User Code (editor)
     ↓
-[GUI] Text Widget
+gui/app.py  TimeWarpApp.run_code()
     ↓
-Execute Button Pressed
+core/interpreter.py  Time_WarpInterpreter.run_program()
     ↓
-[Core] Interpreter.execute()
+Parse into program_lines
     ↓
-Detect Language
+For each line:  execute_line(command)
     ↓
-Language-Specific Executor
+Route to language executor  (e.g. basic_executor.execute_command())
     ↓
-Validate Syntax
+Internal: interpret in-process
+External: write temp file → subprocess.run() → capture stdout/stderr
     ↓
-Execute Code
+log_output() → output widget
     ↓
-Capture Output
-    ↓
-[Core] Format Output
-    ↓
-[GUI] Output Widget
-    ↓
-Display Result
+Display result in GUI
 ```
 
 ### Variable Scope
 
 ```
-Global Scope
-├── Built-in functions
-├── Standard library
-└── User-defined globals
-    │
-    └── Function/Procedure Scope
-        ├── Local variables
-        ├── Parameters
-        └── Function-local scope
+Global Scope  (interpreter.variables)
+├── Shared across all languages
+├── PILOT system variables
+├── BASIC arrays and variables
+└── Logo procedures and turtle state
 ```
 
-### Output Capture
-
-Each language captures output through:
-1. **Print/Echo statements:** Direct output
-2. **Return values:** Function results
-3. **Graphics:** Visual output (Logo)
-4. **Logging:** Debug output
-
-All output consolidated into unified output stream.
+Each language executor accesses shared state via `self.interpreter.variables`.
 
 ---
 
@@ -430,15 +409,16 @@ All output consolidated into unified output stream.
 #### New Language Support
 
 1. Create `core/languages/[lang].py`
-2. Implement executor class
-3. Register in `core/__init__.py`
-4. Add syntax highlighting
+2. Implement executor class (extend `SubprocessExecutor` for external runtimes)
+3. Register in `core/languages/__init__.py`
+4. Add executor instance in `core/interpreter.py` `__init__`
+5. Add syntax highlighting patterns (optional)
 
 #### New IDE Features
 
 1. Add feature module to `core/features/`
-2. Integrate in GUI (`Time_Warp.py`)
-3. Add menu items/buttons
+2. Integrate in `gui/app.py` (for UI) or `core/interpreter.py` (for execution)
+3. Add menu items in `gui/menus.py`
 4. Implement event handlers
 
 #### New Optimization
@@ -448,48 +428,27 @@ All output consolidated into unified output stream.
 3. Hook into execution pipeline
 4. Benchmark improvements
 
-### Plugin Architecture
-
-Consider for future:
-- Plugin directory scanning
-- Dynamic language loading
-- Third-party extensions
-- Community themes
-
 ---
 
 ## Performance Optimization
 
 ### Built-in Optimizations
 
-#### 1. Code Caching
-```python
-# Interpreter caches compiled/parsed code
-self.code_cache = {}
-```
+#### 1. Expression Caching
+The interpreter caches evaluated expressions to avoid redundant computation.
 
 #### 2. Memory Management
-- Track variable memory usage
+- Track variable memory usage via `core/optimizations/memory_manager.py`
 - Cleanup unused variables
 - Limit memory per execution
 
 #### 3. GUI Optimization
-- Output buffering
+- Output buffering via `core/optimizations/gui_optimizer.py`
 - Refresh rate limiting
-- Lazy rendering
 
 #### 4. Execution Optimization
-- Statement compilation (where applicable)
-- Function caching
-- Lazy evaluation
-
-### Performance Monitoring
-
-Track:
-- Execution time
-- Memory usage
-- Output size
-- Cache hits
+- Lazy module loading
+- Profiling infrastructure
 
 ### Benchmarking
 
@@ -500,10 +459,9 @@ python scripts/run_tests.py
 
 ### Profiling
 
-Identify bottlenecks:
+Toggle profiling from the Tools menu, or programmatically:
 ```python
-import cProfile
-cProfile.run('interpreter.execute(code)')
+interpreter.profile_enabled = True
 ```
 
 ---
@@ -533,13 +491,6 @@ python scripts/run_tests.py
 python Time_Warp.py
 ```
 
-### Testing
-
-- **Unit tests:** Test individual components
-- **Integration tests:** Test language implementations
-- **GUI tests:** Verify UI functionality
-- **Performance tests:** Benchmark optimizations
-
 ### Code Standards
 
 - Python 3.9+ compatibility
@@ -547,25 +498,6 @@ python Time_Warp.py
 - Docstring documentation
 - PEP 8 style guide
 - Meaningful variable names
-
-### Contribution Process
-
-1. Create feature branch
-2. Implement changes with tests
-3. Run full test suite
-4. Submit pull request
-5. Code review
-6. Merge to main
-
----
-
-## API Reference
-
-See [API_REFERENCE.md](API_REFERENCE.md) for detailed API documentation.
-
-## Implementation Details
-
-See [LANGUAGE_IMPLEMENTATIONS.md](LANGUAGE_IMPLEMENTATIONS.md) for how each language is implemented.
 
 ---
 

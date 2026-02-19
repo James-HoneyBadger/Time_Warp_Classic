@@ -78,7 +78,7 @@ class TwPilotExecutor:
             "screen_cleared": False,
         }
 
-    def execute_command(
+    def execute_command(  # noqa: C901
         self, command
     ):  # pylint: disable=too-many-return-statements,too-many-branches
         """
@@ -277,12 +277,11 @@ class TwPilotExecutor:
         condition = command[2:].strip()
         try:
             result = self.interpreter.evaluate_expression(condition)
-            # N: treat like a plain conditional
-            # (match when the condition is TRUE).
-            self.interpreter.match_flag = bool(result)
+            # N: is the negation of Y: — match when the condition is FALSE.
+            self.interpreter.match_flag = not bool(result)
         except Exception:
-            # On error, default to no match
-            self.interpreter.match_flag = False
+            # On error, default to match (opposite of Y: default)
+            self.interpreter.match_flag = True
         # mark that the last command set the match
         # flag so a following T: can be conditional
         self.interpreter._last_match_set = True
@@ -463,10 +462,10 @@ class TwPilotExecutor:
             )
             return "continue"
 
-        # Find current line number (simplified - we'll use a placeholder)
-        current_line = 0  # This would need to be passed from the interpreter
+        # Use the interpreter's actual current line for the return address
+        current_line = self.interpreter.current_line
 
-        # Push return address to stack
+        # Push return address to stack (line after the U: call)
         self.return_stack.append(current_line)
 
         # Jump to subroutine
@@ -500,7 +499,7 @@ class TwPilotExecutor:
     def _handle_runtime_command(self, command):
         """Handle R: runtime commands"""
         cmd = command[2:].strip().upper()
-        
+
         if cmd == "VERSION":
             self.interpreter.log_output("Time_Warp PILOT v1.0")
         elif cmd == "HELP":
@@ -520,13 +519,13 @@ class TwPilotExecutor:
                 self.interpreter.log_output(f"Variable {var_name} not found")
         else:
             self.interpreter.log_output(f"Unknown runtime command: {cmd}")
-        
+
         return "continue"
 
     def _handle_game_command(self, command):
         """Handle GAME: game development commands"""
         cmd = command[5:].strip().upper()
-        
+
         if cmd == "SCORE":
             # Display current score
             score = self.interpreter.variables.get("SCORE", 0)
@@ -549,13 +548,13 @@ class TwPilotExecutor:
             self.interpreter.log_output(f"Lives remaining: {lives}")
         else:
             self.interpreter.log_output(f"Unknown game command: {cmd}")
-        
+
         return "continue"
 
     def _handle_audio_command(self, command):
         """Handle AUDIO: audio system commands"""
         cmd = command[6:].strip().upper()
-        
+
         if cmd.startswith("PLAY "):
             # AUDIO:PLAY tone - play a simple tone
             tone = cmd[5:].strip()
@@ -577,7 +576,7 @@ class TwPilotExecutor:
             self.interpreter.log_output("🔇 Audio stopped")
         else:
             self.interpreter.log_output(f"Unknown audio command: {cmd}")
-        
+
         return "continue"
 
     def _handle_file_command(self, command):
@@ -1133,7 +1132,7 @@ class TwPilotExecutor:
 
         return "continue"
 
-    def _handle_branch_command(self, command):
+    def _handle_branch_command(self, command):  # noqa: C901
         """Handle BRANCH: advanced branching operations"""
         cmd = command[7:].strip()  # Skip "BRANCH:"
         parts = cmd.split(" ", 1)
@@ -1358,7 +1357,7 @@ class TwPilotExecutor:
 
         return "continue"
 
-    def _handle_storage_command(self, command):
+    def _handle_storage_command(self, command):  # noqa: C901
         """Handle STORAGE: advanced variable storage operations"""
         cmd = command[8:].strip()  # Skip "STORAGE:"
         parts = cmd.split(" ", 1)
@@ -1615,8 +1614,8 @@ class TwPilotExecutor:
         """Handle TH: type hang command (PILOT 73)"""
         text = command[3:].strip()
         text = self.interpreter.interpolate_text(text)
-        # Type without newline
-        self.interpreter.log_output(text, end="")
+        # log_output does not support end= kwarg; output without extra newline
+        self.interpreter.log_output(text)
         return "continue"
 
     def _handle_system_command(self, command):
@@ -1625,13 +1624,22 @@ class TwPilotExecutor:
         if cmd:
             try:
                 import subprocess
+                import shlex
+
+                # Parse into a list to avoid shell=True injection risk.
+                # A bare string with shell=True allows the user to execute
+                # arbitrary shell code (e.g. XS: rm -rf ~).
+                cmd_list = shlex.split(cmd)
+                if not cmd_list:
+                    return "continue"
 
                 result = subprocess.run(
-                    cmd,
-                    shell=True,
+                    cmd_list,
+                    shell=False,
                     capture_output=True,
                     text=True,
                     check=False,
+                    timeout=10,
                 )
                 self.system_vars["status"] = result.returncode
                 if result.stdout:
@@ -1640,6 +1648,15 @@ class TwPilotExecutor:
                     self.interpreter.debug_output(
                         f"System command stderr: {result.stderr}"
                     )
+            except subprocess.TimeoutExpired:
+                self.interpreter.log_output("XS: system command timed out (limit: 10s)")
+                self.system_vars["status"] = -1
+            except FileNotFoundError:
+                cmd_list_local = shlex.split(cmd) if cmd else []
+                self.interpreter.log_output(
+                    f"XS: command not found: {cmd_list_local[0] if cmd_list_local else cmd}"
+                )
+                self.system_vars["status"] = -1
             except Exception as e:
                 self.interpreter.debug_output(f"Error executing system command: {e}")
                 self.system_vars["status"] = -1

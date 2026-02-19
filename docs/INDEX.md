@@ -9,15 +9,10 @@ Welcome to the Time Warp Classic comprehensive documentation. This is your compl
 - **[../SETUP.md](../SETUP.md)** - Installation, setup, and troubleshooting guide
 
 ### User Documentation
-- **[USER_GUIDE.md](user/USER_GUIDE.md)** - Complete IDE features and usage
 - **[LANGUAGE_TUTORIALS.md](user/LANGUAGE_TUTORIALS.md)** - Learn all 9 programming languages
-- **[KEYBOARD_SHORTCUTS.md](user/KEYBOARD_SHORTCUTS.md)** - IDE keyboard shortcuts and commands
-- **[THEMES_AND_FONTS.md](user/THEMES_AND_FONTS.md)** - Customization guide
 
 ### Developer Documentation
-- **[TECHNICAL_REFERENCE.md](dev/TECHNICAL_REFERENCE.md)** - Architecture and implementation details
-- **[API_REFERENCE.md](dev/API_REFERENCE.md)** - Python API for extending Time Warp
-- **[LANGUAGE_IMPLEMENTATIONS.md](dev/LANGUAGE_IMPLEMENTATIONS.md)** - How each language is implemented
+- **[TECHNICAL_REFERENCE.md](dev/TECHNICAL_REFERENCE.md)** - Architecture, API, and implementation details
 
 ### Language Guides
 - **[BASIC_REFERENCE.md](languages/BASIC_REFERENCE.md)** - Complete BASIC language reference
@@ -31,8 +26,6 @@ Welcome to the Time Warp Classic comprehensive documentation. This is your compl
 - **[PILOT_REFERENCE.md](languages/PILOT_REFERENCE.md)** - PILOT language reference
 
 ### Project Information
-- **[../PROJECT_STATUS.md](../PROJECT_STATUS.md)** - Project status and feature completeness
-- **[../INCOMPLETE_FEATURES.md](../INCOMPLETE_FEATURES.md)** - Known limitations and incomplete features
 - **[../examples/README.md](../examples/README.md)** - Example programs and code samples
 - **[TROUBLESHOOTING.md](TROUBLESHOOTING.md)** - Common issues and solutions
 - **[FAQ.md](FAQ.md)** - Frequently asked questions
@@ -44,9 +37,6 @@ Welcome to the Time Warp Classic comprehensive documentation. This is your compl
 **Get started immediately**
 → [QUICK_START.md](QUICK_START.md)
 
-**Learn to use the IDE**
-→ [USER_GUIDE.md](user/USER_GUIDE.md)
-
 **Learn a programming language**
 → [LANGUAGE_TUTORIALS.md](user/LANGUAGE_TUTORIALS.md)
 
@@ -57,7 +47,7 @@ Welcome to the Time Warp Classic comprehensive documentation. This is your compl
 → [TECHNICAL_REFERENCE.md](dev/TECHNICAL_REFERENCE.md)
 
 **Extend or modify the IDE**
-→ [API_REFERENCE.md](dev/API_REFERENCE.md)
+→ [TECHNICAL_REFERENCE.md](dev/TECHNICAL_REFERENCE.md)
 
 **Troubleshoot a problem**
 → [TROUBLESHOOTING.md](TROUBLESHOOTING.md)
@@ -74,19 +64,16 @@ Welcome to the Time Warp Classic comprehensive documentation. This is your compl
 1. Read [QUICK_START.md](QUICK_START.md)
 2. Try running an example in [../examples/](../examples/)
 3. Follow [LANGUAGE_TUTORIALS.md](user/LANGUAGE_TUTORIALS.md) - BASIC section
-4. Use [KEYBOARD_SHORTCUTS.md](user/KEYBOARD_SHORTCUTS.md) as reference
 
 ### For Experienced Programmers
-1. Skim [USER_GUIDE.md](user/USER_GUIDE.md)
+1. Read [QUICK_START.md](QUICK_START.md) for IDE overview
 2. Check language reference for your chosen language in [languages/](languages/)
 3. Review [TECHNICAL_REFERENCE.md](dev/TECHNICAL_REFERENCE.md)
 4. Explore [examples/](../examples/) for advanced patterns
 
 ### For IDE Developers
 1. Read [TECHNICAL_REFERENCE.md](dev/TECHNICAL_REFERENCE.md)
-2. Study [API_REFERENCE.md](dev/API_REFERENCE.md)
-3. Review [LANGUAGE_IMPLEMENTATIONS.md](dev/LANGUAGE_IMPLEMENTATIONS.md)
-4. Check source code in [core/](../core/) directory
+2. Check source code in [core/](../core/) directory
 
 ## 🎯 Learning Paths
 
@@ -120,17 +107,13 @@ Advanced examples in examples/
 
 ### Path 3: IDE Developer (Advanced)
 ```
-PROJECT_STATUS.md
-  ↓
 TECHNICAL_REFERENCE.md
-  ↓
-API_REFERENCE.md
-  ↓
-LANGUAGE_IMPLEMENTATIONS.md
   ↓
 Review core/interpreter.py
   ↓
-Study individual language implementations
+Study core/languages/ implementations
+  ↓
+Study gui/ package
 ```
 
 ## 📋 File Organization
@@ -138,18 +121,14 @@ Study individual language implementations
 ```
 docs/
 ├── INDEX.md (this file)
+├── README.md
 ├── QUICK_START.md
 ├── TROUBLESHOOTING.md
 ├── FAQ.md
 ├── user/
-│   ├── USER_GUIDE.md
-│   ├── LANGUAGE_TUTORIALS.md
-│   ├── KEYBOARD_SHORTCUTS.md
-│   └── THEMES_AND_FONTS.md
+│   └── LANGUAGE_TUTORIALS.md
 ├── dev/
-│   ├── TECHNICAL_REFERENCE.md
-│   ├── API_REFERENCE.md
-│   └── LANGUAGE_IMPLEMENTATIONS.md
+│   └── TECHNICAL_REFERENCE.md
 └── languages/
     ├── BASIC_REFERENCE.md
     ├── PYTHON_REFERENCE.md
@@ -174,8 +153,8 @@ docs/
 1. **Quick question?** → Check [FAQ.md](FAQ.md)
 2. **Something not working?** → See [TROUBLESHOOTING.md](TROUBLESHOOTING.md)
 3. **Want to learn a language?** → Go to [languages/](languages/) directory
-4. **Need IDE features?** → Read [USER_GUIDE.md](user/USER_GUIDE.md)
-5. **Want to extend?** → Study [dev/API_REFERENCE.md](dev/API_REFERENCE.md)
+4. **Need IDE features?** → Read [QUICK_START.md](QUICK_START.md)
+5. **Want to extend?** → Study [dev/TECHNICAL_REFERENCE.md](dev/TECHNICAL_REFERENCE.md)
 
 ## 📞 Support Resources
 
@@ -187,13 +166,13 @@ docs/
 ## 📝 License & Attribution
 
 Time Warp Classic - Multi-language Retro IDE  
-Copyright © 2025 Honey Badger Universe
+Copyright © 2025–2026 Honey Badger Universe
 
 See [../License.md](../License.md) for full license information.
 
 ---
 
-**Last Updated:** December 30, 2025  
-**Version:** 1.0 Stable
+**Last Updated:** February 2026  
+**Version:** 1.3.0 Stable
 
 **Start with [QUICK_START.md](QUICK_START.md) →**

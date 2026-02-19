@@ -11,7 +11,7 @@
 # - pathlib (file system operations)
 
 # Required runtime dependencies
-pygame>=2.0.0           # Graphics and multimedia support
+pygame-ce>=2.0.0        # Graphics and multimedia support (community edition)
 pygments>=2.15.0        # Syntax highlighting for code editor
 
 # Development dependencies

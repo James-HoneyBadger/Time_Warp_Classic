@@ -102,7 +102,7 @@ class TwBasicExecutor:
             self.interpreter.log_output(f"❌ Error initializing pygame: {e}")
             return False
 
-    def execute_command(
+    def execute_command(  # noqa: C901
         self, command
     ):  # pylint: disable=too-many-return-statements,too-many-branches
         """
@@ -136,6 +136,8 @@ class TwBasicExecutor:
             elif cmd == "REM":
                 return self._handle_rem(command)
             elif cmd == "END":
+                if len(parts) > 1 and parts[1].upper() == "SELECT":
+                    return self._handle_end_select(command)
                 return self._handle_end(command)
             elif cmd == "INPUT":
                 return self._handle_input(command, parts)
@@ -165,10 +167,6 @@ class TwBasicExecutor:
                 return self._handle_select(command)
             elif cmd == "CASE":
                 return self._handle_case(command)
-            elif cmd == "END":
-                if len(parts) > 1 and parts[1].upper() == "SELECT":
-                    return self._handle_end_select(command)
-                return self._handle_end(command)
             elif cmd == "SUB":
                 return self._handle_sub(command)
             elif cmd == "DEFFN":
@@ -341,8 +339,27 @@ class TwBasicExecutor:
         return "continue"
 
     def _handle_if(self, command):
-        """Handle IF/THEN conditional statement"""
+        """Handle IF/THEN conditional statement with optional ELSE"""
         try:
+            # Try matching IF ... THEN ... ELSE ... first
+            m = re.match(
+                r"IF\s+(.+?)\s+THEN\s+(.+?)\s+ELSE\s+(.+)",
+                command,
+                re.IGNORECASE,
+            )
+            if m:
+                cond_expr = m.group(1).strip()
+                then_cmd = m.group(2).strip()
+                else_cmd = m.group(3).strip()
+                try:
+                    cond_val = self.interpreter.evaluate_expression(cond_expr)
+                except Exception:  # pylint: disable=broad-except
+                    cond_val = False
+                if cond_val:
+                    return self.interpreter.execute_line(then_cmd)
+                else:
+                    return self.interpreter.execute_line(else_cmd)
+            # Fall back to IF ... THEN ... (no ELSE)
             m = re.match(r"IF\s+(.+?)\s+THEN\s+(.+)", command, re.IGNORECASE)
             if m:
                 cond_expr = m.group(1).strip()
@@ -352,9 +369,6 @@ class TwBasicExecutor:
                 except Exception:  # pylint: disable=broad-except
                     cond_val = False
                 if cond_val:
-                    # Execute the THEN command using
-                    # the general line executor so
-                    # it can be a BASIC, PILOT or LOGO command fragment.
                     return self.interpreter.execute_line(then_cmd)
         except Exception as e:  # pylint: disable=broad-except
             self.interpreter.debug_output(f"IF statement error: {e}")
@@ -382,19 +396,17 @@ class TwBasicExecutor:
                     else 1
                 )
 
-                # Integer-only loops: coerce start/end/step to int
-                try:
-                    start_val = int(start_val)
-                except (ValueError, TypeError):
-                    start_val = 0
-                try:
-                    end_val = int(end_val)
-                except (ValueError, TypeError):
-                    end_val = 0
-                try:
-                    step_val = int(step_val)
-                except (ValueError, TypeError):
-                    step_val = 1
+                # Coerce to numeric, preserving float when needed
+                def to_number(val, default=0):
+                    try:
+                        f = float(val)
+                        return int(f) if f == int(f) else f
+                    except (ValueError, TypeError):
+                        return default
+
+                start_val = to_number(start_val)
+                end_val = to_number(end_val)
+                step_val = to_number(step_val, 1)
 
                 # Store the loop variable and position
                 self.interpreter.variables[var_name] = start_val
@@ -511,7 +523,7 @@ class TwBasicExecutor:
 
         # Display the prompt
         if prompt:
-            self.interpreter.log_output(prompt, end="")
+            self.interpreter.log_output(prompt)
 
         # Get user input
         value = self.interpreter.get_user_input("")
@@ -585,26 +597,31 @@ class TwBasicExecutor:
                 found_idx = len(self.interpreter.for_stack) - 1
 
             var_name = ctx["var"]
-            step = int(ctx["step"])
-            end_val = int(ctx["end"])
+            step = ctx["step"]
+            end_val = ctx["end"]
 
-            # Ensure variable exists (treat as integer)
+            # Ensure variable exists; preserve float for fractional steps
             current_val = self.interpreter.variables.get(var_name, 0)
             try:
-                current_val = int(current_val)
+                current_val = float(current_val)
             except Exception:
-                current_val = 0
+                current_val = 0.0
 
             next_val = current_val + step
-            self.interpreter.variables[var_name] = int(next_val)
+            # Store as int when both step and result are whole numbers
+            self.interpreter.variables[var_name] = (
+                int(next_val)
+                if isinstance(step, int) and next_val == int(next_val)
+                else next_val
+            )
 
             # Decide whether to loop
             loop_again = False
             try:
                 if step >= 0:
-                    loop_again = next_val <= int(end_val)
+                    loop_again = next_val <= end_val
                 else:
-                    loop_again = next_val >= int(end_val)
+                    loop_again = next_val >= end_val
             except Exception:
                 loop_again = False
 
@@ -760,12 +777,26 @@ class TwBasicExecutor:
             if condition_part:
                 condition = self.interpreter.evaluate_expression(condition_part)
                 if condition:
-                    # Continue execution
+                    # Condition true: push current line for WEND to loop back to
+                    self.interpreter.while_stack.append(self.interpreter.current_line)
                     return "continue"
                 else:
-                    # Skip to WEND - find matching WEND
-                    self.interpreter.while_stack.append(self.interpreter.current_line)
-                    # For now, just continue (would need parser to find WEND)
+                    # Condition false: skip to matching WEND
+                    depth = 1
+                    search_line = self.interpreter.current_line + 1
+                    while search_line < len(self.interpreter.program_lines):
+                        _, cmd_text = self.interpreter.program_lines[search_line]
+                        cmd_upper = cmd_text.strip().upper()
+                        if cmd_upper.startswith("WHILE"):
+                            depth += 1
+                        elif cmd_upper == "WEND":
+                            depth -= 1
+                            if depth == 0:
+                                # Jump PAST the WEND so it is not executed and
+                                # does not pop an outer WHILE's stack entry
+                                return f"jump:{search_line + 1}"
+                        search_line += 1
+                    self.interpreter.debug_output("WHILE without matching WEND")
                     return "continue"
         except Exception as e:
             self.interpreter.debug_output(f"WHILE statement error: {e}")
@@ -775,8 +806,8 @@ class TwBasicExecutor:
         """Handle WEND statement (Turbo BASIC)"""
         try:
             if self.interpreter.while_stack:
-                # Jump back to WHILE
-                while_line = self.interpreter.while_stack[-1]
+                # Jump back to WHILE line to re-evaluate condition
+                while_line = self.interpreter.while_stack.pop()
                 return f"jump:{while_line}"
             else:
                 self.interpreter.debug_output("WEND without matching WHILE")
@@ -1007,7 +1038,7 @@ class TwBasicExecutor:
                 distance = self.interpreter.evaluate_expression(distance_expr)
             else:
                 distance = 50.0
-                
+
             if not self.interpreter.turtle_graphics:
                 self.interpreter.init_turtle_graphics()
             self.interpreter.turtle_forward(distance)
@@ -1124,7 +1155,7 @@ class TwBasicExecutor:
             self.interpreter.debug_output(f"CALL statement error: {e}")
         return "continue"
 
-    def _handle_math_functions(self, cmd, parts):
+    def _handle_math_functions(self, cmd, parts):  # noqa: C901
         """Handle mathematical functions"""
         try:
             if cmd == "SIN":
@@ -1263,7 +1294,7 @@ class TwBasicExecutor:
             self.interpreter.debug_output(f"Math function error: {e}")
         return "continue"
 
-    def _handle_string_functions(self, cmd, parts):
+    def _handle_string_functions(self, cmd, parts):  # noqa: C901
         """Handle string manipulation functions"""
         try:
             if cmd == "LEN":
@@ -1430,7 +1461,7 @@ class TwBasicExecutor:
             self.interpreter.debug_output(f"String function error: {e}")
         return "continue"
 
-    def _handle_file_commands(self, cmd, parts):
+    def _handle_file_commands(self, cmd, parts):  # noqa: C901
         """Handle file I/O commands"""
         try:
             if cmd == "OPEN":
@@ -1572,7 +1603,7 @@ class TwBasicExecutor:
             self.interpreter.debug_output(f"File command error: {e}")
         return "continue"
 
-    def _handle_enhanced_graphics(self, cmd, parts):
+    def _handle_enhanced_graphics(self, cmd, parts):  # noqa: C901
         """Handle enhanced graphics commands"""
         try:
             if cmd == "LINE":
@@ -1994,13 +2025,13 @@ class TwBasicExecutor:
                         "D": 2,
                         "D#": 3,
                         "E": 4,
-                        "F": 4,
-                        "F#": 5,
-                        "G": 6,
-                        "G#": 7,
-                        "A": 8,
-                        "A#": 9,
-                        "B": 10,
+                        "F": 5,
+                        "F#": 6,
+                        "G": 7,
+                        "G#": 8,
+                        "A": 9,
+                        "A#": 10,
+                        "B": 11,
                     }
 
                     if note.upper() in note_values:
@@ -2028,7 +2059,7 @@ class TwBasicExecutor:
             self.interpreter.debug_output(f"Sound command error: {e}")
         return "continue"
 
-    def _handle_array_operations(self, cmd, parts):
+    def _handle_array_operations(self, cmd, parts):  # noqa: C901
         """Handle array operations"""
         try:
             if cmd == "SORT":
@@ -2123,7 +2154,7 @@ class TwBasicExecutor:
             self.interpreter.debug_output(f"Array operation error: {e}")
         return "continue"
 
-    def _handle_game_commands(self, command, cmd, parts):
+    def _handle_game_commands(self, command, cmd, parts):  # noqa: C901
         """Handle game development commands"""
         if cmd == "GAMESCREEN":
             # GAMESCREEN width, height [, title]

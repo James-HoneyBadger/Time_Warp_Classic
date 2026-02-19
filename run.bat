@@ -1,17 +1,17 @@
 @echo off
 REM ============================================================================
 REM Time Warp Classic - Complete Setup & Run Script (Windows)
-REM 
+REM
 REM This script:
 REM 1. Creates a Python virtual environment (if needed)
-REM 2. Installs all required Python dependencies
+REM 2. Installs all required Python dependencies (individually for resilience)
 REM 3. Launches the Time Warp Classic GUI
 REM
 REM Usage: run.bat [--clean] [--no-install]
 REM   --clean      Delete and recreate the virtual environment
 REM   --no-install Skip dependency installation
 REM
-REM Copyright © 2025 Honey Badger Universe
+REM Copyright © 2025–2026 Honey Badger Universe
 REM ============================================================================
 
 setlocal enabledelayedexpansion
@@ -48,7 +48,7 @@ echo.
 REM ============================================================================
 REM Step 1: Check Python availability
 REM ============================================================================
-echo [1/4] Checking Python installation...
+echo [1/5] Checking Python installation...
 python --version >nul 2>&1
 if errorlevel 1 (
     echo.
@@ -67,7 +67,7 @@ echo.
 REM ============================================================================
 REM Step 2: Virtual Environment Setup
 REM ============================================================================
-echo [2/4] Setting up Virtual Environment...
+echo [2/5] Setting up Virtual Environment...
 
 if "%CLEAN%"=="true" (
     if exist "venv" (
@@ -79,13 +79,18 @@ if "%CLEAN%"=="true" (
 if not exist "venv" (
     echo Creating virtual environment...
     python -m venv venv
+    if errorlevel 1 (
+        echo ERROR: Failed to create virtual environment
+        pause
+        exit /b 1
+    )
     echo [OK] Virtual environment created
 ) else (
     echo [OK] Virtual environment already exists
 )
 
 REM ============================================================================
-REM Step 3: Activate Virtual Environment
+REM Activate Virtual Environment
 REM ============================================================================
 echo Activating virtual environment...
 
@@ -100,39 +105,95 @@ if exist "venv\Scripts\activate.bat" (
 echo.
 
 REM ============================================================================
-REM Step 4: Install Dependencies
+REM Step 3: Install Dependencies (individually for resilience)
 REM ============================================================================
 if "%NO_INSTALL%"=="false" (
-    echo [3/4] Installing Python dependencies...
-    
+    echo [3/5] Installing Python dependencies...
+
     REM Upgrade pip first
     echo Upgrading pip...
     python -m pip install --upgrade pip setuptools wheel >nul 2>&1
-    
-    REM Check if requirements.txt exists
-    if exist "requirements.txt" (
-        echo Installing packages from requirements.txt...
-        pip install -r requirements.txt
-        if errorlevel 0 (
-            echo [OK] Dependencies installed
+
+    set "FAILED=0"
+
+    echo   -- Required packages --
+
+    REM pygame-ce (community edition with broad platform support)
+    python -c "import pygame" >nul 2>&1
+    if errorlevel 1 (
+        echo   Installing pygame-ce...
+        pip install "pygame-ce>=2.0.0" >nul 2>&1
+        if errorlevel 1 (
+            echo   [FAIL] pygame-ce failed to install
+            set /a FAILED+=1
         ) else (
-            echo [WARN] Some dependencies may have failed
-            echo        (This is often OK - many features work without optional dependencies)
+            echo   [OK] pygame-ce installed
         )
     ) else (
-        echo ERROR: requirements.txt not found!
-        pause
-        exit /b 1
+        echo   [OK] pygame already available
+    )
+
+    REM pygments
+    echo   Installing pygments...
+    pip install "pygments>=2.15.0" >nul 2>&1
+    if errorlevel 1 (
+        echo   [FAIL] pygments failed to install
+        set /a FAILED+=1
+    ) else (
+        echo   [OK] pygments installed
+    )
+
+    REM Pillow
+    echo   Installing Pillow...
+    pip install "Pillow>=8.0.0" >nul 2>&1
+    if errorlevel 1 (
+        echo   [FAIL] Pillow failed to install
+        set /a FAILED+=1
+    ) else (
+        echo   [OK] Pillow installed
+    )
+
+    echo   -- Development packages --
+
+    REM pytest
+    pip install "pytest>=7.0.0" >nul 2>&1
+    if errorlevel 1 (
+        echo   [INFO] pytest not installed (optional^)
+    ) else (
+        echo   [OK] pytest installed
+    )
+
+    REM black
+    pip install "black>=22.0.0" >nul 2>&1
+    if errorlevel 1 (
+        echo   [INFO] black not installed (optional^)
+    ) else (
+        echo   [OK] black installed
+    )
+
+    REM flake8
+    pip install "flake8>=4.0.0" >nul 2>&1
+    if errorlevel 1 (
+        echo   [INFO] flake8 not installed (optional^)
+    ) else (
+        echo   [OK] flake8 installed
+    )
+
+    echo.
+    if "!FAILED!"=="0" (
+        echo [OK] All runtime dependencies installed successfully
+    ) else (
+        echo [WARN] !FAILED! runtime package(s^) had issues (app may still work^)
     )
 ) else (
-    echo [3/4] Skipping dependency installation (--no-install)
+    echo [3/5] Skipping dependency installation (--no-install)
 )
 echo.
 
 REM ============================================================================
-REM Step 5: Verify Installation
+REM Step 4: Verify Installation
 REM ============================================================================
-echo [4/4] Verifying installation...
+echo [4/5] Verifying installation...
 
 python -c "import tkinter; print('  [OK] tkinter available')" 2>nul
 if errorlevel 1 (
@@ -158,7 +219,7 @@ if errorlevel 1 (
 echo.
 
 REM ============================================================================
-REM Step 6: Launch Time Warp Classic
+REM Step 5: Launch Time Warp Classic
 REM ============================================================================
 echo ============================================================================
 echo.
@@ -173,6 +234,8 @@ if not exist "Time_Warp.py" (
     pause
     exit /b 1
 )
+
+echo [5/5] Starting IDE...
 
 REM Run the IDE
 python Time_Warp.py %*

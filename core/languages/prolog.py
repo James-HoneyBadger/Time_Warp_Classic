@@ -101,7 +101,7 @@ class TwPrologExecutor:
         """Handle fact definition"""
         try:
             # fact(arg1, arg2, ...).
-            match = re.match(r"(\w+)\s*\((.*?)\)", command)
+            match = re.match(r"(\w+)\s*\((.*)\)$", command)
             if match:
                 predicate = match.group(1)
                 args_str = match.group(2)
@@ -483,7 +483,7 @@ class TwPrologExecutor:
             return builtin_res
 
         # Parse goal
-        match = re.match(r"(\w+)\s*\((.*?)\)", goal)
+        match = re.match(r"(\w+)\s*\((.*)\)$", goal)
         if not match:
             # Nothing matched and not a built-in
             return []
@@ -521,64 +521,79 @@ class TwPrologExecutor:
 
         return solutions
 
+    # Arithmetic comparison operators recognised by _prove_arithmetic
+    _ARITH_OPS = (" =:= ", r" =\= ", " < ", " > ", " >= ", " =< ")
+
+    def _prove_write(self, goal, bindings):
+        """Prove write/1 — output a term to the screen"""
+        arg_str = goal[6:-1].strip()
+        arg = self._parse_term(arg_str)
+        bound_arg = self._apply_bindings_to_term(arg, bindings)
+        if bound_arg["type"] == "string":
+            display = bound_arg["value"]
+        elif bound_arg["type"] == "number":
+            display = str(bound_arg.get("value", bound_arg.get("name", "")))
+        else:
+            display = bound_arg.get("name", str(bound_arg))
+        self.interpreter.log_output(display)
+        return [bindings]
+
+    def _prove_io_predicate(self, goal, bindings):
+        """Dispatch Turbo-Prolog I/O predicates (readln, readchar, readint, readreal)"""
+        if goal.startswith("readln("):
+            return self._prove_readln(goal, bindings)
+        if goal.startswith("readchar("):
+            return self._prove_readchar(goal, bindings)
+        if goal.startswith("readint("):
+            return self._prove_readint(goal, bindings)
+        return self._prove_readreal(goal, bindings)
+
     def _prove_builtin(self, goal, bindings):
         """Prove built-in predicates"""
         goal = goal.strip()
 
         # write/1 - output
         if goal.startswith("write(") and goal.endswith(")"):
-            arg_str = goal[6:-1].strip()
-            arg = self._parse_term(arg_str)
-            bound_arg = self._apply_bindings_to_term(arg, bindings)
-            if bound_arg["type"] == "string":
-                self.interpreter.log_output(bound_arg["value"])
-            else:
-                self.interpreter.log_output(str(bound_arg))
-            return [bindings]
+            return self._prove_write(goal, bindings)
 
         # nl/0 - newline
-        elif goal == "nl":
+        if goal == "nl":
             self.interpreter.log_output("")
             return [bindings]
 
         # Arithmetic comparisons
-        elif " =:= " in goal or r" =\= " in goal or " < " in goal or " > " in goal:
+        if any(op in goal for op in self._ARITH_OPS):
             return self._prove_arithmetic(goal, bindings)
 
         # List operations
-        elif goal.startswith("member(") and goal.endswith(")"):
+        if goal.startswith("member(") and goal.endswith(")"):
             return self._prove_member(goal, bindings)
 
         # Turbo Prolog enhanced I/O predicates
-        elif goal.startswith("readln(") and goal.endswith(")"):
-            return self._prove_readln(goal, bindings)
-        elif goal.startswith("readchar(") and goal.endswith(")"):
-            return self._prove_readchar(goal, bindings)
-        elif goal.startswith("readint(") and goal.endswith(")"):
-            return self._prove_readint(goal, bindings)
-        elif goal.startswith("readreal(") and goal.endswith(")"):
-            return self._prove_readreal(goal, bindings)
+        if goal.endswith(")") and any(
+            goal.startswith(p) for p in ("readln(", "readchar(", "readint(", "readreal(")
+        ):
+            return self._prove_io_predicate(goal, bindings)
 
         # Turbo Prolog database manipulation
-        elif goal.startswith("assert(") and goal.endswith(")"):
+        if goal.startswith("assert(") and goal.endswith(")"):
             return self._prove_assert(goal, bindings)
-        elif goal.startswith("retract(") and goal.endswith(")"):
+        if goal.startswith("retract(") and goal.endswith(")"):
             return self._prove_retract(goal, bindings)
-        elif goal.startswith("consult(") and goal.endswith(")"):
+        if goal.startswith("consult(") and goal.endswith(")"):
             return self._prove_consult(goal, bindings)
 
         # Turbo Prolog control predicates
-        elif goal == "fail":
+        if goal == "fail":
             return []
-        elif goal == "true":
+        if goal == "true":
             return [bindings]
-        elif goal == "!":
-            # Cut operator - prune alternatives by setting the flag
+        if goal == "!":
             self.cut_flag = True
             return [bindings]
-        elif goal.startswith("not(") and goal.endswith(")"):
+        if goal.startswith("not(") and goal.endswith(")"):
             return self._prove_not(goal, bindings)
-        elif goal.startswith("repeat"):
+        if goal.startswith("repeat"):
             return self._prove_repeat(bindings)
 
         return []
@@ -587,7 +602,8 @@ class TwPrologExecutor:
         """Prove arithmetic comparisons"""
         try:
             # Simple arithmetic evaluation
-            expr = goal.replace("=\\=", "!=").replace("=:", "==")
+            # Order matters: replace longer operators before shorter substrings
+            expr = goal.replace("=:=", "==").replace("=\\=", "!=").replace("=<", "<=")
             bound_expr = self._apply_bindings_to_expression(expr, bindings)
 
             # Safe evaluation
@@ -644,13 +660,12 @@ class TwPrologExecutor:
                 self.interpreter.log_output("💬 readln/1: No input available (simulated)")
                 user_input = "simulated_input"
 
-            # Unify with the variable
+            # Bind the variable directly in bindings instead of using _unify
             if var_name.startswith(':'):
                 var_name = var_name[1:]
-            new_bindings = self._unify(var_name, user_input, bindings.copy())
-            if new_bindings is not None:
-                return [new_bindings]
-            return []
+            new_bindings = bindings.copy()
+            new_bindings[var_name] = {"type": "atom", "name": user_input}
+            return [new_bindings]
         except (ValueError, TypeError):
             return []
 
@@ -667,10 +682,9 @@ class TwPrologExecutor:
 
             if var_name.startswith(':'):
                 var_name = var_name[1:]
-            new_bindings = self._unify(var_name, user_input, bindings.copy())
-            if new_bindings is not None:
-                return [new_bindings]
-            return []
+            new_bindings = bindings.copy()
+            new_bindings[var_name] = {"type": "atom", "name": user_input}
+            return [new_bindings]
         except (ValueError, TypeError):
             return []
 
@@ -687,10 +701,9 @@ class TwPrologExecutor:
 
             if var_name.startswith(':'):
                 var_name = var_name[1:]
-            new_bindings = self._unify(var_name, value, bindings.copy())
-            if new_bindings is not None:
-                return [new_bindings]
-            return []
+            new_bindings = bindings.copy()
+            new_bindings[var_name] = {"type": "number", "name": str(value), "value": value}
+            return [new_bindings]
         except (ValueError, TypeError):
             return []
 
@@ -707,10 +720,9 @@ class TwPrologExecutor:
 
             if var_name.startswith(':'):
                 var_name = var_name[1:]
-            new_bindings = self._unify(var_name, value, bindings.copy())
-            if new_bindings is not None:
-                return [new_bindings]
-            return []
+            new_bindings = bindings.copy()
+            new_bindings[var_name] = {"type": "number", "name": str(value), "value": value}
+            return [new_bindings]
         except (ValueError, TypeError):
             return []
 
@@ -732,28 +744,34 @@ class TwPrologExecutor:
 
             # Find and remove matching facts
             found = False
-            facts_to_remove = []
+            key_to_remove = None
+            fact_to_remove = None
 
-            for fact in self.database:
-                # Simple pattern matching
-                if fact.startswith(fact_str.split('(')[0]):
-                    # Try to unify to check if it matches
-                    test_bindings = self._unify(fact_str, fact, {})
-                    if test_bindings is not None:
-                        facts_to_remove.append(fact)
-                        found = True
-                        break  # retract only removes first match
+            # Parse the fact to get its functor for lookup
+            fact_functor = fact_str.split('(')[0].strip()
+
+            if fact_functor in self.database:
+                facts_list = self.database[fact_functor]
+                if isinstance(facts_list, list):
+                    for i, fact in enumerate(facts_list):
+                        # Simple string match for retract
+                        fact_repr = f"{fact_functor}({', '.join(str(a.get('name', a)) if isinstance(a, dict) else str(a) for a in fact.get('args', []))})"
+                        if fact_str in fact_repr or fact_functor == fact_str:
+                            fact_to_remove = i
+                            key_to_remove = fact_functor
+                            found = True
+                            break
 
             # Remove the matched fact
-            for fact in facts_to_remove:
-                if fact in self.database:
-                    self.database.remove(fact)
-
-            if found:
+            if found and key_to_remove is not None and fact_to_remove is not None:
+                self.database[key_to_remove].pop(fact_to_remove)
+                # Clean up empty entries
+                if not self.database[key_to_remove]:
+                    del self.database[key_to_remove]
                 self.interpreter.log_output(f"🔄 Retracted: {fact_str}")
                 return [bindings]
             return []
-        except (ValueError, TypeError, IndexError):
+        except (ValueError, TypeError, IndexError, KeyError):
             return []
 
     def _prove_consult(self, goal, bindings):

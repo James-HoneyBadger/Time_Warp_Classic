@@ -281,9 +281,9 @@ Time Warp Classic requires:
 - `tkinter` - GUI framework (usually bundled with Python)
 
 **Recommended:**
-- `pygame>=2.1.0` - Multimedia and graphics
+- `pygame-ce>=2.0.0` - Multimedia and graphics (community edition; or `pygame`)
 - `pygments>=2.10.0` - Syntax highlighting
-- `Pillow>=9.0.0` - Image processing
+- `Pillow>=8.0.0` - Image processing
 
 **Development (optional):**
 - `pytest>=7.0` - Unit testing
@@ -343,18 +343,26 @@ Time Warp Classic includes interpreters for:
 
 ```
 Time_Warp_Classic/
-├── Time_Warp.py              # Main GUI application
+├── Time_Warp.py              # Entry point (launches GUI)
 ├── run.py                    # Python launcher (cross-platform)
 ├── run.sh                    # Bash launcher (Linux/macOS)
 ├── run.bat                   # Batch launcher (Windows)
 ├── requirements.txt          # Python dependencies
 ├── venv/                     # Virtual environment (created by scripts)
+├── gui/                      # GUI package
+│   ├── __init__.py
+│   ├── app.py                # Main TimeWarpApp class
+│   ├── menus.py              # Menu bar construction
+│   ├── dialogs.py            # Find/Replace dialogs
+│   └── themes.py             # Themes, languages, config
 ├── core/                     # Core interpreter code
 │   ├── interpreter.py        # Multi-language interpreter
+│   ├── stubs.py              # Placeholder classes for optional modules
 │   └── languages/            # Language executors
+│       ├── base.py           # SubprocessExecutor base class
 │       ├── basic.py
 │       ├── forth.py
-│       ├── javascript.py
+│       ├── javascript_executor.py
 │       ├── logo.py
 │       ├── pascal.py
 │       ├── perl.py
@@ -363,7 +371,7 @@ Time_Warp_Classic/
 │       └── python_executor.py
 ├── docs/                     # Documentation
 ├── examples/                 # Code examples for each language
-└── tests/                    # Unit tests
+└── scripts/                  # Helper scripts
 ```
 
 ---
@@ -465,7 +473,7 @@ python3 Time_Warp.py
 ## License
 
 Time Warp Classic - Multi-language IDE  
-Copyright © 2025 Honey Badger Universe
+Copyright © 2025–2026 Honey Badger Universe
 
 See `License.md` for full license information.
 

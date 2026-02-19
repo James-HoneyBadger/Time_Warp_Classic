@@ -4,7 +4,7 @@ Time Warp Classic - Complete Setup & Run Script (Cross-Platform)
 
 This script:
 1. Creates a Python virtual environment (if needed)
-2. Installs all required Python dependencies
+2. Installs all required Python dependencies (individually for resilience)
 3. Launches the Time Warp Classic GUI
 
 Usage:
@@ -13,7 +13,7 @@ Usage:
     python3 run.py --no-install    # Skip dependency installation
     python3 run.py --help          # Show this help message
 
-Copyright © 2025 Honey Badger Universe
+Copyright © 2025–2026 Honey Badger Universe
 """
 
 import os
@@ -23,6 +23,7 @@ import argparse
 import platform
 from pathlib import Path
 
+
 # Colors for console output
 class Colors:
     """ANSI color codes for terminal output"""
@@ -30,13 +31,19 @@ class Colors:
     GREEN = '\033[0;32m'
     YELLOW = '\033[1;33m'
     RED = '\033[0;31m'
+    CYAN = '\033[0;36m'
     END = '\033[0m'
 
     @staticmethod
     def disable_on_windows():
         """Disable colors on Windows if not supported"""
         if platform.system() == 'Windows':
-            Colors.BLUE = Colors.GREEN = Colors.YELLOW = Colors.RED = Colors.END = ''
+            Colors.BLUE = ''
+            Colors.GREEN = ''
+            Colors.YELLOW = ''
+            Colors.RED = ''
+            Colors.CYAN = ''
+            Colors.END = ''
 
 
 # Disable colors if needed
@@ -52,7 +59,7 @@ def print_header(title):
 
 def print_step(number, title):
     """Print a step header"""
-    print(f"{Colors.YELLOW}[{number}/4]{Colors.END} {title}...")
+    print(f"{Colors.YELLOW}[{number}/5]{Colors.END} {title}...")
 
 
 def print_success(message):
@@ -70,19 +77,29 @@ def print_error(message):
     print(f"{Colors.RED}✗{Colors.END} {message}")
 
 
-def run_command(cmd, capture_output=False, check=True):
-    """Run a shell command"""
+def run_command(cmd, capture_output=False, check=True, timeout=120):
+    """Run a shell command safely without shell=True"""
+    import shlex
     try:
+        # Accept either a pre-split list or a plain string
+        cmd_list = shlex.split(cmd) if isinstance(cmd, str) else list(cmd)
         result = subprocess.run(
-            cmd,
-            shell=True,
+            cmd_list,
+            shell=False,
             capture_output=capture_output,
             text=True,
-            check=False
+            check=False,
+            timeout=timeout,
         )
         if check and result.returncode != 0:
             return False
         return result
+    except subprocess.TimeoutExpired:
+        print_error(f"Command timed out after {timeout}s: {cmd}")
+        return False
+    except FileNotFoundError as e:
+        print_error(f"Command not found: {e}")
+        return False
     except Exception as e:
         print_error(f"Failed to run command: {e}")
         return False
@@ -132,7 +149,7 @@ def get_python_exe(venv_path):
 
 
 def install_dependencies(venv_path, no_install=False):
-    """Install Python dependencies"""
+    """Install Python dependencies individually for resilience"""
     if no_install:
         print_step(3, "Skipping dependency installation")
         print("(--no-install flag set)\n")
@@ -142,25 +159,56 @@ def install_dependencies(venv_path, no_install=False):
 
     python_exe = get_python_exe(venv_path)
 
-    # Check if requirements.txt exists
-    req_file = Path('requirements.txt')
-    if not req_file.exists():
-        print_error("requirements.txt not found!")
-        return False
-
     # Upgrade pip
     print("📥 Upgrading pip...")
     run_command(f"{python_exe} -m pip install --upgrade pip setuptools wheel")
 
-    # Install requirements
-    print("📚 Installing packages from requirements.txt...")
-    result = run_command(f"{python_exe} -m pip install -r {req_file}")
+    def install_pkg(spec, label):
+        """Install a single package, return True on success."""
+        result = run_command(
+            f"{python_exe} -m pip install \"{spec}\"",
+            capture_output=True, check=False
+        )
+        if result and result.returncode == 0:
+            print_success(f"{label} installed")
+            return True
+        print_error(f"{label} failed to install")
+        return False
 
-    if result and result.returncode == 0:
-        print_success("All dependencies installed successfully")
+    failed = 0
+
+    # --- Required runtime packages ---
+    print(f"{Colors.CYAN}  ── Required packages ──{Colors.END}")
+
+    # pygame-ce (community edition with pre-built wheels for more platforms)
+    pygame_ok = run_command(
+        f"{python_exe} -c \"import pygame\"", capture_output=True, check=False
+    )
+    if pygame_ok and pygame_ok.returncode == 0:
+        print_success("pygame already available")
     else:
-        print_warning("Some dependencies may have failed to install")
-        print("    (This is often OK - many features work without optional dependencies)")
+        if not install_pkg("pygame-ce>=2.0.0", "pygame-ce (multimedia)"):
+            failed += 1
+
+    if not install_pkg("pygments>=2.15.0", "pygments (syntax highlighting)"):
+        failed += 1
+
+    if not install_pkg("Pillow>=8.0.0", "Pillow (image processing)"):
+        failed += 1
+
+    # --- Development packages (non-blocking) ---
+    print(f"{Colors.CYAN}  ── Development packages ──{Colors.END}")
+    install_pkg("pytest>=7.0.0", "pytest (testing)")
+    install_pkg("black>=22.0.0", "black (formatting)")
+    install_pkg("flake8>=4.0.0", "flake8 (linting)")
+
+    print()
+    if failed == 0:
+        print_success("All runtime dependencies installed successfully")
+    else:
+        print_warning(
+            f"{failed} runtime package(s) had issues (app may still work)"
+        )
 
     print()
     return True
@@ -171,19 +219,23 @@ def verify_installation(venv_path):
     print_step(4, "Verifying installation")
 
     python_exe = get_python_exe(venv_path)
+    all_ok = True
 
-    # Check tkinter (required)
+    # Check tkinter (required — provided by the OS, not pip)
     result = run_command(f"{python_exe} -c 'import tkinter'", capture_output=True)
-    if result.returncode == 0:
+    if result and result.returncode == 0:
         print_success("tkinter available")
     else:
         print_error("tkinter not available!")
-        print("  This is required. If missing after installation, try:")
+        print("  This is required. Install it with your system package manager:")
         if platform.system() == 'Linux':
+            print("    Fedora:        sudo dnf install python3-tkinter")
             print("    Ubuntu/Debian: sudo apt-get install python3-tk")
-            print("    Fedora: sudo dnf install python3-tkinter")
         elif platform.system() == 'Darwin':
             print("    macOS: brew install python-tk")
+        else:
+            print("    Windows: Reinstall Python with tkinter selected")
+        all_ok = False
 
     # Check optional packages
     packages = [
@@ -194,13 +246,13 @@ def verify_installation(venv_path):
 
     for pkg, msg in packages:
         result = run_command(f"{python_exe} -c 'import {pkg}'", capture_output=True)
-        if result.returncode == 0:
+        if result and result.returncode == 0:
             print_success(msg)
         else:
             print_warning(f"{pkg} not available (optional feature)")
 
     print()
-    return True
+    return all_ok
 
 
 def launch_gui(venv_path):
@@ -264,9 +316,11 @@ Examples:
         print_warning("Continuing despite installation issues...")
 
     if not verify_installation(venv_path):
-        print_warning("Continuing despite verification issues...")
+        print_error("Required dependency missing — see above.")
+        return 1
 
     # Launch GUI
+    print_step(5, "Starting IDE")
     if not launch_gui(venv_path):
         return 1
 
