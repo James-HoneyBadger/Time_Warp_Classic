@@ -56,6 +56,18 @@ archive/
 *_compiled
 *_logo
 *_pilot
+test.txt
+test_logo.txt
+
+# IDE key-value test files
+delkey val
+key value
+mykey myvalue
+
+# Coverage reports
+.coverage
+htmlcov/
+coverage.xml
 
 # Config files (user-specific)
 .timewarp/
