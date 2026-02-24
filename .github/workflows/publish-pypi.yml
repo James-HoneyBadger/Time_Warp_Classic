@@ -4,10 +4,6 @@ on:
   push:
     tags:
       - "v*"
-    tags-ignore:
-      - "v*-rc*"
-      - "v*-beta*"
-      - "v*-alpha*"
   workflow_dispatch:
 
 jobs:
@@ -42,6 +38,7 @@ jobs:
   publish:
     name: Publish to PyPI
     runs-on: ubuntu-latest
+    if: ${{ !contains(github.ref_name, '-rc') && !contains(github.ref_name, '-beta') && !contains(github.ref_name, '-alpha') }}
     needs: build
     permissions:
       id-token: write
