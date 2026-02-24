@@ -50,6 +50,15 @@ test = [
     "pytest-xdist>=3.0.0"
 ]
 
+[tool.setuptools]
+py-modules = ["Time_Warp"]
+include-package-data = true
+
+[tool.setuptools.packages.find]
+where = ["."]
+include = ["core*", "gui*"]
+exclude = ["tests*", "docs*", "examples*"]
+
 [tool.black]
 line-length = 88
 target-version = ['py39', 'py310', 'py311', 'py312', 'py313']
