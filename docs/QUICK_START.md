@@ -130,6 +130,47 @@ FORWARD 100
 # Open examples/python/comprehensive_demo.py
 ```
 
+### Release Publishing (Maintainers)
+
+Package publishing is automated through GitHub Actions and tag patterns:
+
+- Stable tags (`vX.Y.Z`) publish to **PyPI**
+- Prerelease tags (`vX.Y.Z-rcN`, `vX.Y.Z-betaN`, `vX.Y.Z-alphaN`) publish to **TestPyPI**
+
+```bash
+# Prerelease to TestPyPI
+git tag v1.3.2-rc1
+git push origin v1.3.2-rc1
+
+# Stable release to PyPI
+git tag v1.3.2
+git push origin v1.3.2
+```
+
+Workflows:
+- `.github/workflows/publish-pypi.yml`
+- `.github/workflows/publish-testpypi.yml`
+
+### GitHub Packages (GHCR)
+
+After a stable tag publish (`vX.Y.Z`), you can pull the container package from GitHub Packages:
+
+```bash
+docker pull ghcr.io/james-honeybadger/time-warp-classic:latest
+```
+
+Run on Linux with X11 forwarding (GUI):
+
+```bash
+xhost +local:docker
+docker run --rm \
+    -e DISPLAY=$DISPLAY \
+    -v /tmp/.X11-unix:/tmp/.X11-unix \
+    ghcr.io/james-honeybadger/time-warp-classic:latest
+```
+
+Use a specific release image tag (for example `v1.3.2`) instead of `latest` when needed.
+
 ### Troubleshooting
 If something doesn't work:
 1. See [TROUBLESHOOTING.md](TROUBLESHOOTING.md)

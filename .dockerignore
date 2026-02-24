@@ -1,0 +1,17 @@
+.git
+.github
+.venv
+venv
+__pycache__
+*.pyc
+*.pyo
+*.pyd
+build
+dist
+*.egg-info
+htmlcov
+.pytest_cache
+.mypy_cache
+.ruff_cache
+.idea
+.vscode

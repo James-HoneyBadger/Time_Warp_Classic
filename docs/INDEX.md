@@ -30,6 +30,11 @@ Welcome to the Time Warp Classic comprehensive documentation. This is your compl
 - **[TROUBLESHOOTING.md](TROUBLESHOOTING.md)** - Common issues and solutions
 - **[FAQ.md](FAQ.md)** - Frequently asked questions
 
+### Release Publishing (Maintainers)
+- **[QUICK_START.md](QUICK_START.md)** - Tag-based release commands for TestPyPI and PyPI
+- **[../.github/workflows/publish-testpypi.yml](../.github/workflows/publish-testpypi.yml)** - Prerelease publish workflow
+- **[../.github/workflows/publish-pypi.yml](../.github/workflows/publish-pypi.yml)** - Stable publish workflow
+
 ## 🚀 Quick Navigation
 
 ### I want to...
@@ -57,6 +62,9 @@ Welcome to the Time Warp Classic comprehensive documentation. This is your compl
 
 **Run example programs**
 → [../examples/README.md](../examples/README.md)
+
+**Publish a package release**
+→ [QUICK_START.md](QUICK_START.md) (Release Publishing section)
 
 ## 📖 Reading Recommendations
 

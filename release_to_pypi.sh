@@ -21,7 +21,7 @@ if [ -f ".venv/bin/activate" ]; then
 fi
 
 echo "🧹 Cleaning previous builds..."
-rm -rf dist/ build/ *.egg-info time_warp.egg-info
+rm -rf dist/ build/ *.egg-info
 
 echo "🔨 Building distributions..."
 python -m build
@@ -36,7 +36,7 @@ if [ "$TARGET" = "testpypi" ]; then
     echo
     twine upload --repository testpypi dist/* -u __token__ -p "$TOKEN"
     echo "✨ Upload to TestPyPI successful!"
-    echo "Test installation: pip install --index-url https://test.pypi.org/simple/ time-warp"
+    echo "Test installation: pip install --index-url https://test.pypi.org/simple/ timewarp-classic"
 else
     echo "📤 Uploading to PyPI..."
     echo "Username: __token__"
@@ -44,6 +44,6 @@ else
     echo
     twine upload dist/* -u __token__ -p "$TOKEN"
     echo "✨ Upload to PyPI successful!"
-    echo "Package URL: https://pypi.org/project/time-warp/"
-    echo "Installation: pip install time-warp"
+    echo "Package URL: https://pypi.org/project/timewarp-classic/"
+    echo "Installation: pip install timewarp-classic"
 fi

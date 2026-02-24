@@ -10,7 +10,7 @@ Your project has been successfully prepared for PyPI release. All necessary conf
 
 ### 1. **Enhanced pyproject.toml**
    - ✅ Added complete package metadata
-   - ✅ Set proper entry point: `time-warp` command
+   - ✅ Set proper entry point: `timewarp` command
    - ✅ Configured all dependencies
    - ✅ Added project URLs (homepage, docs, repository, issues)
    - ✅ Added comprehensive classifiers
@@ -28,8 +28,8 @@ Your project has been successfully prepared for PyPI release. All necessary conf
    - ✅ Ensures all necessary files are packaged
 
 ### 4. **Built & Validated Distributions**
-   - ✅ Source distribution: `time_warp-1.3.0.tar.gz` (427 KB)
-   - ✅ Wheel distribution: `time_warp-1.3.0-py3-none-any.whl` (368 KB)
+   - ✅ Source distribution: `timewarp_classic-1.3.0.tar.gz` (427 KB)
+   - ✅ Wheel distribution: `timewarp_classic-1.3.0-py3-none-any.whl` (368 KB)
    - ✅ Both distributions passed twine validation
 
 ---
@@ -40,8 +40,8 @@ Your package is now ready for PyPI publication. Two files are available in the `
 
 ```
 dist/
-├── time_warp-1.3.0.tar.gz
-└── time_warp-1.3.0-py3-none-any.whl
+├── timewarp_classic-1.3.0.tar.gz
+└── timewarp_classic-1.3.0-py3-none-any.whl
 ```
 
 ---
@@ -82,16 +82,16 @@ Three new reference files have been created:
 
 ### Package Name & Version
 ```toml
-name = "time-warp"
+name = "timewarp-classic"
 version = "1.3.0"
 ```
 
 ### Entry Point
 ```toml
 [project.scripts]
-time-warp = "Time_Warp:main"
+timewarp = "Time_Warp:main"
 ```
-Users will be able to run: `time-warp` from command line
+Users will be able to run: `timewarp` from command line
 
 ### Dependencies
 - pygame>=2.0.0
@@ -108,12 +108,12 @@ Users will be able to run: `time-warp` from command line
 
 Once published, users can install with:
 ```bash
-pip install time-warp
+pip install timewarp-classic
 ```
 
 Then run with:
 ```bash
-time-warp
+timewarp
 ```
 
 ---
@@ -131,10 +131,10 @@ time-warp
    bash release_to_pypi.sh testpypi
    
    # Verify installation
-   pip install --index-url https://test.pypi.org/simple/ time-warp
+   pip install --index-url https://test.pypi.org/simple/ timewarp-classic
    
    # Test the command
-   time-warp
+   timewarp
    ```
 
 ### 3. Fix Any Issues
@@ -156,8 +156,8 @@ time-warp
 | pyproject.toml | ✅ | Fully configured |
 | LICENSE | ✅ | MIT License present |
 | MANIFEST.in | ✅ | All files included |
-| Source Distribution | ✅ | time_warp-1.3.0.tar.gz |
-| Wheel Distribution | ✅ | time_warp-1.3.0-py3-none-any.whl |
+| Source Distribution | ✅ | timewarp_classic-1.3.0.tar.gz |
+| Wheel Distribution | ✅ | timewarp_classic-1.3.0-py3-none-any.whl |
 | Metadata Validation | ✅ | Twine check passed |
 | Deprecation Warnings | ✅ | None (fixed) |
 

@@ -95,6 +95,54 @@ Execute code in 9 different programming languages — six with full built-in int
 
 See [SETUP.md](SETUP.md) for detailed installation, troubleshooting, and advanced options.
 
+## 📦 Releases
+
+This repository publishes Python package releases through GitHub Actions using tag-based workflows:
+
+- **Stable tags** (`vX.Y.Z`) publish to **PyPI**
+- **Prerelease tags** (`vX.Y.Z-rcN`, `vX.Y.Z-betaN`, `vX.Y.Z-alphaN`) publish to **TestPyPI**
+
+### Tag Examples
+
+```bash
+# Prerelease to TestPyPI
+git tag v1.3.2-rc1
+git push origin v1.3.2-rc1
+
+# Stable release to PyPI
+git tag v1.3.2
+git push origin v1.3.2
+```
+
+### Workflows
+
+- Stable publish workflow: `.github/workflows/publish-pypi.yml`
+- Prerelease publish workflow: `.github/workflows/publish-testpypi.yml`
+- GitHub Packages (GHCR) workflow: `.github/workflows/publish-ghcr.yml`
+
+### GitHub Packages (GHCR)
+
+GitHub Packages will show a published package after pushing a version tag (`vX.Y.Z`).
+
+- Package registry: `ghcr.io`
+- Package name: `ghcr.io/james-honeybadger/time-warp-classic`
+
+```bash
+# Pull latest stable image
+docker pull ghcr.io/james-honeybadger/time-warp-classic:latest
+
+# Run on Linux with X11 forwarding (GUI)
+xhost +local:docker
+docker run --rm \
+  -e DISPLAY=$DISPLAY \
+  -v /tmp/.X11-unix:/tmp/.X11-unix \
+  ghcr.io/james-honeybadger/time-warp-classic:latest
+```
+
+Use a specific release image tag (for example `v1.3.2`) instead of `latest` when needed.
+
+> One-time setup: configure Trusted Publishers for this repository on both PyPI and TestPyPI, and ensure GitHub environments `pypi` and `testpypi` exist.
+
 ## 🧪 Testing
 
 Time_Warp_Classic includes a comprehensive test suite to ensure code quality and reliability.
