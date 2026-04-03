@@ -55,6 +55,11 @@ class TwBasicExecutor:
         self.pygame_screen = None
         self.pygame_clock = None
         self.current_color = (255, 255, 255)  # White default
+        # Stack for multi-line IF/ELSE IF/ELSE/END IF blocks.
+        # Each entry: {'active': bool, 'any_taken': bool}
+        #   active    = True when the current branch should execute
+        #   any_taken = True when at least one branch has already executed
+        self.if_stack = []
 
     def _init_pygame_graphics(self, width, height, title):
         """
@@ -123,6 +128,71 @@ class TwBasicExecutor:
                 return "continue"
 
             cmd = parts[0].upper()
+
+            # --- Multi-line IF block skip logic ---
+            # When inside a multi-line IF block whose current branch is
+            # inactive, skip all lines except structural keywords (IF, ELSE,
+            # ELSE IF, END IF) that control the block nesting.
+            if self.if_stack:
+                top = self.if_stack[-1]
+                if not top["active"]:
+                    # We're skipping lines.  Handle structural keywords only.
+                    if cmd == "IF" and command.strip().upper().endswith("THEN"):
+                        # Nested multi-line IF while skipping — push a
+                        # dummy frame so its END IF is consumed correctly.
+                        self.if_stack.append({"active": False, "any_taken": True})
+                        return "continue"
+                    if cmd == "END" and len(parts) > 1 and parts[1].upper() == "IF":
+                        self.if_stack.pop()
+                        return "continue"
+                    if cmd == "ELSE" and len(self.if_stack) > 0:
+                        # Only process ELSE/ELSE IF for the innermost
+                        # block (skip depth == current level).
+                        top = self.if_stack[-1]
+                        # Check for ELSE IF
+                        rest = command.strip()[4:].strip()  # after "ELSE"
+                        if rest.upper().startswith("IF "):
+                            # ELSE IF condition THEN
+                            if top["any_taken"]:
+                                return "continue"
+                            m = re.match(
+                                r"IF\s+(.+?)\s+THEN\s*$",
+                                rest,
+                                re.IGNORECASE,
+                            )
+                            if m:
+                                cond_expr = m.group(1).strip()
+                                try:
+                                    cond_val = bool(
+                                        self.interpreter.evaluate_expression(cond_expr)
+                                    )
+                                except Exception:
+                                    cond_val = False
+                                top["active"] = cond_val
+                                top["any_taken"] = cond_val
+                            return "continue"
+                        else:
+                            # Plain ELSE
+                            if top["any_taken"]:
+                                return "continue"
+                            top["active"] = True
+                            top["any_taken"] = True
+                            return "continue"
+                    # Any other line while skipping — just skip it.
+                    return "continue"
+
+            # --- ELSE / ELSE IF when current branch is active ---
+            if cmd == "ELSE" and self.if_stack:
+                top = self.if_stack[-1]
+                rest = command.strip()[4:].strip()
+                if rest.upper().startswith("IF "):
+                    # ELSE IF — previous branch was taken, skip subsequent
+                    top["active"] = False
+                    return "continue"
+                else:
+                    # Plain ELSE — previous branch was taken, skip else
+                    top["active"] = False
+                    return "continue"
 
             # Standard BASIC commands
             if cmd == "LET":
@@ -341,7 +411,7 @@ class TwBasicExecutor:
     def _handle_if(self, command):
         """Handle IF/THEN conditional statement with optional ELSE"""
         try:
-            # Try matching IF ... THEN ... ELSE ... first
+            # Try matching IF ... THEN ... ELSE ... first (single-line)
             m = re.match(
                 r"IF\s+(.+?)\s+THEN\s+(.+?)\s+ELSE\s+(.+)",
                 command,
@@ -359,7 +429,21 @@ class TwBasicExecutor:
                     return self.interpreter.execute_line(then_cmd)
                 else:
                     return self.interpreter.execute_line(else_cmd)
-            # Fall back to IF ... THEN ... (no ELSE)
+
+            # Multi-line IF block: IF condition THEN  (nothing after THEN)
+            m = re.match(r"IF\s+(.+?)\s+THEN\s*$", command, re.IGNORECASE)
+            if m:
+                cond_expr = m.group(1).strip()
+                try:
+                    cond_val = bool(
+                        self.interpreter.evaluate_expression(cond_expr)
+                    )
+                except Exception:  # pylint: disable=broad-except
+                    cond_val = False
+                self.if_stack.append({"active": cond_val, "any_taken": cond_val})
+                return "continue"
+
+            # Fall back to IF ... THEN ... (no ELSE, single-line)
             m = re.match(r"IF\s+(.+?)\s+THEN\s+(.+)", command, re.IGNORECASE)
             if m:
                 cond_expr = m.group(1).strip()
@@ -429,18 +513,25 @@ class TwBasicExecutor:
             self.interpreter.log_output("")
             return "continue"
 
-        # Split by commas for PRINT statements (BASIC standard)
-        # Semicolons suppress newlines, commas add spaces
+        # Split by semicolons for PRINT statements (BASIC standard)
+        # Commas inside function arguments (parens) are NOT separators.
         parts = []
         current_part = ""
         in_quotes = False
+        paren_depth = 0
         i = 0
         while i < len(text):
             char = text[i]
             if char == '"' and (i == 0 or text[i - 1] != "\\"):
                 in_quotes = not in_quotes
                 current_part += char
-            elif char in [",", ";"] and not in_quotes:
+            elif not in_quotes and char == '(':
+                paren_depth += 1
+                current_part += char
+            elif not in_quotes and char == ')':
+                paren_depth -= 1
+                current_part += char
+            elif char in [",", ";"] and not in_quotes and paren_depth == 0:
                 if current_part.strip():
                     parts.append(current_part.strip())
                     current_part = ""
@@ -689,7 +780,9 @@ class TwBasicExecutor:
         if len(parts) > 1:
             end_type = parts[1]
             if end_type == "IF":
-                # END IF - handled by IF block logic
+                # END IF - pop the multi-line IF block frame
+                if self.if_stack:
+                    self.if_stack.pop()
                 return "continue"
             elif end_type == "SELECT":
                 # END SELECT - handled by SELECT logic
@@ -700,6 +793,9 @@ class TwBasicExecutor:
             elif end_type == "DEF":
                 # END DEF - end function definition
                 return "continue"
+            elif end_type == "WHILE":
+                # END WHILE - same as WEND
+                return self._handle_wend(command)
         # Regular END - terminate program
         return "end"
 
@@ -737,17 +833,18 @@ class TwBasicExecutor:
                 self.interpreter.debug_output("LOOP without matching DO")
                 return "continue"
 
-            parts = command.upper().split()
+            parts = command.split()
             ctx = self.interpreter.do_stack[-1]
 
             # Check for WHILE/UNTIL condition on LOOP statement
             loop_again = True
             if len(parts) > 1:
-                if parts[1] == "WHILE":
+                keyword = parts[1].upper()
+                if keyword == "WHILE":
                     while_expr = " ".join(parts[2:])
                     while_result = self.interpreter.evaluate_expression(while_expr)
-                    loop_again = while_result
-                elif parts[1] == "UNTIL":
+                    loop_again = bool(while_result)
+                elif keyword == "UNTIL":
                     until_expr = " ".join(parts[2:])
                     until_result = self.interpreter.evaluate_expression(until_expr)
                     loop_again = not until_result
@@ -789,7 +886,7 @@ class TwBasicExecutor:
                         cmd_upper = cmd_text.strip().upper()
                         if cmd_upper.startswith("WHILE"):
                             depth += 1
-                        elif cmd_upper == "WEND":
+                        elif cmd_upper == "WEND" or cmd_upper == "END WHILE":
                             depth -= 1
                             if depth == 0:
                                 # Jump PAST the WEND so it is not executed and

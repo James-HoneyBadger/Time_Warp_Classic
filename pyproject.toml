@@ -49,6 +49,12 @@ test = [
     "pytest-mock>=3.10.0",
     "pytest-xdist>=3.0.0"
 ]
+dev = [
+    "build>=1.0.0",
+    "twine>=5.0.0",
+    "black>=22.0.0",
+    "flake8>=4.0.0",
+]
 
 [tool.setuptools]
 py-modules = ["Time_Warp"]

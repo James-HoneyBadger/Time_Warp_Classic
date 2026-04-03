@@ -875,12 +875,12 @@ class TwPascalExecutor:
                 eval_context[k.lower()] = v
             eval_context.update(allowed_names)
 
-            # Safe evaluation
-            safe_dict = {"__builtins__": {}}
-            safe_dict.update(eval_context)
+            # Safe evaluation via AST-based evaluator
+            from core.utilities.safe_eval import safe_eval
+            eval_context.update(allowed_names)
 
-            return eval(expr, safe_dict)
-        except Exception as e:
+            return safe_eval(expr, eval_context)
+        except (ValueError, SyntaxError, TypeError, ZeroDivisionError) as e:
             self.interpreter.debug_output(f"Expression evaluation error: {e}")
             return 0
 

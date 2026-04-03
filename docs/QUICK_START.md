@@ -123,11 +123,13 @@ FORWARD 100
 
 ### Run Examples
 ```bash
-# Open any comprehensive demo
+# Open any comprehensive demo or showcase demo
 # Examples are in examples/[language]/comprehensive_demo.*
+# Advanced showcases in examples/[language]/showcase_demo.*
 
 # E.g., for Python:
 # Open examples/python/comprehensive_demo.py
+# Or the advanced: examples/python/showcase_demo.py
 ```
 
 ### Release Publishing (Maintainers)
@@ -227,12 +229,14 @@ for i in range(1, 6):
 ## 💡 Pro Tips
 
 ### Tip 1: Copy Examples
-All comprehensive demo files are in `examples/[language]/`
+Demo files are in `examples/[language]/`:
 ```
-examples/basic/comprehensive_demo.bas
+examples/basic/comprehensive_demo.bas     # Feature overview
+examples/basic/showcase_demo.bas          # Advanced showcase
 examples/python/comprehensive_demo.py
+examples/python/showcase_demo.py
 examples/logo/comprehensive_demo.logo
-... etc
+... (all 9 languages have both demo types)
 ```
 
 ### Tip 2: Use Keyboard Shortcuts
@@ -254,7 +258,7 @@ Change numbers, add loops, try new things.
 A: BASIC or Python - most familiar syntax
 
 **Q: Where are the examples?**
-A: In `examples/[language]/comprehensive_demo.*`
+A: In `examples/[language]/` — each language has `comprehensive_demo` and `showcase_demo` files
 
 **Q: How do I save my code?**
 A: File menu → Save, or Ctrl+S

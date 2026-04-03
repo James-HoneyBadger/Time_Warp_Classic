@@ -2,6 +2,8 @@
 
 Complete reference for Python 3 syntax and features in Time Warp Classic.
 
+> **Note:** Python runs via subprocess with a 30-second timeout. Full Python 3 standard library is available.
+
 ## Quick Reference
 
 | Feature | Syntax | Example |
@@ -457,22 +459,271 @@ for num in fibonacci(8):
     print(num)
 ```
 
+## Classes & Object-Oriented Programming
+
+### Class Definition
+
+```python
+class Animal:
+    def __init__(self, name, sound):
+        self.name = name
+        self.sound = sound
+
+    def speak(self):
+        return f"{self.name} says {self.sound}"
+
+    def __str__(self):
+        return f"Animal({self.name})"
+
+dog = Animal("Rex", "Woof")
+print(dog.speak())        # Rex says Woof
+```
+
+### Inheritance
+
+```python
+class Dog(Animal):
+    def __init__(self, name):
+        super().__init__(name, "Woof")
+        self.tricks = []
+
+    def learn(self, trick):
+        self.tricks.append(trick)
+
+    def show_tricks(self):
+        return f"{self.name} knows: {', '.join(self.tricks)}"
+
+rex = Dog("Rex")
+rex.learn("sit")
+rex.learn("shake")
+print(rex.show_tricks())  # Rex knows: sit, shake
+```
+
+### Properties
+
+```python
+class Circle:
+    def __init__(self, radius):
+        self._radius = radius
+
+    @property
+    def radius(self):
+        return self._radius
+
+    @radius.setter
+    def radius(self, value):
+        if value < 0:
+            raise ValueError("Radius must be non-negative")
+        self._radius = value
+
+    @property
+    def area(self):
+        import math
+        return math.pi * self._radius ** 2
+```
+
+### Class Methods & Static Methods
+
+```python
+class Date:
+    def __init__(self, year, month, day):
+        self.year = year
+        self.month = month
+        self.day = day
+
+    @classmethod
+    def from_string(cls, date_str):
+        y, m, d = map(int, date_str.split("-"))
+        return cls(y, m, d)
+
+    @staticmethod
+    def is_valid(year, month, day):
+        return 1 <= month <= 12 and 1 <= day <= 31
+
+d = Date.from_string("2025-06-15")
+```
+
+### Dataclasses
+
+```python
+from dataclasses import dataclass
+
+@dataclass
+class Point:
+    x: float
+    y: float
+
+    def distance_to(self, other):
+        return ((self.x - other.x)**2 + (self.y - other.y)**2) ** 0.5
+
+p1 = Point(0, 0)
+p2 = Point(3, 4)
+print(p1.distance_to(p2))  # 5.0
+```
+
+## Decorators
+
+```python
+# Function decorator
+def timer(func):
+    import time
+    def wrapper(*args, **kwargs):
+        start = time.time()
+        result = func(*args, **kwargs)
+        elapsed = time.time() - start
+        print(f"{func.__name__} took {elapsed:.4f}s")
+        return result
+    return wrapper
+
+@timer
+def slow_function():
+    import time
+    time.sleep(0.1)
+    return "done"
+
+# Decorator with parameters
+def repeat(n):
+    def decorator(func):
+        def wrapper(*args, **kwargs):
+            for _ in range(n):
+                result = func(*args, **kwargs)
+            return result
+        return wrapper
+    return decorator
+
+@repeat(3)
+def say_hello():
+    print("Hello!")
+```
+
+## Context Managers
+
+```python
+# Using with statement
+with open("file.txt", "r") as f:
+    content = f.read()
+
+# Custom context manager
+from contextlib import contextmanager
+
+@contextmanager
+def timer(label):
+    import time
+    start = time.time()
+    yield
+    elapsed = time.time() - start
+    print(f"{label}: {elapsed:.4f}s")
+
+with timer("Processing"):
+    result = sum(range(1000000))
+```
+
+## Import System
+
+```python
+import math
+from math import sqrt, pi
+from collections import Counter, defaultdict
+from itertools import chain, combinations
+import json
+import os
+```
+
+## Regular Expressions
+
+```python
+import re
+
+text = "Hello World 123"
+
+# Search
+match = re.search(r'\d+', text)
+if match:
+    print(match.group())       # 123
+
+# Find all
+numbers = re.findall(r'\d+', "a1 b22 c333")
+# ['1', '22', '333']
+
+# Replace
+result = re.sub(r'\d+', '#', text)
+# "Hello World #"
+
+# Split
+parts = re.split(r'\s+', text)
+# ['Hello', 'World', '123']
+
+# Compile for reuse
+pattern = re.compile(r'[A-Z][a-z]+')
+words = pattern.findall(text)  # ['Hello', 'World']
+```
+
+## Generators & Itertools
+
+```python
+# Generator function
+def fibonacci():
+    a, b = 0, 1
+    while True:
+        yield a
+        a, b = b, a + b
+
+# Use generator
+fib = fibonacci()
+first_10 = [next(fib) for _ in range(10)]
+
+# Generator expression
+squares = (x**2 for x in range(100))
+
+# Itertools
+from itertools import count, cycle, chain, combinations
+
+# Infinite counter
+for i in count(1):
+    if i > 5: break
+    print(i)
+
+# Combinations
+list(combinations([1, 2, 3], 2))
+# [(1, 2), (1, 3), (2, 3)]
+```
+
+## File I/O
+
+```python
+# Read file
+with open("data.txt", "r") as f:
+    content = f.read()           # Read all
+    # lines = f.readlines()      # Read as list of lines
+
+# Write file
+with open("output.txt", "w") as f:
+    f.write("Hello\n")
+    f.write("World\n")
+
+# JSON
+import json
+data = {"name": "Alice", "age": 30}
+json_str = json.dumps(data)
+parsed = json.loads(json_str)
+```
+
 ## Tips & Best Practices
 
 1. **Use f-strings** for string formatting
-2. **List comprehensions** are more efficient than loops
-3. **Type hints** improve code clarity (Python 3.5+)
-4. **Error handling** prevents crashes
-5. **Use meaningful names** for variables
-6. **Avoid global variables** when possible
-7. **Test your code** with various inputs
+2. **List comprehensions** are more Pythonic than manual loops
+3. **Use `with`** for resource management (files, connections)
+4. **Use dataclasses** for simple data containers
+5. **Use type hints** for clarity: `def add(a: int, b: int) -> int:`
+6. **Handle errors** with try/except
+7. **Use meaningful names** for variables and functions
+8. **Execution timeout:** 30 seconds for all Python programs
 
 ## See Also
 
-- [USER_GUIDE.md](../user/USER_GUIDE.md)
 - [LANGUAGE_TUTORIALS.md](../user/LANGUAGE_TUTORIALS.md)
 - [examples/python/](../../examples/python/)
 
 ---
 
-**Last Updated:** 2024
+**Last Updated:** 2025

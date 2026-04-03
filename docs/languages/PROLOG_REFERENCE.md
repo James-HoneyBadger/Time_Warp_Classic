@@ -128,11 +128,17 @@ sum_list([H|T], Sum) :- sum_list(T, RestSum), Sum is H + RestSum.
 ### Math Functions
 
 ```prolog
-is abs(-5), 5.          % Absolute value
-is sqrt(16), 4.         % Square root
-is sin(0), 0.           % Sine
-is max(5, 3), 5.        % Maximum
-is min(5, 3), 3.        % Minimum
+X is abs(-5).           % X = 5, Absolute value
+X is sqrt(16).          % X = 4.0, Square root
+X is sin(0).            % X = 0.0, Sine
+X is cos(0).            % X = 1.0, Cosine
+X is max(5, 3).         % X = 5, Maximum
+X is min(5, 3).         % X = 3, Minimum
+X is round(3.7).        % X = 4, Round to integer
+X is truncate(3.7).     % X = 3, Truncate to integer
+X is 7 mod 3.           % X = 1, Modulo
+X is 7 // 3.            % X = 2, Integer division
+X is 2 ** 8.            % X = 256, Power
 ```
 
 ## Control Structures
@@ -273,7 +279,8 @@ guess_number :-
 
 ```prolog
 ?- current_predicate(parent/2).    % Does predicate exist?
-?- listing(parent).                % Show definition
+?- listing(parent).                % Show all clauses for parent
+?- listing.                        % Show all predicates
 ```
 
 ## Tips & Best Practices
@@ -311,4 +318,4 @@ sum_list([H|T], Acc, Sum) :-
 
 ---
 
-**Last Updated:** 2024
+**Last Updated:** 2025

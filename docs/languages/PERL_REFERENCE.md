@@ -2,6 +2,8 @@
 
 Complete reference for Perl syntax in Time Warp Classic.
 
+> **Note:** Perl runs via subprocess with a 30-second timeout.
+
 ## Program Structure
 
 ```perl
@@ -303,6 +305,43 @@ $text =~ s/o/0/g;          # Replace all
 /a?/                        # Zero or one
 ```
 
+### Regex Modifiers
+
+```perl
+/pattern/i                  # Case-insensitive
+/pattern/g                  # Global (all matches)
+/pattern/m                  # Multiline (^ and $ match line boundaries)
+/pattern/s                  # Single-line (. matches newline)
+/pattern/x                  # Extended (allow comments/whitespace)
+
+# Combined modifiers
+$text =~ s/hello/Hi/gi;    # Case-insensitive, replace all
+
+# Extended mode example
+if ($text =~ /
+    ^           # Start of string
+    (\w+)       # Capture word
+    \s+         # Whitespace
+    (\d+)       # Capture number
+    $           # End of string
+/x) {
+    print "Word: $1, Number: $2\n";
+}
+```
+
+### Capture Groups
+
+```perl
+if ("2025-06-15" =~ /(\d{4})-(\d{2})-(\d{2})/) {
+    print "Year: $1, Month: $2, Day: $3\n";
+}
+
+# Named captures
+if ($text =~ /(?<name>\w+)\s+(?<age>\d+)/) {
+    print "Name: $+{name}, Age: $+{age}\n";
+}
+```
+
 ## Functions/Subroutines
 
 ### Subroutine Definition
@@ -472,6 +511,57 @@ for my $line (@lines) {
 print "Total: $total\n";
 ```
 
+## Closures & Anonymous Subroutines
+
+```perl
+# Anonymous subroutine
+my $greet = sub {
+    my ($name) = @_;
+    return "Hello, $name!";
+};
+print $greet->("Alice");    # Hello, Alice!
+
+# Closure (captures outer variable)
+sub make_counter {
+    my $count = 0;
+    return sub { return ++$count; };
+}
+
+my $counter = make_counter();
+print $counter->();          # 1
+print $counter->();          # 2
+print $counter->();          # 3
+
+# Higher-order functions
+sub apply {
+    my ($func, @values) = @_;
+    return map { $func->($_) } @values;
+}
+
+my @doubled = apply(sub { $_[0] * 2 }, 1, 2, 3);  # (2, 4, 6)
+```
+
+## Sorting
+
+```perl
+# Default sort (lexicographic)
+@sorted = sort @array;
+
+# Numeric sort
+@sorted = sort { $a <=> $b } @numbers;
+
+# Reverse sort
+@sorted = sort { $b <=> $a } @numbers;
+
+# Custom sort
+@sorted = sort { length($a) <=> length($b) } @words;
+
+# Sort hash by value
+for my $key (sort { $hash{$a} <=> $hash{$b} } keys %hash) {
+    print "$key: $hash{$key}\n";
+}
+```
+
 ## Tips & Best Practices
 
 1. **Use strict & warnings** always
@@ -481,6 +571,7 @@ print "Total: $total\n";
 5. **Avoid globals** when possible
 6. **Use references** for complex data
 7. **Check return values** (especially file I/O)
+8. **Execution timeout:** 30 seconds for all Perl programs
 
 ## See Also
 
@@ -489,4 +580,4 @@ print "Total: $total\n";
 
 ---
 
-**Last Updated:** 2024
+**Last Updated:** 2025

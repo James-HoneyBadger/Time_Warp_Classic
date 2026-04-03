@@ -1,6 +1,8 @@
-# Time Warp Classic - Code Examples
+# Time Warp Classic - Example Programs
 
-This directory contains comprehensive example programs demonstrating all features of the 9 supported programming languages in Time Warp Classic.
+Full-featured, practical programs for all 9 supported languages.
+Each program is a standalone application that demonstrates real-world
+use of the language while exercising its full capabilities.
 
 ---
 
@@ -8,351 +10,167 @@ This directory contains comprehensive example programs demonstrating all feature
 
 ```
 examples/
-├── README.md                      # This file
+├── README.md                        # This file
 ├── basic/
-│   ├── comprehensive_demo.bas     # Complete BASIC feature demo
-│   ├── hello_basic.bas            # Simple Hello World example
-│   └── INDEX.bas                  # Index of BASIC examples
+│   ├── finance_calculator.bas       # Personal finance calculator
+│   ├── sales_dashboard.bas          # Sales analytics dashboard
+│   └── INDEX.bas                    # Index of all examples
 ├── forth/
-│   ├── comprehensive_demo.fth     # Complete Forth feature demo
-│   └── stack_forth.fth            # Stack operations example
+│   ├── engineering_calc.fth         # Engineering unit converter
+│   └── number_theory.fth           # Number theory toolkit
 ├── javascript/
-│   ├── comprehensive_demo.js      # Complete JavaScript feature demo
-│   └── interactive_javascript.js  # Interactive JavaScript example
+│   ├── sorting_showcase.js          # Sorting algorithm comparison
+│   └── statistics_engine.js         # Statistical analysis engine
 ├── logo/
-│   ├── comprehensive_demo.logo    # Complete Logo feature demo
-│   └── spiral_logo.logo           # Spiral drawing example
+│   ├── mandala_art.logo             # Multi-layered mandala generator
+│   └── spirograph_art.logo          # Spirograph pattern collection
 ├── pascal/
-│   ├── comprehensive_demo.pas     # Complete Pascal feature demo
-│   └── hello_pascal.pas           # Simple Hello World example
+│   ├── gradebook.pas                # Student grade book system
+│   └── physics_calculator.pas       # Physics formula calculator
 ├── perl/
-│   ├── comprehensive_demo.pl      # Complete Perl feature demo
-│   └── patterns_perl.pl           # Pattern matching example
+│   ├── log_analyzer.pl              # Server log analyzer
+│   └── cipher_toolkit.pl            # Cryptographic cipher toolkit
 ├── pilot/
-│   ├── comprehensive_demo.pilot   # Complete PILOT feature demo
-│   └── quiz_pilot.pilot           # Interactive quiz example
+│   ├── science_quiz.pilot           # Interactive science quiz
+│   └── math_tutor.pilot             # Mental math trainer
 ├── prolog/
-│   ├── comprehensive_demo.pro     # Complete Prolog feature demo
-│   └── facts_prolog.pro           # Facts and queries example
+│   ├── expert_system.pro            # Animal classification expert system
+│   └── geography_db.pro             # World geography knowledge base
 └── python/
-    ├── comprehensive_demo.py      # Complete Python feature demo
-    └── modern_python.py           # Modern Python features example
+    ├── crypto_toolkit.py            # Cryptography toolkit
+    └── data_pipeline.py             # Data analysis pipeline
 ```
 
 ---
 
-## Comprehensive Demo Programs
+## Programs by Language
 
-Each language directory contains a **comprehensive_demo** file that thoroughly demonstrates all major features and commands of that language.
+### BASIC
 
-### 1. BASIC (`basic/comprehensive_demo.bas`)
+| Program | Description |
+|---------|-------------|
+| `finance_calculator.bas` | Compound interest, loan amortization, investment growth projections, savings goals, and retirement planning with formatted tables |
+| `sales_dashboard.bas` | Sales analytics with 5 product lines, quarterly data, ASCII bar charts, statistical analysis, and revenue forecasting |
 
-**Features Demonstrated:**
-- Variables and data types
-- Arithmetic operations (+, -, *, /, MOD, ^)
-- Mathematical functions (SIN, COS, SQRT, ABS, INT, RND)
-- String operations (LEN, LEFT, RIGHT, MID, INSTR, UPPER, LOWER)
-- Array operations (DIM, SORT, SUM, AVG, MIN, MAX)
-- Conditional statements (IF/THEN/ELSE)
-- Loop control (FOR/NEXT, WHILE loops)
-- Subroutines (GOSUB/RETURN)
-- Type conversion (VAL, STR$)
-
-**Output:** Text-based demonstration of all language features
+**Features used:** Variables, arrays (DIM/SUM/AVG), FOR/NEXT loops, GOSUB/RETURN subroutines, IF/THEN/ELSE, string formatting, math functions (SQR, INT, RND), PRINT TAB
 
 ---
 
-### 2. Python (`python/comprehensive_demo.py`)
+### Forth
 
-**Features Demonstrated:**
-- Variables and all data types (int, float, str, bool)
-- Arithmetic and comparison operators
-- String methods and operations
-- Collections (lists, dictionaries, tuples, sets)
-- Conditional statements (if/elif/else)
-- Loop constructs (for, while, list comprehensions)
-- Function definitions and recursion
-- Lambda expressions
-- Exception handling
-- Mathematical operations
-- String formatting (f-strings, format)
+| Program | Description |
+|---------|-------------|
+| `engineering_calc.fth` | Temperature, distance, weight, electrical (Ohm's law), energy, and speed unit conversions with formatted output |
+| `number_theory.fth` | Prime numbers (sieve/counting), GCD/LCM (Euclid's algorithm), Fibonacci with golden ratio, factorials, Collatz conjecture, perfect numbers, Pythagorean triples |
 
-**Output:** Comprehensive showcase of Python language capabilities
+**Features used:** Stack manipulation (DUP, SWAP, OVER, ROT, DROP), colon definitions, variables, DO...LOOP, BEGIN...UNTIL, IF/ELSE/THEN, MOD, nested word calls, formatted output (.  ." )
 
 ---
 
-### 3. JavaScript (`javascript/comprehensive_demo.js`)
+### JavaScript
 
-**Features Demonstrated:**
-- Variables (var declaration)
-- All data types (number, string, boolean, null, undefined)
-- Arithmetic operators and precedence
-- String operations and methods
-- Arrays (create, access, methods)
-- Objects (properties, methods)
-- Conditional statements (if/else, switch)
-- Loop constructs (for, while, do-while)
-- Functions and anonymous functions
-- Mathematical functions (Math object)
-- Type conversion
-- Comparison and logical operators
+| Program | Description |
+|---------|-------------|
+| `sorting_showcase.js` | Side-by-side comparison of 5 sorting algorithms (bubble, selection, insertion, merge, quick) with operation counting and performance analysis |
+| `statistics_engine.js` | Full statistical analysis: mean, median, mode, standard deviation, skewness, kurtosis, percentiles, correlation, linear regression, outlier detection, histograms |
 
-**Output:** Interactive demonstration of JavaScript features
+**Features used:** Functions, arrays, objects, Math library, loops (for/while), conditionals, string methods, template literals, closures, higher-order functions (map/filter/reduce), recursion
 
 ---
 
-### 4. Pascal (`pascal/comprehensive_demo.pas`)
+### Logo
 
-**Features Demonstrated:**
-- Variables with explicit typing
-- Constants and custom types
-- Procedures and functions
-- Formal parameters and return values
-- Arithmetic operations
-- String operations
-- Array declarations and operations
-- IF/THEN/ELSE and CASE statements
-- FOR, WHILE, and REPEAT-UNTIL loops
-- Function recursion
-- Boolean logic and comparisons
+| Program | Description |
+|---------|-------------|
+| `mandala_art.logo` | Six-layered mandala with color-coded geometric elements: starbursts, petals, diamonds, and concentric circles using procedures and RGB colors |
+| `spirograph_art.logo` | Six distinct spirograph patterns: growing spiral, rose, triangular web, pentagon flower, hexagonal lace, and diamond frame |
 
-**Output:** Structured showcase of Pascal programming concepts
+**Features used:** TO/END procedures, REPEAT loops, MAKE variables, SETPENCOLOR (RGB), SETPENSIZE, FORWARD/BACKWARD, RIGHT/LEFT, PENUP/PENDOWN, CIRCLE, CLEARSCREEN, HOME
 
 ---
 
-### 5. Prolog (`prolog/comprehensive_demo.pro`)
+### Pascal
 
-**Features Demonstrated:**
-- Facts and rules (predicates)
-- Unification and pattern matching
-- List operations (append, member, length, sum)
-- Recursion (ancestors, factorial)
-- Arithmetic evaluation (is, =:=, =\=)
-- Comparison operators
-- Logical operators (AND, OR, NOT)
-- Backtracking and search
-- Aggregation (findall, forall)
-- Database operations (retract, consult)
-- I/O predicates (readln, readchar, readint)
+| Program | Description |
+|---------|-------------|
+| `gradebook.pas` | Student grade management for 5 students across 4 subjects with weighted averages, letter grades, class statistics (mean, variance, standard deviation), and honor roll |
+| `physics_calculator.pas` | Physics formula tables: projectile motion, free fall, electromagnetic spectrum, kinetic energy, pendulum periods, orbital mechanics, and trigonometry |
 
-**Output:** Logic programming demonstrations and family relationship queries
+**Features used:** VAR/CONST declarations, typed variables (Integer, Real, String), FOR loops, IF/THEN with AND/OR, WRITELN with expressions, math functions (SIN, COS, SQRT, SQR, POWER, LN), string operations
 
 ---
 
-### 6. Forth (`forth/comprehensive_demo.fth`)
+### Perl
 
-**Features Demonstrated:**
-- Stack manipulation (DUP, SWAP, ROT, OVER)
-- Variables and memory operations
-- Word definitions (colon definitions)
-- Conditional logic (IF/ELSE)
-- Loop constructs (DO...LOOP, ?DO)
-- Array/table creation and access
-- Recursion
-- User-defined words
-- Floating-point operations
-- Mathematical functions
+| Program | Description |
+|---------|-------------|
+| `log_analyzer.pl` | Apache access log parser: IP tracking, status code analysis, URL frequency, user agent detection, brute force attempt identification, and server health rating |
+| `cipher_toolkit.pl` | Five classical ciphers (Caesar, ROT13, Atbash, Vigenere, Rail Fence) with encryption, decryption, brute force attack, and frequency analysis |
 
-**Output:** Stack-based computation demonstrations
+**Features used:** Scalars, arrays, hashes, regular expressions (captures, character classes), subroutines, foreach/for/while loops, if/elsif/else, string manipulation (uc, lc, substr, chr, ord), sort, printf formatting, references
 
 ---
 
-### 7. Perl (`perl/comprehensive_demo.pl`)
+### PILOT
 
-**Features Demonstrated:**
-- Variables (scalars, arrays, hashes)
-- Arithmetic and string operators
-- String operations and methods
-- Arrays (push, pop, shift, unshift, sort)
-- Hashes (key-value pairs)
-- Conditional statements (if/elsif/else, unless)
-- All loop types (for, foreach, while, do-while)
-- Subroutines with parameters
-- Regular expressions (matching, substitution)
-- References and dereferencing
-- Map and grep operations
-- String comparison
-- Logical operators
+| Program | Description |
+|---------|-------------|
+| `science_quiz.pilot` | 15-question science quiz across physics, chemistry, biology, earth science, and astronomy with pattern matching and educational explanations |
+| `math_tutor.pilot` | 15 mental arithmetic problems (addition, subtraction, multiplication, division, mixed) with automatic answer checking and score tracking |
 
-**Output:** Text processing and data manipulation demonstrations
+**Features used:** T: text output, A: input, C: computation, M: pattern matching, MT: conditional text, Y:/N: conditions, L: labels, J: jumps, J(condition): conditional jumps, U:/E: subroutines, R: runtime commands, {VAR} interpolation
 
 ---
 
-### 8. Logo (`logo/comprehensive_demo.logo`)
+### Prolog
 
-**Features Demonstrated:**
-- Turtle movement (FORWARD, BACKWARD, RIGHT, LEFT)
-- Pen control (PENUP, PENDOWN)
-- Pen properties (SETPENCOLOR, SETPENSIZE)
-- Drawing shapes (squares, circles, stars)
-- REPEAT loops for patterns
-- Nested structures
-- Screen manipulation (CLEARSCREEN, HOME)
-- Recursive drawing patterns
+| Program | Description |
+|---------|-------------|
+| `expert_system.pro` | Animal classification with 20 animals, physical characteristics, habitat/diet facts, and inference rules for species identification, danger assessment, and ecological queries |
+| `geography_db.pro` | World geography knowledge base with 21 countries, capitals, populations, languages, currencies, and inference rules for regional analysis and cross-country comparisons |
 
-**Output:** Visual graphics on the turtle canvas
+**Features used:** Facts, rules with :- operator, ?- queries, unification, backtracking, variables (uppercase), comma-separated goals, write/1, member/2, arithmetic comparisons, LISTING
 
 ---
 
-### 9. PILOT (`pilot/comprehensive_demo.pilot`)
+### Python
 
-**Features Demonstrated:**
-- Text output (T:)
-- Variable assignment (A:)
-- Conditional branching (C:, Y, N)
-- Arithmetic in variables
-- Labels and jumping (M:, G:)
-- Loop control
-- Comparison operations
-- String concatenation
-- Multiple variables
-- Nested conditionals
+| Program | Description |
+|---------|-------------|
+| `crypto_toolkit.py` | Four cipher implementations (Caesar, Vigenere, Substitution, Playfair) as classes, SHA/MD5 hashing, avalanche effect demonstration, chi-squared cryptanalysis, password strength analyzer |
+| `data_pipeline.py` | DataTable class with filter/sort/group_by operations, Stats class for statistical analysis, 24-row retail sales dataset, regional/product analysis, correlation matrix, trend forecasting |
 
-**Output:** Educational instruction program demonstrations
+**Features used:** Classes (OOP), inheritance, list/dict comprehensions, f-strings, lambda functions, math/hashlib modules, exception handling, string methods, enumerate, zip, sorted with key functions, formatted output
 
 ---
 
-## How to Use the Demos
-
-### Quick Start
+## How to Use
 
 1. **Launch Time Warp Classic:**
    ```bash
    python3 run.py
    ```
 
-2. **Select a Language:**
-   Use the dropdown menu to select from 9 languages
+2. **Select a language** from the dropdown menu
 
-3. **Open a Demo:**
-   Copy the comprehensive_demo file contents into the editor for your chosen language
+3. **Open a program:** File → Open → navigate to `examples/[language]/`
 
-4. **Run the Program:**
-   Click "Run" button or press the Run button
+4. **Run:** Click the Run button
 
-5. **View Results:**
-   Check the output panel for results and graphics
+5. **View results** in the output panel (and turtle canvas for Logo)
 
-### Step-by-Step Example
-
-```
-1. Launch: python3 run.py
-2. Select Language: Click dropdown → Choose "Python"
-3. Open Demo: Copy contents of python/comprehensive_demo.py
-4. Paste: Into the editor panel
-5. Execute: Click Run button
-6. Observe: Output shows all Python features
-```
+> **Note:** PILOT programs with `A:` commands will prompt for input via dialog boxes. The science quiz accepts text answers; the math tutor accepts numeric answers.
 
 ---
 
-## Learning Recommendations
+## Learning Path
 
-### By Skill Level
-
-**Absolute Beginner:**
-1. Start with **BASIC** - Familiar syntax, clear output
-2. Try **Logo** - Visual feedback helps understanding
-3. Explore **PILOT** - Instruction-oriented design
-
-**Intermediate:**
-1. Learn **Python** - Modern, readable syntax
-2. Try **Pascal** - Structured, strongly typed
-3. Explore **Perl** - Text processing power
-
-**Advanced:**
-1. Master **Prolog** - Logic programming paradigm
-2. Study **Forth** - Stack-based thinking
-3. Review **JavaScript** - Multiple paradigms
-
-### By Learning Goal
-
-**Goal: Learn Programming Fundamentals**
-- BASIC → Pascal → Python
-
-**Goal: Understand Different Paradigms**
-- Procedural: BASIC, Pascal, Python
-- Functional: JavaScript, Perl
-- Logical: Prolog
-- Stack-based: Forth
-
-**Goal: Practice Pattern Matching & Logic**
-- Prolog (pattern matching)
-- Perl (regular expressions)
-- Pascal (structured logic)
-
-**Goal: Visual/Graphics Programming**
-- Logo (turtle graphics)
-- BASIC (with graphics extensions)
+| Level | Recommended Programs |
+|-------|---------------------|
+| **Beginner** | BASIC `finance_calculator`, Logo `mandala_art`, PILOT `science_quiz` |
+| **Intermediate** | Pascal `gradebook`, Python `data_pipeline`, Perl `cipher_toolkit` |
+| **Advanced** | Prolog `expert_system`, Forth `number_theory`, JavaScript `statistics_engine` |
 
 ---
-
-## Tips for Using These Examples
-
-### Before Running
-
-1. **Read the Comments** - Each demo has inline comments explaining features
-2. **Understand the Structure** - Look at how the program is organized
-3. **Identify Language Features** - Try to spot variables, loops, functions, etc.
-4. **Predict Output** - Mentally run through the program
-
-### While Running
-
-1. **Watch the Output** - See exactly what each command produces
-2. **Note the Order** - Output follows code execution order
-3. **Check Section Headers** - Demos are organized into clear sections
-4. **Read Carefully** - Output explains what each feature does
-
-### After Running
-
-1. **Modify Values** - Change numbers and re-run
-2. **Add Comments** - Mark sections you want to understand better
-3. **Create Variations** - Try adding new features
-4. **Compare Languages** - Run demos in multiple languages to see differences
-
----
-
-## Feature Reference Matrix
-
-| Feature | BASIC | Python | JS | Pascal | Prolog | Forth | Perl | Logo | PILOT |
-|---------|:-----:|:------:|:--:|:------:|:------:|:-----:|:----:|:----:|:-----:|
-| Variables | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | - | ✅ |
-| Arithmetic | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | - | ✅ |
-| Strings | ✅ | ✅ | ✅ | ✅ | - | - | ✅ | - | ✅ |
-| Arrays | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | - | - |
-| If/Else | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | - | ✅ |
-| Loops | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ |
-| Functions | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | - | - |
-| Recursion | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | - | - |
-| Regular Expr | - | ✅ | ✅ | - | - | - | ✅ | - | - |
-| Graphics | - | - | - | - | - | - | - | ✅ | - |
-
----
-
-## Performance Notes
-
-- **BASIC, Python, JavaScript, Pascal**: Fast execution ⚡
-- **Prolog**: Slower due to backtracking; expected behavior
-- **Forth**: Very fast; minimal overhead
-- **Perl**: Good performance for text operations
-- **Logo**: Graphics rendering adds minimal delay
-- **PILOT**: Instant execution for education purposes
-
----
-
-## Additional Resources
-
-For more information:
-- Check **SETUP.md** for installation and troubleshooting
-- See **PROJECT_STATUS.md** for feature completeness status
-- Review **README.md** in the root for project overview
-- Browse **docs/** directory for detailed language documentation
-- Check **INCOMPLETE_FEATURES.md** for known limitations
-
----
-
-**Happy Learning! 🚀**
-
-Master multiple programming languages from the 1970s-1990s era!
 
 © 2025–2026 Honey Badger Universe | Example Programs

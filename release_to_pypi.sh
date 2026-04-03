@@ -31,17 +31,25 @@ twine check dist/* --strict
 
 if [ "$TARGET" = "testpypi" ]; then
     echo "📤 Uploading to TestPyPI..."
-    echo "Username: __token__"
-    read -sp "Password (PyPI token): " TOKEN
-    echo
+    if [ -n "$TWINE_PASSWORD" ]; then
+        TOKEN="$TWINE_PASSWORD"
+    else
+        echo "Username: __token__"
+        read -sp "Password (PyPI token): " TOKEN
+        echo
+    fi
     twine upload --repository testpypi dist/* -u __token__ -p "$TOKEN"
     echo "✨ Upload to TestPyPI successful!"
     echo "Test installation: pip install --index-url https://test.pypi.org/simple/ timewarp-classic"
 else
     echo "📤 Uploading to PyPI..."
-    echo "Username: __token__"
-    read -sp "Password (PyPI token): " TOKEN
-    echo
+    if [ -n "$TWINE_PASSWORD" ]; then
+        TOKEN="$TWINE_PASSWORD"
+    else
+        echo "Username: __token__"
+        read -sp "Password (PyPI token): " TOKEN
+        echo
+    fi
     twine upload dist/* -u __token__ -p "$TOKEN"
     echo "✨ Upload to PyPI successful!"
     echo "Package URL: https://pypi.org/project/timewarp-classic/"

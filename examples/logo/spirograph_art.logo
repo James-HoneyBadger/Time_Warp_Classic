@@ -1,0 +1,73 @@
+; ═══════════════════════════════════════════════════════
+; SPIROGRAPH ART COLLECTION
+; Mathematical curve art using precise angle offsets
+; Demonstrates: color control, pen sizes, math patterns
+; ═══════════════════════════════════════════════════════
+
+HT
+
+; ─── Pattern 1: Growing Square Spiral ───
+; Each side grows by 3 units, creating an outward spiral
+
+SETPENCOLOR [0 120 200]
+SETPENSIZE 2
+MAKE "SIDE 5
+REPEAT 50 [
+  FD :SIDE
+  RT 91
+  MAKE "SIDE :SIDE + 3
+]
+
+; ─── Pattern 2: Classic Rose Spirograph ───
+; Turn angle 89 degrees creates a complex star pattern
+
+PU
+HOME
+PD
+SETPENCOLOR [200 40 80]
+SETPENSIZE 1
+REPEAT 360 [FD 120 RT 89]
+
+; ─── Pattern 3: Triangular Web ───
+; Turn angle 121 creates interlocking triangles
+
+PU
+HOME
+PD
+SETPENCOLOR [40 180 80]
+REPEAT 180 [FD 140 RT 121]
+
+; ─── Pattern 4: Pentagon Flower ───
+; Turn angle 145 creates a five-fold symmetry pattern
+
+PU
+HOME
+PD
+SETPENCOLOR [180 100 220]
+REPEAT 144 [FD 100 RT 145]
+
+; ─── Pattern 5: Fine Hexagonal Lace ───
+; Smaller steps with 61-degree turns
+
+PU
+HOME
+PD
+SETPENCOLOR [255 165 0]
+SETPENSIZE 1
+REPEAT 360 [FD 60 RT 61]
+
+; ─── Pattern 6: Outer Diamond Frame ───
+; 4 large diamonds positioned around the center
+
+PU
+HOME
+PD
+SETPENCOLOR [100 100 100]
+SETPENSIZE 3
+REPEAT 4 [
+  REPEAT 4 [FD 160 RT 90]
+  RT 90
+]
+
+PRINT [Spirograph Art Collection Complete]
+PRINT [6 overlapping mathematical curve patterns]

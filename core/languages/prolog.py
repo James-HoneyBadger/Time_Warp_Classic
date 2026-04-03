@@ -619,10 +619,9 @@ class TwPrologExecutor:
                 "sqrt": __import__("math").sqrt,
             }
 
-            safe_dict = {"__builtins__": {}}
-            safe_dict.update(allowed_names)
+            from core.utilities.safe_eval import safe_eval
 
-            result = eval(bound_expr, safe_dict)
+            result = safe_eval(bound_expr, allowed_names)
             if result:
                 return [bindings]
         except (ValueError, TypeError, NameError, SyntaxError):
@@ -779,9 +778,19 @@ class TwPrologExecutor:
         try:
             filename = goal[8:-1].strip().strip('"').strip("'")
 
+            # Path validation: restrict to current working directory
+            import os
+            abs_path = os.path.realpath(filename)
+            cwd = os.path.realpath(os.getcwd())
+            if not abs_path.startswith(cwd + os.sep) and abs_path != cwd:
+                self.interpreter.log_output(
+                    f"❌ Access denied: {filename} is outside the working directory"
+                )
+                return []
+
             # Try to load and parse the file
             try:
-                with open(filename, 'r', encoding='utf-8') as f:
+                with open(abs_path, 'r', encoding='utf-8') as f:
                     content = f.read()
 
                 # Parse facts from file

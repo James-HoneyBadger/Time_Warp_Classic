@@ -142,14 +142,14 @@ You can write very large programs, but performance depends on:
 
 ### Is there a time limit for execution?
 
-No, programs run until completion or manual stop.
+**For built-in languages** (BASIC, Logo, PILOT, Pascal, Prolog, Forth): No timeout — programs run until completion or manual stop.
+
+**For subprocess languages** (Python, JavaScript, Perl): Yes — a **30-second timeout** is enforced. If your program takes longer than 30 seconds, it will be terminated automatically.
 
 ### What happens if I create an infinite loop?
 
-The program will run forever. Stop it by:
-1. Pressing Ctrl+C in terminal
-2. Force-quitting the application
-3. System kill if needed
+**Built-in languages:** The program will run until you stop it manually via the GUI.
+**Subprocess languages:** The 30-second timeout will kill the process automatically.
 
 ---
 
@@ -184,7 +184,17 @@ Forth is **stack-based**:
 
 ### Can I use graphics in all languages?
 
-Logo has full graphics support. Other languages have limited graphics through built-in functions.
+**Logo** has full turtle graphics support with shapes, colors, and procedures.
+**BASIC** has turtle graphics (FORWARD, RIGHT, etc.) and direct graphics (PSET, LINE, BOX, CIRCLE).
+**PILOT** has turtle graphics via the `G:` command prefix (G:LINE, G:CIRCLE, G:RECT).
+Other languages focus on text output.
+
+### Where can I find example programs?
+
+Each language has example programs in the `examples/` directory:
+- `comprehensive_demo` — A broad feature walkthrough for each language
+- `showcase_demo` — An advanced demonstration of language capabilities
+- Additional examples (hello world, specific features)
 
 ---
 

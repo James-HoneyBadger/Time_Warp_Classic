@@ -34,6 +34,10 @@ DROP        Remove top of stack
 SWAP        Swap top two values
 ROT         Rotate top 3 values
 OVER        Copy second value to top
+NIP         Remove second value (keep top)
+TUCK        Copy top below second value
+PICK        Copy nth value to top
+ROLL        Rotate nth value to top
 DEPTH       Return stack depth
 ```
 
@@ -192,6 +196,21 @@ TEN TWENTY + \ 30
     DROP ;
 
 5 COUNTDOWN   \ Prints 5 4 3 2 1 0
+```
+
+#### BEGIN/WHILE/REPEAT
+
+```forth
+: COUNT-DOWN ( n -- )
+    BEGIN
+        DUP 0 >
+    WHILE
+        DUP .
+        1 -
+    REPEAT
+    DROP ;
+
+5 COUNT-DOWN   \ Prints 5 4 3 2 1
 ```
 
 ## Arrays (Forth Arrays)
@@ -361,6 +380,102 @@ temp @    \ Retrieve x
 5 QUAD    \ 625
 ```
 
+## Math Functions
+
+```forth
+SIN         Sine (radians)
+COS         Cosine (radians)
+TAN         Tangent (radians)
+SQRT        Square root
+LOG         Natural logarithm
+EXP         e raised to power
+ABS         Absolute value
+MIN         Minimum of two values
+MAX         Maximum of two values
+NEGATE      Negate top of stack
+```
+
+### Examples
+
+```forth
+3.14159 SIN .     \ ~0.0
+16 SQRT .         \ 4.0
+2.718 LOG .       \ ~1.0
+-5 ABS .          \ 5
+3 7 MAX .         \ 7
+```
+
+## Bitwise Operations
+
+```forth
+AND         Bitwise AND
+OR          Bitwise OR
+XOR         Bitwise XOR
+INVERT      Bitwise NOT (complement)
+```
+
+### Examples
+
+```forth
+255 15 AND .      \ 15
+240 15 OR .       \ 255
+255 15 XOR .      \ 240
+0 INVERT .        \ -1 (all bits set)
+```
+
+## Floating Point
+
+```forth
+1.5 2.3 F+ .      \ 3.8  (floating add)
+5.0 2.0 F/ .       \ 2.5  (floating divide)
+3.14 FSIN .        \ ~0.0 (floating sine)
+```
+
+## Exception Handling
+
+```forth
+: SAFE-DIVIDE ( n1 n2 -- result )
+    TRY
+        /
+    CATCH
+        DROP DROP
+        ." Division error" CR
+        0
+    ENDTRY ;
+
+10 0 SAFE-DIVIDE   \ Division error, result: 0
+10 2 SAFE-DIVIDE   \ 5
+```
+
+## Quick Reference
+
+| Feature | Syntax | Example |
+|---------|--------|---------|
+| Push | `number` | `42` |
+| Add | `+` | `3 5 +` |
+| Subtract | `-` | `10 3 -` |
+| Multiply | `*` | `4 5 *` |
+| Divide | `/` | `20 4 /` |
+| Modulo | `MOD` | `7 3 MOD` |
+| Duplicate | `DUP` | `5 DUP` |
+| Swap | `SWAP` | `3 5 SWAP` |
+| Drop | `DROP` | `5 DROP` |
+| Over | `OVER` | `3 5 OVER` |
+| Rotate | `ROT` | `1 2 3 ROT` |
+| Print | `.` | `42 .` |
+| Print String | `."` | `." Hello"` |
+| Newline | `CR` | `CR` |
+| Define | `: name ... ;` | `: DOUBLE 2 * ;` |
+| Variable | `VARIABLE name` | `VARIABLE x` |
+| Store | `!` | `5 x !` |
+| Fetch | `@` | `x @` |
+| If | `IF ... THEN` | `DUP 0 > IF ...` |
+| If/Else | `IF ... ELSE ... THEN` | `IF 1 ELSE 0 THEN` |
+| Do Loop | `DO ... LOOP` | `10 0 DO I . LOOP` |
+| Begin/Until | `BEGIN ... UNTIL` | `BEGIN DUP . 1- DUP 0= UNTIL` |
+| Begin/While | `BEGIN ... WHILE ... REPEAT` | `BEGIN DUP 0> WHILE 1- REPEAT` |
+| Try/Catch | `TRY ... CATCH ... ENDTRY` | `TRY / CATCH 0 ENDTRY` |
+
 ## See Also
 
 - [LANGUAGE_TUTORIALS.md](../user/LANGUAGE_TUTORIALS.md)
@@ -368,4 +483,4 @@ temp @    \ Retrieve x
 
 ---
 
-**Last Updated:** 2024
+**Last Updated:** 2025

@@ -610,6 +610,108 @@ class LineNumberedText(tk.Frame):
         """Set the font for the text widget."""
         self.text.config(font=font_tuple)
 
+    # ---- Search / Replace methods (parity with SyntaxHighlightingText) ----
+
+    def find_text(self, search_term, start_pos='1.0', case_sensitive=False,
+                  whole_word=False, regex=False):
+        """Find the next occurrence of search_term starting from start_pos."""
+        import re as _re
+
+        if not search_term:
+            return None
+
+        text_content = self.text.get('1.0', tk.END)
+        start_line, start_col = map(int, start_pos.split('.'))
+        start_char = 0
+        lines = text_content.split('\n')
+        for i in range(min(start_line - 1, len(lines))):
+            start_char += len(lines[i]) + 1
+        start_char += start_col
+        search_text = text_content[start_char:]
+
+        if regex or whole_word:
+            flags = 0 if case_sensitive else _re.IGNORECASE
+            if whole_word and not regex:
+                pattern = r'\b' + _re.escape(search_term) + r'\b'
+            elif whole_word:
+                pattern = r'\b' + search_term + r'\b'
+            else:
+                pattern = search_term
+            m = _re.search(pattern, search_text, flags)
+            if m:
+                return (self._char_to_index(start_char + m.start()),
+                        self._char_to_index(start_char + m.end()))
+        else:
+            hay = search_text if case_sensitive else search_text.lower()
+            needle = search_term if case_sensitive else search_term.lower()
+            pos = hay.find(needle)
+            if pos != -1:
+                return (self._char_to_index(start_char + pos),
+                        self._char_to_index(start_char + pos + len(search_term)))
+        return None
+
+    def replace_text(self, search_term, replace_term, start_pos='1.0',
+                     case_sensitive=False, whole_word=False, regex=False):
+        """Replace the next occurrence of search_term with replace_term."""
+        match = self.find_text(search_term, start_pos, case_sensitive, whole_word, regex)
+        if match:
+            start_idx, end_idx = match
+            self.text.delete(start_idx, end_idx)
+            self.text.insert(start_idx, replace_term)
+            self.text.mark_set(tk.INSERT, f"{start_idx}+{len(replace_term)}c")
+            self.text.see(start_idx)
+            return True
+        return False
+
+    def replace_all(self, search_term, replace_term, case_sensitive=False,
+                    whole_word=False, regex=False):
+        """Replace all occurrences. Returns count of replacements."""
+        count = 0
+        start_pos = '1.0'
+        while True:
+            match = self.find_text(search_term, start_pos, case_sensitive, whole_word, regex)
+            if not match:
+                break
+            start_idx, end_idx = match
+            self.text.delete(start_idx, end_idx)
+            self.text.insert(start_idx, replace_term)
+            count += 1
+            start_pos = self.text.index(f"{start_idx}+{len(replace_term)}c")
+        return count
+
+    def highlight_search_results(self, search_term, case_sensitive=False,
+                                 whole_word=False, regex=False):
+        """Highlight all occurrences of search_term."""
+        self.text.tag_remove('search_highlight', '1.0', tk.END)
+        if not search_term:
+            return
+        start_pos = '1.0'
+        while True:
+            match = self.find_text(search_term, start_pos, case_sensitive, whole_word, regex)
+            if not match:
+                break
+            start_idx, end_idx = match
+            self.text.tag_add('search_highlight', start_idx, end_idx)
+            start_pos = end_idx
+        self.text.tag_configure('search_highlight', background='#264f78')
+
+    def clear_search_highlights(self):
+        """Clear all search result highlights."""
+        self.text.tag_remove('search_highlight', '1.0', tk.END)
+
+    def _char_to_index(self, char_pos):
+        """Convert character position to tkinter text index."""
+        text_content = self.text.get('1.0', tk.END)
+        lines = text_content.split('\n')
+        current_char = 0
+        for line_num, line in enumerate(lines, 1):
+            line_len = len(line) + 1
+            if current_char + line_len > char_pos:
+                col = char_pos - current_char
+                return f"{line_num}.{col}"
+            current_char += line_len
+        return f"{len(lines)}.{len(lines[-1])}"
+
     def __getattr__(self, name):
         """Delegate attribute access to the text widget."""
         return getattr(self.text, name)

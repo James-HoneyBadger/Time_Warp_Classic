@@ -94,7 +94,8 @@ Time_Warp_Classic/
 │   │   ├── memory_manager.py
 │   │   └── gui_optimizer.py
 │   └── utilities/
-│       └── __init__.py
+│       ├── __init__.py
+│       └── safe_eval.py      # AST-based safe expression evaluator
 ├── docs/                     # Documentation
 ├── examples/                 # Example programs (one dir per language)
 ├── scripts/                  # Launch and test scripts
@@ -169,6 +170,43 @@ Performance optimization modules.
 - `performance_optimizer.py` — Code caching, expression optimization, profiling
 - `memory_manager.py` — Variable scope management, memory limits
 - `gui_optimizer.py` — Output buffering, refresh rate optimization
+
+#### utilities/safe_eval.py
+AST-based safe expression evaluator that replaces Python's `eval()` throughout the codebase.
+
+**Key Function:**
+- `safe_eval(expr, variables, allowed_functions)` — Evaluate a mathematical expression safely
+
+**Safety Model:**
+- Parses expressions into an AST (Abstract Syntax Tree) before evaluation
+- Only allows: numeric literals, strings, arithmetic operators, comparisons, boolean operators
+- Supports whitelisted function calls (e.g., `ABS`, `INT`, `SIN`, `COS`, `SQR`, `RND`)
+- Supports variable references, subscripts, and string attribute access
+- Rejects any node type not explicitly permitted (no imports, no exec, no file access)
+
+**Used By:** BASIC, Logo, Pascal, and Prolog interpreters for evaluating user expressions safely.
+
+---
+
+## Security Architecture
+
+### Expression Evaluation
+
+All user-provided expressions are evaluated through `core/utilities/safe_eval.py` instead of Python's built-in `eval()`. This prevents arbitrary code execution from user programs.
+
+### Subprocess Isolation
+
+External language executors (Python, JavaScript, Perl) run user code in isolated subprocesses with:
+- **30-second timeout** — prevents infinite loops and resource exhaustion
+- **Temporary file execution** — code written to temp file, executed, file cleaned up
+- **Output capture** — stdout/stderr captured and displayed in the IDE
+- **No shell=True** — subprocess calls use argument lists, not shell interpretation
+
+### Input Validation
+
+- File paths are validated before use
+- Variable names are sanitized
+- Expression parsing rejects dangerous constructs at the AST level
 
 ---
 

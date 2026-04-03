@@ -120,6 +120,25 @@ pip install -r requirements.txt
 **Problem:** "is not a function"
 - Solution: Verify function name and arguments
 
+**Problem:** Program killed after 30 seconds
+- Solution: JavaScript runs via Node.js with a 30-second timeout. Optimize or simplify long-running code.
+
+### Perl
+
+**Problem:** `.pl` file opens as Prolog instead of Perl
+- Solution: The `.pl` extension is shared by both Perl and Prolog. Time Warp examines file content to detect the correct language (looks for `print`, `my`, `use`, `sub` for Perl vs. `:-`, `?-` for Prolog). If auto-detection fails, manually select the language from the dropdown.
+
+**Problem:** "perl: command not found"
+- Solution: Install Perl (`sudo apt install perl` on Linux, or from [perl.org](https://www.perl.org/))
+
+**Problem:** Program killed after 30 seconds
+- Solution: Perl runs via subprocess with a 30-second timeout. Simplify long-running operations.
+
+### Subprocess Languages (Python, JavaScript, Perl)
+
+**Problem:** "Execution timed out" or program killed
+- Solution: These languages run as external subprocesses with a **30-second timeout**. If your program needs more time, optimize the algorithm or reduce the workload. Built-in languages (BASIC, Logo, PILOT, Pascal, Prolog, Forth) have no timeout.
+
 ### Prolog
 
 **Problem:** No solutions found

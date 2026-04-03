@@ -30,7 +30,6 @@ program lines, execution position, and turtle graphics state.
 # pylint: disable=C0302,C0301,C0103,C0115,C0116,W0613,R0903,C0413,W0718,R0902,R0915,C0415,W0404,W0621,R0913,R0917,R0914,W0612,W0108,W0123,R0911,R0912,R1705,W0611,W0718,R0902,R0915,C0415,W0404,W0621,R0913,R0917,R0914,W0612,W0108,W0123,R0911,R0912,R1705,W0611
 
 import tkinter as tk
-from tkinter import simpledialog
 import re
 import random
 import math
@@ -393,11 +392,24 @@ class Time_WarpInterpreter:  # pylint: disable=too-many-public-methods
                 self.debug_output(
                     f"📐 Canvas size: {canvas_width}x{canvas_height}, center: ({self.turtle_graphics['center_x']}, {self.turtle_graphics['center_y']})"
                 )
-            except Exception as e:
-                # Fallback to known canvas size
-                self.turtle_graphics["center_x"] = 300
-                self.turtle_graphics["center_y"] = 200
-                self.debug_output(f"📐 Using fallback canvas center: (300, 200) - {e}")
+            except (tk.TclError, ValueError, TypeError) as e:
+                # Fallback to configured canvas size
+                canvas_width = int(self.ide_turtle_canvas.cget("width") or 600)
+                canvas_height = int(self.ide_turtle_canvas.cget("height") or 400)
+                self.turtle_graphics["center_x"] = canvas_width // 2
+                self.turtle_graphics["center_y"] = canvas_height // 2
+                self.debug_output(f"📐 Using configured canvas center: ({self.turtle_graphics['center_x']}, {self.turtle_graphics['center_y']}) - {e}")
+
+            # Update center when canvas is resized
+            def _on_canvas_resize(event):
+                if self.turtle_graphics and event.width > 1 and event.height > 1:
+                    self.turtle_graphics["center_x"] = event.width // 2
+                    self.turtle_graphics["center_y"] = event.height // 2
+
+            try:
+                self.ide_turtle_canvas.bind("<Configure>", _on_canvas_resize)
+            except (tk.TclError, AttributeError):
+                pass
 
             self.update_turtle_display()
             # Force canvas update to ensure it's ready for drawing
@@ -532,6 +544,15 @@ class Time_WarpInterpreter:  # pylint: disable=too-many-public-methods
                     width=self.turtle_graphics["pen_size"],
                 )
                 self.turtle_graphics["lines"].append(line_id)
+
+                # Prevent unbounded memory growth: drop oldest lines when
+                # the list exceeds a generous cap.  The canvas items are
+                # NOT deleted so existing drawings remain visible, but the
+                # ID list is trimmed so the interpreter doesn't hold
+                # thousands of references indefinitely.
+                _MAX_TRACKED_LINES = 10000
+                if len(self.turtle_graphics["lines"]) > _MAX_TRACKED_LINES:
+                    self.turtle_graphics["lines"] = self.turtle_graphics["lines"][-_MAX_TRACKED_LINES:]
 
                 # Force canvas update to show the line immediately
                 try:
@@ -867,18 +888,28 @@ class Time_WarpInterpreter:  # pylint: disable=too-many-public-methods
                     else ""
                 )
             ),
+            # Math functions
+            "SIN": lambda x: math.sin(math.radians(float(x))),
+            "COS": lambda x: math.cos(math.radians(float(x))),
+            "TAN": lambda x: math.tan(math.radians(float(x))),
+            "SQRT": lambda x: math.sqrt(float(x)),
             # BASIC-style functions
             "STR$": lambda x: str(x),
             "CHR$": lambda x: chr(int(x)),
             "ASC": lambda x: ord(str(x)[0]) if str(x) else 0,
             "LEN": lambda x: len(str(x)),
             "LEFT$": lambda s, n: str(s)[: int(n)],
+            "LEFT": lambda s, n: str(s)[: int(n)],
             "RIGHT$": lambda s, n: str(s)[-int(n) :] if int(n) > 0 else "",
+            "RIGHT": lambda s, n: str(s)[-int(n) :] if int(n) > 0 else "",
+            "INSTR": lambda s, sub: str(s).find(str(sub)) + 1,
             # Turbo BASIC enhanced functions
             "CEIL": lambda x: math.ceil(float(x)),
             "FIX": lambda x: int(float(x)) if float(x) >= 0 else -int(-float(x)),
+            "EXP": lambda x: math.exp(float(x)),
             "EXP2": lambda x: 2 ** float(x),
             "EXP10": lambda x: 10 ** float(x),
+            "LOG": lambda x: math.log(float(x)) if float(x) > 0 else 0,
             "LOG2": lambda x: math.log2(float(x)) if float(x) > 0 else 0,
             "LOG10": lambda x: math.log10(float(x)) if float(x) > 0 else 0,
             "CHR": lambda x: chr(int(x)),
@@ -888,6 +919,41 @@ class Time_WarpInterpreter:  # pylint: disable=too-many-public-methods
             "OCT": lambda x: oct(int(x))[2:],
             "HEX": lambda x: hex(int(x))[2:],
         }
+
+        # Array aggregate functions: SUM, AVG, MIN, MAX
+        # Must be processed BEFORE array access regex so the array name
+        # is not consumed as an array index lookup.
+        def replace_array_aggregate(match):
+            func_name = match.group(1).upper()
+            arg = match.group(2).strip()
+            try:
+                if arg in self.variables:
+                    arr = self.variables[arg]
+                    if isinstance(arr, (list, dict)):
+                        if isinstance(arr, dict):
+                            values = [v for v in arr.values() if isinstance(v, (int, float))]
+                        else:
+                            values = [v for v in arr if isinstance(v, (int, float))]
+                        if not values:
+                            return "0"
+                        if func_name == "SUM":
+                            return str(sum(values))
+                        elif func_name == "AVG":
+                            return str(sum(values) / len(values))
+                        elif func_name == "MIN":
+                            return str(min(values))
+                        elif func_name == "MAX":
+                            return str(max(values))
+            except Exception:
+                pass
+            return match.group(0)  # Return unchanged if not an array
+
+        expr = re.sub(
+            r"\b(SUM|AVG|MIN|MAX)\(([^)]+)\)",
+            replace_array_aggregate,
+            expr,
+            flags=re.IGNORECASE,
+        )
 
         # Handle array access first (e.g., BULLETS(I,0) -> array value)
         array_pattern = r"([A-Za-z_][A-Za-z0-9_]*)\(([^)]+)\)"
@@ -932,8 +998,8 @@ class Time_WarpInterpreter:  # pylint: disable=too-many-public-methods
         for var_name, var_value in sorted(
             self.variables.items(), key=lambda x: len(x[0]), reverse=True
         ):
-            if isinstance(var_value, dict):
-                continue  # Skip arrays, they're handled above
+            if isinstance(var_value, (dict, list)):
+                continue  # Skip arrays/lists, they're handled above
             if isinstance(var_value, (int, float)):
                 val_repr = str(var_value)
             else:
@@ -952,8 +1018,8 @@ class Time_WarpInterpreter:  # pylint: disable=too-many-public-methods
                 expr = expr.replace(var_name, val_repr)
 
         # Safe evaluation of mathematical & simple string expressions
-        safe_dict = {"__builtins__": {}}
-        safe_dict.update(allowed_names)
+        from core.utilities.safe_eval import safe_eval as _safe_eval
+        eval_names = dict(allowed_names)
 
         # Replace custom functions (rudimentary)
         expr = expr.replace("RND(1)", str(random.random()))
@@ -961,6 +1027,10 @@ class Time_WarpInterpreter:  # pylint: disable=too-many-public-methods
 
         # Convert BASIC operators to Python equivalents
         expr = re.sub(r"\bMOD\b", "%", expr, flags=re.IGNORECASE)  # MOD -> %
+        expr = re.sub(r"\bAND\b", " and ", expr, flags=re.IGNORECASE)  # AND -> and
+        expr = re.sub(r"\bOR\b", " or ", expr, flags=re.IGNORECASE)  # OR -> or
+        expr = re.sub(r"\bNOT\b", " not ", expr, flags=re.IGNORECASE)  # NOT -> not
+        expr = expr.replace("^", "**")  # BASIC ^ (power) -> Python **
         expr = re.sub(r"<>", "!=", expr)  # <> -> !=
         # Convert single = to == for equality (but not <=, >=, !=, ==)
         expr = re.sub(r"(?<![<>!=])=(?!=)", "==", expr)
@@ -1015,8 +1085,27 @@ class Time_WarpInterpreter:  # pylint: disable=too-many-public-methods
 
         expr = re.sub(r"RIGHT\$\(([^)]+)\)", replace_right_func, expr)
 
+        # LEFT(s,n) and RIGHT(s,n) without $ suffix
+        expr = re.sub(r"(?<!\$)\bLEFT\(([^)]+)\)", replace_left_func, expr)
+        expr = re.sub(r"(?<!\$)\bRIGHT\(([^)]+)\)", replace_right_func, expr)
+
+        # INSTR(s, sub) function - returns 1-based position
+        def replace_instr_func(match):
+            args = match.group(1).split(",")
+            if len(args) == 2:
+                try:
+                    s = str(self.evaluate_expression(args[0].strip()))
+                    sub = str(self.evaluate_expression(args[1].strip()))
+                    pos = s.find(sub)
+                    return str(pos + 1 if pos >= 0 else 0)
+                except Exception:
+                    pass
+            return "0"
+
+        expr = re.sub(r"\bINSTR\(([^)]+)\)", replace_instr_func, expr)
+
         try:
-            return eval(expr, safe_dict)
+            return _safe_eval(expr, eval_names)
         except ZeroDivisionError:
             self.log_error("Division by zero in expression", None)
             return "ERROR: Division by zero"
@@ -1029,9 +1118,9 @@ class Time_WarpInterpreter:  # pylint: disable=too-many-public-methods
                     if len(parts) > 1:
                         resolved_parts = []
                         for p in parts:
-                            # Try normal eval for each part
+                            # Try safe eval for each part
                             try:
-                                val = eval(p, safe_dict)
+                                val = _safe_eval(p, eval_names)
                             except Exception:
                                 val = p.strip("\"'")
                             resolved_parts.append(str(val))
@@ -1070,14 +1159,15 @@ class Time_WarpInterpreter:  # pylint: disable=too-many-public-methods
             return expr  # Return original instead of 0
 
     def interpolate_text(self, text: str) -> str:
-        """Interpolate *VAR* tokens and evaluate *expr* tokens inside a text string.
+        """Interpolate *VAR* and {VAR} tokens and evaluate *expr* tokens inside a text string.
 
         This central helper is used by T: and MT: to keep interpolation logic
         consistent and reduce duplication.
         """
-        # First replace explicit variable occurrences like *VAR*
+        # First replace explicit variable occurrences like *VAR* and {VAR}
         for var_name, var_value in self.variables.items():
             text = text.replace(f"*{var_name}*", str(var_value))
+            text = text.replace("{" + var_name + "}", str(var_value))
 
         # Then evaluate expression-like tokens remaining between *...*
         try:
@@ -1105,9 +1195,21 @@ class Time_WarpInterpreter:  # pylint: disable=too-many-public-methods
         return text
 
     def get_user_input(self, prompt=""):
-        """Get input from user"""
+        """Get input from user.
+
+        Checks the GUI input buffer first (populated by the bottom input
+        field). Falls back to a modal dialog in GUI mode or console input
+        in headless mode.
+        """
+        # Check if there is buffered input from the GUI input field
+        if hasattr(self, "input_buffer") and self.input_buffer:
+            value = self.input_buffer.pop(0)
+            self.log_output(value)
+            return value
+
         if self.output_widget:
             # Use dialog for GUI environment
+            from tkinter import simpledialog
             result = simpledialog.askstring("Input", prompt)
             if result is not None:
                 # Echo the input to the output for visibility
@@ -1174,6 +1276,9 @@ class Time_WarpInterpreter:  # pylint: disable=too-many-public-methods
             "GOTO",
             "IF",
             "THEN",
+            "ELSE",
+            "ELSE IF",
+            "END IF",
             "FOR",
             "TO",
             "NEXT",
@@ -1191,6 +1296,8 @@ class Time_WarpInterpreter:  # pylint: disable=too-many-public-methods
             "SELECT",
             "CASE",
             "END SELECT",  # Compound command
+            "END IF",
+            "END WHILE",
             # Turbo BASIC Enhanced Commands
             "INCR",
             "DECR",
@@ -1476,10 +1583,10 @@ class Time_WarpInterpreter:  # pylint: disable=too-many-public-methods
                 line_num, command = self.parse_line(line)
                 self.program_lines.append((line_num, command))
 
-                # Collect PILOT labels
-                if command.startswith("L:"):
-                    label = command[2:].strip()
-                    self.labels[label] = i
+            # Collect PILOT labels (must work for all languages)
+            if command.startswith("L:"):
+                label = command[2:].strip()
+                self.labels[label] = i
 
         return True
 

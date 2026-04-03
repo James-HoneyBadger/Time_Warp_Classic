@@ -20,9 +20,30 @@ def detect_language_from_extension(filepath, content=None):
     ext = ext.lower()
 
     if ext == ".pl":
-        # Disambiguate Perl vs Prolog based on file content
-        if content and (":-" in content or "?-" in content or content.count(".") > 3):
-            return "Prolog"
+        # Disambiguate Perl vs Prolog based on file content heuristics.
+        # Prolog files typically contain rule/fact definitions ending with
+        # periods and use ``:-`` for rules or ``?-`` for queries.  Perl
+        # files commonly start with a shebang or use ``$``, ``@``, ``%``
+        # sigils extensively.
+        if content:
+            # Strong Perl indicators
+            lines = content.split("\n", 5)  # check first few lines
+            first_line = lines[0].strip() if lines else ""
+            if first_line.startswith("#!") and "perl" in first_line.lower():
+                return "Perl"
+            # Count Perl sigils ($var, @array, %hash) vs Prolog patterns
+            perl_sigils = sum(1 for ch in content[:2000] if ch in ("$", "@"))
+            prolog_rules = content[:2000].count(":-")
+            prolog_queries = content[:2000].count("?-")
+            # Periods ending statements on their own line (Prolog convention)
+            prolog_dots = sum(
+                1 for line in content[:2000].split("\n")
+                if line.rstrip().endswith(".") and not line.strip().startswith("#")
+            )
+            prolog_score = prolog_rules * 3 + prolog_queries * 3 + prolog_dots
+            perl_score = perl_sigils * 2
+            if prolog_score > perl_score and (prolog_rules or prolog_queries):
+                return "Prolog"
         return "Perl"
 
     return EXT_TO_LANG.get(ext)

@@ -31,14 +31,17 @@ from .base import SubprocessExecutor
 
 
 class PythonExecutor(SubprocessExecutor):
-    """Handles Python language script execution."""
+    """Handles Python language script execution.
+
+    Delegates to the Python interpreter via a subprocess for safety.
+    Scripts run in an isolated process and cannot access the IDE's state.
+    """
 
     lang_name = "Python"
     file_suffix = ".py"
-
-    # Python always uses the same interpreter that runs Time_Warp.
-    def _find_executable(self) -> str:
-        return sys.executable
+    # Use the same Python that runs Time_Warp, but execute via subprocess
+    # so user scripts cannot access IDE internals.
+    executable_candidates = [sys.executable, "python3", "python"]
 
     # ---- convenience aliases (backward-compat) ----
 
@@ -48,5 +51,5 @@ class PythonExecutor(SubprocessExecutor):
 
     def get_python_version(self) -> str:
         """Get Python version information."""
-        return f"Python {sys.version}"
+        return self.get_version()
 

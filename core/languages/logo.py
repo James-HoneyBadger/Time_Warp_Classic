@@ -458,7 +458,8 @@ class TwLogoExecutor:
             condition_eval = re.sub(r":(\w+)", replace_var, condition_str)
 
             # Evaluate the condition
-            result = eval(condition_eval, {"__builtins__": {}}, {})
+            from core.utilities.safe_eval import safe_eval
+            result = safe_eval(condition_eval)
 
             # If condition is true, execute commands
             if result:
@@ -559,7 +560,8 @@ class TwLogoExecutor:
 
             expr_str = re.sub(r":(\w+)", replace_var, arg)
             self.interpreter.debug_output(f"_eval_argument: '{arg}' -> '{expr_str}'")
-            result = eval(expr_str, {"__builtins__": {}}, {})
+            from core.utilities.safe_eval import safe_eval
+            result = safe_eval(expr_str)
             self.interpreter.debug_output(f"_eval_argument: eval result = {result}")
             return float(result)
         except Exception as e:
@@ -2283,7 +2285,8 @@ class TwLogoExecutor:
             return str(self.interpreter.variables.get(var_name, 0))
 
         evaluated = re.sub(r":(\w+)", replace_var, cond_str)
-        return bool(eval(evaluated, {"__builtins__": {}}, {}))  # noqa: S307
+        from core.utilities.safe_eval import safe_eval
+        return bool(safe_eval(evaluated))
 
     # ---- UCBLogo loop constructs ----
 
@@ -2638,7 +2641,8 @@ class TwLogoExecutor:
             expr_str = re.sub(r":(\w+)", replace_var, str(expr))
 
             # Evaluate the expression
-            result = eval(expr_str, {"__builtins__": {}}, {})
+            from core.utilities.safe_eval import safe_eval
+            result = safe_eval(expr_str)
             return result
         except Exception:
             # If evaluation fails, try to parse as number

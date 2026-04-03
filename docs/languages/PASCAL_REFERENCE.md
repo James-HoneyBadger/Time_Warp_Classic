@@ -41,7 +41,11 @@ VAR
 ### Data Types
 
 - **INTEGER** - Whole numbers
+- **LONGINT** - Large whole numbers
+- **BYTE** - 0 to 255
+- **WORD** - 0 to 65535
 - **REAL** - Decimal numbers
+- **DOUBLE** - Double-precision decimal numbers
 - **STRING** - Text
 - **BOOLEAN** - TRUE or FALSE
 - **CHAR** - Single character
@@ -204,6 +208,58 @@ numbers[2] := 20;
 WriteLn(numbers[1]);
 ```
 
+## Type Definitions
+
+### TYPE Keyword
+
+```pascal
+TYPE
+    TColor = (Red, Green, Blue, Yellow);
+    TScoreArray = ARRAY[1..100] OF INTEGER;
+    TMatrix = ARRAY[1..3, 1..3] OF REAL;
+```
+
+### Record Types
+
+```pascal
+TYPE
+    TStudent = RECORD
+        name : STRING;
+        age : INTEGER;
+        grade : REAL;
+    END;
+
+VAR
+    student : TStudent;
+BEGIN
+    student.name := 'Alice';
+    student.age := 20;
+    student.grade := 3.8;
+    WriteLn(student.name, ' age ', student.age);
+END.
+```
+
+## String Operations
+
+### Built-in String Functions
+
+```pascal
+Length(s)                { Returns length of string }
+Copy(s, start, count)   { Returns substring }
+Pos(substr, s)           { Find position of substring }
+UpCase(ch)               { Uppercase a character }
+Concat(s1, s2)           { Concatenate strings }
+
+{ Examples }
+VAR s : STRING;
+BEGIN
+    s := 'Hello World';
+    WriteLn(Length(s));         { 11 }
+    WriteLn(Copy(s, 1, 5));    { Hello }
+    WriteLn(Pos('World', s));  { 7 }
+END.
+```
+
 ## Complete Examples
 
 ### Fibonacci
@@ -240,6 +296,25 @@ BEGIN
 END.
 ```
 
+## Quick Reference
+
+| Feature | Syntax | Example |
+|---------|--------|---------|
+| Variable | `VAR x : TYPE` | `VAR i : INTEGER` |
+| Assign | `:=` | `x := 10` |
+| Print | `WriteLn(expr)` | `WriteLn('Hi')` |
+| Input | `ReadLn(var)` | `ReadLn(name)` |
+| If/Then | `IF cond THEN ... ELSE` | `IF x > 5 THEN ...` |
+| Case | `CASE var OF ... END` | `CASE x OF 1: ... END` |
+| For Loop | `FOR i := a TO b DO` | `FOR i := 1 TO 10 DO` |
+| While | `WHILE cond DO` | `WHILE x < 100 DO` |
+| Repeat | `REPEAT ... UNTIL cond` | `REPEAT ... UNTIL done` |
+| Function | `FUNCTION name : TYPE` | `FUNCTION Sqr(x) : INTEGER` |
+| Procedure | `PROCEDURE name` | `PROCEDURE Print(msg)` |
+| Array | `ARRAY[a..b] OF TYPE` | `ARRAY[1..10] OF INTEGER` |
+| Record | `RECORD ... END` | `TPoint = RECORD x,y END` |
+| Type | `TYPE name = ...` | `TYPE TColor = (R,G,B)` |
+
 ## See Also
 
 - [LANGUAGE_TUTORIALS.md](../user/LANGUAGE_TUTORIALS.md)
@@ -247,4 +322,4 @@ END.
 
 ---
 
-**Last Updated:** 2024
+**Last Updated:** 2025

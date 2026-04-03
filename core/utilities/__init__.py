@@ -9,6 +9,10 @@ Utility functions and helper classes for the Time_Warp IDE.
 This module provides shared functionality used across different parts of the
 Time_Warp system, including helper functions for string processing, math
 operations, and common programming tasks.
+
+Submodules:
+    safe_eval   AST-based safe expression evaluator (replaces Python's eval()).
+                Used by BASIC, Logo, Pascal, and Prolog interpreters.
 """
 
 # Utility functions for string manipulation

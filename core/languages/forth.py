@@ -74,6 +74,9 @@ class TwForthExecutor:
         self.pending_variable_name = None
         self.expecting_constant_name = False
         self.pending_constant_value = None
+        self.expecting_create_name = False
+        self.last_created_name = None
+        self.created_memory = {}  # CREATE'd memory regions: name -> list
 
         # Initialize built-in words
         self._init_builtin_words()
@@ -84,7 +87,9 @@ class TwForthExecutor:
             {
                 # Stack manipulation
                 "DUP": lambda: self._dup(),
+                "2DUP": lambda: self._2dup(),
                 "DROP": lambda: self._drop(),
+                "2DROP": lambda: self._2drop(),
                 "SWAP": lambda: self._swap(),
                 "OVER": lambda: self._over(),
                 "ROT": lambda: self._rot(),
@@ -96,6 +101,7 @@ class TwForthExecutor:
                 "*": lambda: self._mul(),
                 "/": lambda: self._div(),
                 "MOD": lambda: self._mod(),
+                "**": lambda: self._power(),
                 "NEGATE": lambda: self._negate(),
                 "ABS": lambda: self._abs(),
                 "1+": lambda: self._one_plus(),
@@ -166,6 +172,7 @@ class TwForthExecutor:
                 "D!": lambda: self._d_store(),
                 # Loop index
                 "I": lambda: self._i(),
+                "J": lambda: self._j(),
                 # Memory allocation
                 "ALLOCATE": lambda: self._allocate(),
                 "FREE": lambda: self._free(),
@@ -304,6 +311,17 @@ class TwForthExecutor:
                 self.interpreter.log_output(f"Constant declared: {name}")
                 return True
 
+            if self.expecting_create_name:
+                name = word
+                self.created_memory[name] = [0]  # Start with 1 cell
+                self.last_created_name = name
+                # When the CREATE'd name is used, push a reference
+                self.dictionary[name] = lambda n=name: self.data_stack.append(
+                    {"type": "create", "name": n}
+                )
+                self.expecting_create_name = False
+                return True
+
             # Handle numbers (including floating point)
             if self._is_number(word):
                 if self.compiling:
@@ -398,6 +416,11 @@ class TwForthExecutor:
                     self.word_definition.append(word)
                     return True
                 return self._handle_loop()
+            elif word == "+LOOP":
+                if self.compiling:
+                    self.word_definition.append(word)
+                    return True
+                return self._handle_plus_loop()
 
             # Handle variable operations
             if word == "VARIABLE":
@@ -405,9 +428,38 @@ class TwForthExecutor:
                 return self._handle_variable()
             elif word == "CONSTANT":
                 return self._handle_constant()
+            elif word == "CREATE":
+                self.expecting_create_name = True
+                return True
+            elif word == "CELLS":
+                if self.compiling:
+                    self.word_definition.append(word)
+                    return True
+                # In our model, CELLS is identity (cell size = 1)
+                return True
+            elif word == "ALLOT":
+                if self.compiling:
+                    self.word_definition.append(word)
+                    return True
+                # Allocate n cells for the last CREATE'd name
+                if not self.data_stack:
+                    self.interpreter.log_output("Stack underflow in ALLOT")
+                    return False
+                n = self.data_stack.pop()
+                if self.last_created_name and self.last_created_name in self.created_memory:
+                    mem = self.created_memory[self.last_created_name]
+                    while len(mem) < n + 1:
+                        mem.append(0)
+                return True
             elif word == "!":
+                if self.compiling:
+                    self.word_definition.append(word)
+                    return True
                 return self._store()
             elif word == "@":
+                if self.compiling:
+                    self.word_definition.append(word)
+                    return True
                 return self._fetch()
 
             # Execute built-in or user-defined word
@@ -492,6 +544,28 @@ class TwForthExecutor:
             while i < len(definition):
                 word = definition[i]
 
+                # IF_SKIP check: when inside a false IF branch, skip all words
+                # except ELSE and THEN (which manage the branch state).
+                # Must track nested IF depth to skip inner IF/THEN blocks.
+                if (
+                    self.return_stack
+                    and isinstance(self.return_stack[-1], str)
+                    and self.return_stack[-1].endswith("_SKIP")
+                    and word not in ("ELSE", "THEN")
+                ):
+                    # Track nested IF to skip over inner IF/THEN blocks
+                    if word == "IF":
+                        # Push a nested skip marker
+                        self.return_stack.append("IF_NESTED_SKIP")
+                    i += 1
+                    continue
+
+                # Handle nested skip cleanup for THEN
+                if word == "THEN" and self.return_stack and self.return_stack[-1] == "IF_NESTED_SKIP":
+                    self.return_stack.pop()
+                    i += 1
+                    continue
+
                 # Handle RECURSE sentinel – resolves to a self-recursive call
                 # using the word's name captured at definition time.
                 if word == "__RECURSE__":
@@ -539,6 +613,36 @@ class TwForthExecutor:
                     i += 1
                     continue
 
+                if word == "+LOOP":
+                    if (
+                        not self.return_stack
+                        or self.return_stack[-1].get("type") != "DO"
+                    ):
+                        self.interpreter.log_output("+LOOP without matching DO")
+                        return False
+                    if not self.data_stack:
+                        self.interpreter.log_output("Stack underflow in +LOOP")
+                        return False
+                    step = self.data_stack.pop()
+                    frame = self.return_stack[-1]
+                    old_index = frame["index"]
+                    frame["index"] += step
+                    # Check crossing: for positive step, index >= limit;
+                    # for negative step, index < limit (or crossed start)
+                    crossed = False
+                    if step > 0:
+                        crossed = frame["index"] >= frame["limit"]
+                    elif step < 0:
+                        crossed = frame["index"] < frame["limit"]
+                    else:
+                        crossed = True  # zero step = exit
+                    if not crossed:
+                        i = frame["ip"] + 1
+                        continue
+                    self.return_stack.pop()
+                    i += 1
+                    continue
+
                 # Handle BEGIN...WHILE...REPEAT
                 if word == "BEGIN":
                     # Mark the beginning of the loop
@@ -571,9 +675,10 @@ class TwForthExecutor:
                     continue
 
                 if word == "REPEAT":
-                    # Jump back to BEGIN
+                    # Jump back to just after BEGIN (ip+1) to avoid
+                    # re-executing BEGIN which would push duplicate frames.
                     if self.return_stack and self.return_stack[-1].get("type") == "BEGIN":
-                        i = self.return_stack[-1]["ip"]
+                        i = self.return_stack[-1]["ip"] + 1
                         continue
                     i += 1
                     continue
@@ -586,7 +691,7 @@ class TwForthExecutor:
                     condition = self.data_stack.pop()
                     if condition == 0:  # False - loop back to BEGIN
                         if self.return_stack and self.return_stack[-1].get("type") == "BEGIN":
-                            i = self.return_stack[-1]["ip"]
+                            i = self.return_stack[-1]["ip"] + 1
                             continue
                     # True - exit loop
                     if self.return_stack and self.return_stack[-1].get("type") == "BEGIN":
@@ -612,11 +717,29 @@ class TwForthExecutor:
         self.data_stack.append(self.data_stack[-1])
         return True
 
+    def _2dup(self):
+        """Duplicate top two stack items"""
+        if len(self.data_stack) < 2:
+            self.interpreter.log_output("Stack underflow in 2DUP")
+            return False
+        self.data_stack.append(self.data_stack[-2])
+        self.data_stack.append(self.data_stack[-2])
+        return True
+
     def _drop(self):
         """Drop top of stack"""
         if len(self.data_stack) < 1:
             self.interpreter.log_output("Stack underflow in DROP")
             return False
+        self.data_stack.pop()
+        return True
+
+    def _2drop(self):
+        """Drop top two stack items"""
+        if len(self.data_stack) < 2:
+            self.interpreter.log_output("Stack underflow in 2DROP")
+            return False
+        self.data_stack.pop()
         self.data_stack.pop()
         return True
 
@@ -672,6 +795,13 @@ class TwForthExecutor:
             self.interpreter.log_output("Stack underflow in +")
             return False
         b, a = self.data_stack.pop(), self.data_stack.pop()
+        # Handle adding offset to CREATE'd memory reference
+        if isinstance(a, dict) and a.get("type") == "create" and isinstance(b, (int, float)):
+            self.data_stack.append({"type": "create", "name": a["name"], "offset": a.get("offset", 0) + int(b)})
+            return True
+        if isinstance(b, dict) and b.get("type") == "create" and isinstance(a, (int, float)):
+            self.data_stack.append({"type": "create", "name": b["name"], "offset": b.get("offset", 0) + int(a)})
+            return True
         self.data_stack.append(a + b)
         return True
 
@@ -712,6 +842,14 @@ class TwForthExecutor:
             self.interpreter.log_output("Division by zero in MOD")
             return False
         self.data_stack.append(a % b)
+        return True
+
+    def _power(self):
+        if len(self.data_stack) < 2:
+            self.interpreter.log_output("Stack underflow in **")
+            return False
+        b, a = self.data_stack.pop(), self.data_stack.pop()
+        self.data_stack.append(int(a ** b))
         return True
 
     def _negate(self):
@@ -1097,6 +1235,29 @@ class TwForthExecutor:
             self.return_stack.pop()
         return True
 
+    def _handle_plus_loop(self):
+        """Handle +LOOP in interactive mode"""
+        top = self.return_stack[-1] if self.return_stack else None
+        if not isinstance(top, dict) or top.get("type") != "DO":
+            self.interpreter.log_output("+LOOP without matching DO")
+            return False
+        if not self.data_stack:
+            self.interpreter.log_output("Stack underflow in +LOOP")
+            return False
+        step = self.data_stack.pop()
+        frame = self.return_stack[-1]
+        frame["index"] += step
+        crossed = False
+        if step > 0:
+            crossed = frame["index"] >= frame["limit"]
+        elif step < 0:
+            crossed = frame["index"] < frame["limit"]
+        else:
+            crossed = True
+        if crossed:
+            self.return_stack.pop()
+        return True
+
     def _handle_until(self):
         """Handle UNTIL in interactive mode.
 
@@ -1181,7 +1342,6 @@ class TwForthExecutor:
 
     def _store(self):
         """Store value (!)"""
-        # Expect: value address (address represented by {'type':'var','name':name}) OR name value
         if len(self.data_stack) < 2:
             self.interpreter.log_output("Stack underflow in ! (store)")
             return False
@@ -1194,6 +1354,17 @@ class TwForthExecutor:
             varname = addr.get("name")
             self.variables[varname] = value
             return True
+
+        # If addr is a CREATE'd memory ref with offset
+        if isinstance(addr, dict) and addr.get("type") == "create":
+            name = addr.get("name")
+            offset = addr.get("offset", 0)
+            if name in self.created_memory:
+                mem = self.created_memory[name]
+                while len(mem) <= offset:
+                    mem.append(0)
+                mem[offset] = value
+                return True
 
         # If addr is a string name
         if isinstance(addr, str) and addr in self.variables:
@@ -1215,6 +1386,18 @@ class TwForthExecutor:
             varname = addr.get("name")
             self.data_stack.append(self.variables.get(varname, 0))
             return True
+
+        # CREATE'd memory ref with offset
+        if isinstance(addr, dict) and addr.get("type") == "create":
+            name = addr.get("name")
+            offset = addr.get("offset", 0)
+            if name in self.created_memory:
+                mem = self.created_memory[name]
+                if offset < len(mem):
+                    self.data_stack.append(mem[offset])
+                else:
+                    self.data_stack.append(0)
+                return True
 
         if isinstance(addr, str) and addr in self.variables:
             self.data_stack.append(self.variables[addr])
@@ -1534,6 +1717,16 @@ class TwForthExecutor:
             self.interpreter.log_output("I used outside of DO/LOOP")
             return False
         self.data_stack.append(frame.get("index", 0))
+        return True
+
+    def _j(self):
+        """Push outer loop index (J) for nested DO/LOOP"""
+        # Find the second-to-last DO frame on the return stack
+        do_frames = [f for f in self.return_stack if isinstance(f, dict) and f.get("type") == "DO"]
+        if len(do_frames) < 2:
+            self.interpreter.log_output("J used outside of nested DO/LOOP")
+            return False
+        self.data_stack.append(do_frames[-2].get("index", 0))
         return True
 
     # Memory allocation

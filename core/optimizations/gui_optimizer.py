@@ -22,7 +22,7 @@ class UIThreadManager:
 
     def __init__(self, root: tk.Tk):
         self.root = root
-        self.task_queue: queue.Queue[tuple[Callable[..., Any], tuple[Any, ...], dict[str, Any]]] = queue.Queue()
+        self.task_queue: queue.Queue[tuple[Callable[..., Any], tuple[Any, ...], dict[str, Any]]] = queue.Queue(maxsize=10000)
         self.worker_thread: Optional[threading.Thread] = None
         self.running = False
         self._lock = threading.RLock()
@@ -45,7 +45,10 @@ class UIThreadManager:
     def schedule_task(self, task: Callable, *args, **kwargs) -> None:
         """Schedule a task to run asynchronously."""
         if self.running:
-            self.task_queue.put((task, args, kwargs))
+            try:
+                self.task_queue.put_nowait((task, args, kwargs))
+            except queue.Full:
+                pass
 
     def _process_tasks(self) -> None:
         """Process tasks in the worker thread."""
@@ -86,7 +89,7 @@ class AsyncTextUpdate:
 
     def _schedule_next_update(self) -> None:
         """Schedule the next update in the main thread."""
-        if not self.updating and not self.update_queue.empty():
+        if not self.updating:
             self.updating = True
             self.text_widget.after(1, self._process_update)
 
@@ -95,11 +98,11 @@ class AsyncTextUpdate:
         try:
             operation, args, kwargs = self.update_queue.get_nowait()
             self._execute_operation(operation, *args, **kwargs)
-        except queue.Empty:
-            pass
-        finally:
             self.updating = False
-            self._schedule_next_update()
+            if not self.update_queue.empty():
+                self._schedule_next_update()
+        except queue.Empty:
+            self.updating = False
 
     def _execute_operation(self, operation: str, *args, **kwargs) -> None:
         """Execute a text operation."""

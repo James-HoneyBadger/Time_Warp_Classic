@@ -466,7 +466,7 @@ class TwPilotExecutor:
         current_line = self.interpreter.current_line
 
         # Push return address to stack (line after the U: call)
-        self.return_stack.append(current_line)
+        self.return_stack.append(current_line + 1)
 
         # Jump to subroutine
         if label in self.interpreter.labels:

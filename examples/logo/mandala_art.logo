@@ -1,0 +1,81 @@
+; ═══════════════════════════════════════════════════════
+; MANDALA ART GENERATOR
+; Creates an intricate multi-layered geometric mandala
+; Demonstrates: procedures, REPEAT, color, pen control
+; ═══════════════════════════════════════════════════════
+
+HT
+
+; --- Petal shape: two opposing arcs forming a leaf ---
+TO PETAL
+  REPEAT 2 [
+    REPEAT 45 [
+      FD :PSIZE
+      RT 2
+    ]
+    RT 90
+  ]
+END
+
+; --- Starburst ray from center ---
+TO RAY
+  FD :RLEN
+  BK :RLEN
+END
+
+; --- Diamond shape: two sharp arcs ---
+TO DIAMOND
+  REPEAT 2 [
+    REPEAT 30 [
+      FD :DSIZE
+      RT 2
+    ]
+    RT 120
+  ]
+END
+
+; ─── LAYER 1: Golden center starburst ───
+SETPENCOLOR [255 215 0]
+SETPENSIZE 2
+MAKE "RLEN 50
+REPEAT 36 [RAY RT 10]
+
+; ─── LAYER 2: Crimson inner petals ───
+SETPENCOLOR [220 20 60]
+SETPENSIZE 1
+MAKE "PSIZE 2
+REPEAT 6 [PETAL RT 60]
+
+; ─── LAYER 3: Sapphire medium petals ───
+SETPENCOLOR [30 144 255]
+MAKE "PSIZE 3
+REPEAT 12 [PETAL RT 30]
+
+; ─── LAYER 4: Emerald diamond ring ───
+SETPENCOLOR [50 205 50]
+MAKE "DSIZE 3
+REPEAT 8 [DIAMOND RT 45]
+
+; ─── LAYER 5: Amethyst outer petals ───
+SETPENCOLOR [148 103 189]
+MAKE "PSIZE 4
+REPEAT 18 [PETAL RT 20]
+
+; ─── LAYER 6: Coral outermost starburst ───
+SETPENCOLOR [255 127 80]
+MAKE "RLEN 140
+REPEAT 72 [RAY RT 5]
+
+; ─── Center accent circle ───
+HOME
+SETPENCOLOR [255 215 0]
+SETPENSIZE 3
+CIRCLE 15
+
+; ─── Outer boundary ring ───
+SETPENCOLOR [100 100 100]
+SETPENSIZE 2
+CIRCLE 145
+
+PRINT [Mandala Art Generator Complete]
+PRINT [6 concentric layers with 5 colors rendered]

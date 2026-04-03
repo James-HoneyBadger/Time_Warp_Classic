@@ -55,6 +55,19 @@ SETPENCOLOR [255 0 0]  Set RGB color
 
 ```logo
 CIRCLE 50           Draw circle with radius 50
+DOT                 Draw a dot at current position
+ARC 90 50           Draw arc, 90 degrees, radius 50
+RECT 100 60         Draw rectangle 100 wide, 60 tall
+BOX 100 60          Same as RECT
+POLYGON 6 50        Draw regular polygon (6 sides, radius 50)
+```
+
+### Text & Stamps
+
+```logo
+TEXT "Hello"        Draw text at current position
+LABEL "Hello"       Same as TEXT
+STAMP               Stamp current turtle shape
 ```
 
 ### Clear
@@ -81,6 +94,20 @@ SETHEADING 0        SETH 0      Set direction (0=up)
 ```logo
 PENDOWNP                        Check if pen is down
 PENSTATE                        Get pen state
+```
+
+## Turtle Visibility
+
+```logo
+SHOWTURTLE          ST          Make turtle visible
+HIDETURTLE          HT          Hide the turtle
+```
+
+## Background
+
+```logo
+SETBACKGROUND 1     Set background color (by number)
+SETBG [200 200 255] Set background with RGB color
 ```
 
 ## Loops & Repetition
@@ -351,6 +378,27 @@ CLEARSCREEN        \ Start fresh
 HOME               \ Return to center
 ```
 
+## Quick Reference
+
+| Feature | Syntax | Example |
+|---------|--------|---------|
+| Move | `FORWARD dist` / `FD` | `FD 100` |
+| Back | `BACK dist` / `BK` | `BK 50` |
+| Turn Right | `RIGHT deg` / `RT` | `RT 90` |
+| Turn Left | `LEFT deg` / `LT` | `LT 45` |
+| Pen Up | `PENUP` / `PU` | `PU` |
+| Pen Down | `PENDOWN` / `PD` | `PD` |
+| Circle | `CIRCLE radius` | `CIRCLE 50` |
+| Arc | `ARC angle radius` | `ARC 90 50` |
+| Rect | `RECT w h` | `RECT 100 60` |
+| Polygon | `POLYGON sides radius` | `POLYGON 6 50` |
+| Text | `TEXT "str"` | `TEXT "Hello"` |
+| Color | `SETPENCOLOR c` | `SETPENCOLOR 2` |
+| Repeat | `REPEAT n [...]` | `REPEAT 4 [FD 100 RT 90]` |
+| Procedure | `TO name ... END` | `TO SQUARE :s ... END` |
+| Variable | `MAKE "name val` | `MAKE "x 10` |
+| Clear | `CLEARSCREEN` / `CS` | `CS` |
+
 ## See Also
 
 - [LANGUAGE_TUTORIALS.md](../user/LANGUAGE_TUTORIALS.md)
@@ -358,4 +406,4 @@ HOME               \ Return to center
 
 ---
 
-**Last Updated:** 2024
+**Last Updated:** 2025

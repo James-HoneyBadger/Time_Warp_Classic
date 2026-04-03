@@ -1,0 +1,364 @@
+* ================================================
+*  MENTAL MATH TRAINER
+* ================================================
+*  An interactive arithmetic practice session
+*  with automatic answer checking and score
+*  tracking. 15 problems across five categories
+*  test and build mental math fluency.
+*
+*  Features: C: computation, A: named input,
+*  J(condition): conditional jumps for answer
+*  checking, Y:/N: conditional text, U:/E:
+*  subroutines, {VAR} interpolation, R: runtime.
+* ================================================
+
+C:SCORE=0
+C:TOTAL=0
+
+T:
+T:  ================================================
+T:       MENTAL MATH TRAINER
+T:  ================================================
+T:
+T:  Sharpen your arithmetic skills with 15
+T:  problems across five categories:
+T:
+T:    [1]  Addition         (Problems  1 - 3)
+T:    [2]  Subtraction      (Problems  4 - 6)
+T:    [3]  Multiplication   (Problems  7 - 9)
+T:    [4]  Division         (Problems 10 - 12)
+T:    [5]  Mixed Operations (Problems 13 - 15)
+T:
+T:  Type your numeric answer for each problem.
+T:  Your score is tracked automatically.
+T:
+T:  ================================================
+T:
+R:TIME
+T:
+
+* ---- Call each category ----
+U:ADDITION
+U:SUBTRACTION
+U:MULTIPLICATION
+U:DIVISION
+U:MIXED
+
+* ---- Final Results ----
+T:
+T:  ================================================
+T:         FINAL RESULTS
+T:  ================================================
+T:
+C:PERCENT=INT(SCORE*100/TOTAL)
+T:  Score: {SCORE} correct out of {TOTAL}
+T:  Percentage: {PERCENT}%
+T:
+
+J(PERCENT >= 90):RANK_A
+J(PERCENT >= 70):RANK_B
+J(PERCENT >= 50):RANK_C
+T:  Grade: D -- Keep practicing, you will improve!
+J:RANK_DONE
+
+L:RANK_A
+T:  Grade: A -- Outstanding! You are a math master!
+J:RANK_DONE
+
+L:RANK_B
+T:  Grade: B -- Good work! Almost there!
+J:RANK_DONE
+
+L:RANK_C
+T:  Grade: C -- Not bad, review and try again!
+
+L:RANK_DONE
+T:
+T:  ================================================
+T:  "Mathematics is the queen of the sciences."
+T:                   -- Carl Friedrich Gauss
+T:  ================================================
+T:
+R:TIME
+END
+
+* =================================================
+*  ADDITION PROBLEMS
+* =================================================
+L:ADDITION
+T:
+T:  ---- ADDITION ----
+T:
+
+C:A=47
+C:B=38
+C:ANSWER=A+B
+T:  Problem 1: What is {A} + {B} ?
+A:RESPONSE
+J(RESPONSE == ANSWER):A1_OK
+T:    Incorrect. {A} + {B} = {ANSWER}
+T:    Tip: 47 + 38 --> 47 + 40 - 2 = 85
+J:A1_DONE
+L:A1_OK
+T:    Correct! {A} + {B} = {ANSWER}
+C:SCORE=SCORE+1
+L:A1_DONE
+C:TOTAL=TOTAL+1
+T:
+
+C:A=156
+C:B=289
+C:ANSWER=A+B
+T:  Problem 2: What is {A} + {B} ?
+A:RESPONSE
+J(RESPONSE == ANSWER):A2_OK
+T:    Incorrect. {A} + {B} = {ANSWER}
+T:    Tip: Add hundreds, tens, ones separately.
+J:A2_DONE
+L:A2_OK
+T:    Correct! {A} + {B} = {ANSWER}
+C:SCORE=SCORE+1
+L:A2_DONE
+C:TOTAL=TOTAL+1
+T:
+
+C:A=1234
+C:B=4766
+C:ANSWER=A+B
+T:  Problem 3: What is {A} + {B} ?
+A:RESPONSE
+J(RESPONSE == ANSWER):A3_OK
+T:    Incorrect. {A} + {B} = {ANSWER}
+J:A3_DONE
+L:A3_OK
+T:    Correct! {A} + {B} = {ANSWER}
+C:SCORE=SCORE+1
+L:A3_DONE
+C:TOTAL=TOTAL+1
+
+E:
+
+* =================================================
+*  SUBTRACTION PROBLEMS
+* =================================================
+L:SUBTRACTION
+T:
+T:  ---- SUBTRACTION ----
+T:
+
+C:A=83
+C:B=47
+C:ANSWER=A-B
+T:  Problem 4: What is {A} - {B} ?
+A:RESPONSE
+J(RESPONSE == ANSWER):S1_OK
+T:    Incorrect. {A} - {B} = {ANSWER}
+T:    Tip: 83 - 47 --> 83 - 50 + 3 = 36
+J:S1_DONE
+L:S1_OK
+T:    Correct! {A} - {B} = {ANSWER}
+C:SCORE=SCORE+1
+L:S1_DONE
+C:TOTAL=TOTAL+1
+T:
+
+C:A=500
+C:B=237
+C:ANSWER=A-B
+T:  Problem 5: What is {A} - {B} ?
+A:RESPONSE
+J(RESPONSE == ANSWER):S2_OK
+T:    Incorrect. {A} - {B} = {ANSWER}
+T:    Tip: 500 - 237 --> 500 - 200 - 37 = 263
+J:S2_DONE
+L:S2_OK
+T:    Correct! {A} - {B} = {ANSWER}
+C:SCORE=SCORE+1
+L:S2_DONE
+C:TOTAL=TOTAL+1
+T:
+
+C:A=1000
+C:B=618
+C:ANSWER=A-B
+T:  Problem 6: What is {A} - {B} ?
+A:RESPONSE
+J(RESPONSE == ANSWER):S3_OK
+T:    Incorrect. {A} - {B} = {ANSWER}
+J:S3_DONE
+L:S3_OK
+T:    Correct! {A} - {B} = {ANSWER}
+C:SCORE=SCORE+1
+L:S3_DONE
+C:TOTAL=TOTAL+1
+
+E:
+
+* =================================================
+*  MULTIPLICATION PROBLEMS
+* =================================================
+L:MULTIPLICATION
+T:
+T:  ---- MULTIPLICATION ----
+T:
+
+C:A=12
+C:B=15
+C:ANSWER=A*B
+T:  Problem 7: What is {A} x {B} ?
+A:RESPONSE
+J(RESPONSE == ANSWER):M1_OK
+T:    Incorrect. {A} x {B} = {ANSWER}
+T:    Tip: 12 x 15 --> 12 x 10 + 12 x 5 = 120 + 60
+J:M1_DONE
+L:M1_OK
+T:    Correct! {A} x {B} = {ANSWER}
+C:SCORE=SCORE+1
+L:M1_DONE
+C:TOTAL=TOTAL+1
+T:
+
+C:A=25
+C:B=16
+C:ANSWER=A*B
+T:  Problem 8: What is {A} x {B} ?
+A:RESPONSE
+J(RESPONSE == ANSWER):M2_OK
+T:    Incorrect. {A} x {B} = {ANSWER}
+T:    Tip: 25 x 16 --> 25 x 4 x 4 = 100 x 4
+J:M2_DONE
+L:M2_OK
+T:    Correct! {A} x {B} = {ANSWER}
+C:SCORE=SCORE+1
+L:M2_DONE
+C:TOTAL=TOTAL+1
+T:
+
+C:A=13
+C:B=17
+C:ANSWER=A*B
+T:  Problem 9: What is {A} x {B} ?
+A:RESPONSE
+J(RESPONSE == ANSWER):M3_OK
+T:    Incorrect. {A} x {B} = {ANSWER}
+T:    Tip: 13 x 17 --> (15-2)(15+2) = 225 - 4 = 221
+J:M3_DONE
+L:M3_OK
+T:    Correct! {A} x {B} = {ANSWER}
+C:SCORE=SCORE+1
+L:M3_DONE
+C:TOTAL=TOTAL+1
+
+E:
+
+* =================================================
+*  DIVISION PROBLEMS
+* =================================================
+L:DIVISION
+T:
+T:  ---- DIVISION ----
+T:  (All answers are whole numbers)
+T:
+
+C:A=144
+C:B=12
+C:ANSWER=INT(A/B)
+T:  Problem 10: What is {A} / {B} ?
+A:RESPONSE
+J(RESPONSE == ANSWER):D1_OK
+T:    Incorrect. {A} / {B} = {ANSWER}
+T:    Tip: 144 = 12 x 12, so 144 / 12 = 12
+J:D1_DONE
+L:D1_OK
+T:    Correct! {A} / {B} = {ANSWER}
+C:SCORE=SCORE+1
+L:D1_DONE
+C:TOTAL=TOTAL+1
+T:
+
+C:A=325
+C:B=13
+C:ANSWER=INT(A/B)
+T:  Problem 11: What is {A} / {B} ?
+A:RESPONSE
+J(RESPONSE == ANSWER):D2_OK
+T:    Incorrect. {A} / {B} = {ANSWER}
+T:    Tip: 13 x 25 = 325
+J:D2_DONE
+L:D2_OK
+T:    Correct! {A} / {B} = {ANSWER}
+C:SCORE=SCORE+1
+L:D2_DONE
+C:TOTAL=TOTAL+1
+T:
+
+C:A=756
+C:B=21
+C:ANSWER=INT(A/B)
+T:  Problem 12: What is {A} / {B} ?
+A:RESPONSE
+J(RESPONSE == ANSWER):D3_OK
+T:    Incorrect. {A} / {B} = {ANSWER}
+T:    Tip: 21 x 36 = 756
+J:D3_DONE
+L:D3_OK
+T:    Correct! {A} / {B} = {ANSWER}
+C:SCORE=SCORE+1
+L:D3_DONE
+C:TOTAL=TOTAL+1
+
+E:
+
+* =================================================
+*  MIXED OPERATION PROBLEMS
+* =================================================
+L:MIXED
+T:
+T:  ---- MIXED OPERATIONS ----
+T:
+
+C:ANSWER=8*7+6
+T:  Problem 13: What is 8 x 7 + 6 ?
+T:  (Multiply first, then add)
+A:RESPONSE
+J(RESPONSE == ANSWER):X1_OK
+T:    Incorrect. 8 x 7 + 6 = 56 + 6 = {ANSWER}
+T:    Tip: Multiplication before addition (PEMDAS).
+J:X1_DONE
+L:X1_OK
+T:    Correct! 8 x 7 + 6 = {ANSWER}
+C:SCORE=SCORE+1
+L:X1_DONE
+C:TOTAL=TOTAL+1
+T:
+
+C:ANSWER=100-15*4
+T:  Problem 14: What is 100 - 15 x 4 ?
+T:  (Multiply first, then subtract)
+A:RESPONSE
+J(RESPONSE == ANSWER):X2_OK
+T:    Incorrect. 100 - 15 x 4 = 100 - 60 = {ANSWER}
+T:    Tip: 15 x 4 = 60, then 100 - 60 = 40
+J:X2_DONE
+L:X2_OK
+T:    Correct! 100 - 15 x 4 = {ANSWER}
+C:SCORE=SCORE+1
+L:X2_DONE
+C:TOTAL=TOTAL+1
+T:
+
+C:ANSWER=INT((250+150)/8)
+T:  Problem 15: What is (250 + 150) / 8 ?
+T:  (Add inside parentheses first, then divide)
+A:RESPONSE
+J(RESPONSE == ANSWER):X3_OK
+T:    Incorrect. (250+150)/8 = 400/8 = {ANSWER}
+T:    Tip: 250 + 150 = 400, then 400 / 8 = 50
+J:X3_DONE
+L:X3_OK
+T:    Correct! (250+150)/8 = {ANSWER}
+C:SCORE=SCORE+1
+L:X3_DONE
+C:TOTAL=TOTAL+1
+
+E:

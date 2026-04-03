@@ -1,0 +1,273 @@
+* ================================================
+*  SCIENCE KNOWLEDGE QUIZ
+* ================================================
+*  An interactive educational quiz covering
+*  Physics, Chemistry, Biology, Earth Science,
+*  and Astronomy. 15 questions with detailed
+*  explanations reinforce key science concepts.
+*
+*  Features: T: text output, A: input,
+*  M: pattern matching, MT: conditional text,
+*  U:/E: subroutine calls, R: runtime commands,
+*  variable interpolation with {VAR} syntax.
+* ================================================
+
+T:
+T:  ================================================
+T:       SCIENCE KNOWLEDGE QUIZ
+T:  ================================================
+T:
+T:  Welcome to the Science Knowledge Quiz!
+T:
+T:  You will answer 15 questions across five
+T:  branches of science:
+T:
+T:    [1]  Physics        (Questions  1 - 3)
+T:    [2]  Chemistry       (Questions  4 - 6)
+T:    [3]  Biology         (Questions  7 - 9)
+T:    [4]  Earth Science   (Questions 10 - 12)
+T:    [5]  Astronomy       (Questions 13 - 15)
+T:
+T:  Type your best answer after each question.
+T:  Abbreviations and common synonyms are
+T:  accepted. Each question includes a detailed
+T:  explanation so you learn as you go.
+T:
+T:  ================================================
+T:
+R:TIME
+T:
+
+* ---- Call each category subroutine ----
+U:PHYSICS
+U:CHEMISTRY
+U:BIOLOGY
+U:EARTHSCI
+U:ASTRONOMY
+
+* ---- Closing ----
+T:
+T:  ================================================
+T:          QUIZ COMPLETE!
+T:  ================================================
+T:
+T:  You have answered all 15 science questions.
+T:  Review the explanations above to strengthen
+T:  your understanding of each topic.
+T:
+T:  "The important thing is not to stop
+T:   questioning. Curiosity has its own reason
+T:   for existing."  -- Albert Einstein
+T:
+T:  ================================================
+T:
+R:TIME
+END
+
+* =================================================
+*  PHYSICS QUESTIONS
+* =================================================
+L:PHYSICS
+T:
+T:  ---- CATEGORY 1: PHYSICS ----
+T:
+T:  Q1. What is the SI unit of electrical
+T:      resistance?
+A:
+M:ohm|ohms
+MT:  >> CORRECT! Resistance is measured in Ohms.
+T:     Answer: Ohm (symbol: the Greek letter Omega)
+T:     Ohm's Law: V = I x R
+T:     1 Ohm = the resistance that produces 1 Volt
+T:     when 1 Ampere of current flows through it.
+T:     Named after Georg Simon Ohm (1789-1854).
+T:
+T:  Q2. What fundamental force keeps planets
+T:      in orbit around the Sun?
+A:
+M:gravity|gravitational|gravitation
+MT:  >> CORRECT! Gravity governs orbital motion.
+T:     Answer: Gravity (Gravitational Force)
+T:     Newton's Law of Gravitation:
+T:       F = G x m1 x m2 / r^2
+T:     Without gravity, planets would travel in
+T:     straight lines at constant speed.
+T:
+T:  Q3. What quantity is measured in Joules?
+A:
+M:energy|work
+MT:  >> CORRECT! The Joule measures energy and work.
+T:     Answer: Energy (and Work)
+T:     1 Joule = 1 Newton-meter = 1 kg*m^2/s^2
+T:     A food Calorie is approximately 4,184 Joules.
+T:     Lifting an apple one meter takes about 1 Joule.
+T:
+E:
+
+* =================================================
+*  CHEMISTRY QUESTIONS
+* =================================================
+L:CHEMISTRY
+T:
+T:  ---- CATEGORY 2: CHEMISTRY ----
+T:
+T:  Q4. What is the chemical symbol for gold?
+A:
+M:Au|au
+MT:  >> CORRECT! Gold's symbol comes from Latin.
+T:     Answer: Au (from Latin "Aurum" -- shining dawn)
+T:     Gold is element 79, atomic mass 196.97.
+T:     It is one of the least reactive elements and
+T:     has been prized by civilizations for millennia.
+T:
+T:  Q5. What is the pH value of a perfectly
+T:      neutral solution?
+A:
+M:7|seven
+MT:  >> CORRECT! pH 7 is neutral.
+T:     Answer: 7
+T:     The pH scale runs from 0 (strongly acidic)
+T:     to 14 (strongly alkaline/basic).
+T:     Pure water at 25 C has a pH of exactly 7.
+T:     Each pH unit = a tenfold change in H+ ions.
+T:
+T:  Q6. What is the most abundant gas in
+T:      Earth's atmosphere?
+A:
+M:nitrogen|N2|n2
+MT:  >> CORRECT! Nitrogen dominates our atmosphere.
+T:     Answer: Nitrogen (N2) -- about 78% by volume
+T:     Oxygen is second at about 21%.
+T:     Argon makes up most of the remaining 1%.
+T:     Nitrogen is essential for amino acids and DNA.
+T:
+E:
+
+* =================================================
+*  BIOLOGY QUESTIONS
+* =================================================
+L:BIOLOGY
+T:
+T:  ---- CATEGORY 3: BIOLOGY ----
+T:
+T:  Q7. What organelle is known as the
+T:      "powerhouse of the cell"?
+A:
+M:mitochondria|mitochondrion
+MT:  >> CORRECT! Mitochondria power the cell.
+T:     Answer: Mitochondria (singular: Mitochondrion)
+T:     They produce ATP through cellular respiration.
+T:     Mitochondria have their own DNA, inherited
+T:     from the maternal line. A typical human cell
+T:     contains 1,000 to 2,000 mitochondria.
+T:
+T:  Q8. What molecule carries the genetic
+T:      instructions for all living organisms?
+A:
+M:DNA|deoxyribonucleic
+MT:  >> CORRECT! DNA stores genetic information.
+T:     Answer: DNA (Deoxyribonucleic Acid)
+T:     Its double-helix structure was described by
+T:     Watson and Crick in 1953. Human DNA contains
+T:     approximately 3 billion base pairs. Uncoiled,
+T:     one cell's DNA would stretch about 2 meters.
+T:
+T:  Q9. What process do plants use to convert
+T:      sunlight into chemical energy?
+A:
+M:photosynthesis
+MT:  >> CORRECT! Photosynthesis converts light energy.
+T:     Answer: Photosynthesis
+T:     6CO2 + 6H2O + light --> C6H12O6 + 6O2
+T:     It takes place in chloroplasts using the
+T:     pigment chlorophyll. Photosynthesis produces
+T:     the oxygen that most life on Earth depends on.
+T:
+E:
+
+* =================================================
+*  EARTH SCIENCE QUESTIONS
+* =================================================
+L:EARTHSCI
+T:
+T:  ---- CATEGORY 4: EARTH SCIENCE ----
+T:
+T:  Q10. What scale is commonly used to measure
+T:       earthquake magnitude?
+A:
+M:richter|moment magnitude
+MT:  >> CORRECT! Earthquakes are measured on magnitude scales.
+T:      Answer: Richter Scale / Moment Magnitude Scale
+T:      Charles Richter developed his scale in 1935.
+T:      Each whole number increase represents 10x more
+T:      ground shaking and about 31.6x more energy.
+T:      The 2011 Tohoku earthquake measured 9.1 Mw.
+T:
+T:  Q11. What layer of the atmosphere contains
+T:       the protective ozone layer?
+A:
+M:stratosphere
+MT:  >> CORRECT! The ozone layer resides in the stratosphere.
+T:      Answer: Stratosphere (10-50 km altitude)
+T:      The ozone layer absorbs 97-99% of harmful UV.
+T:      CFCs depleted it, but the 1987 Montreal Protocol
+T:      has allowed it to begin recovering. Full recovery
+T:      is projected by approximately 2066.
+T:
+T:  Q12. What type of rock is formed from cooled
+T:       magma or lava?
+A:
+M:igneous
+MT:  >> CORRECT! Igneous rock forms from cooled magma.
+T:      Answer: Igneous Rock (from Latin "ignis" = fire)
+T:      Intrusive: cools slowly underground (e.g., granite)
+T:      Extrusive: cools quickly at surface (e.g., basalt)
+T:      About 65% of Earth's crust is igneous rock.
+T:      The three rock types are igneous, sedimentary,
+T:      and metamorphic.
+T:
+E:
+
+* =================================================
+*  ASTRONOMY QUESTIONS
+* =================================================
+L:ASTRONOMY
+T:
+T:  ---- CATEGORY 5: ASTRONOMY ----
+T:
+T:  Q13. What is the closest star to Earth?
+A:
+M:sun|sol|the sun
+MT:  >> CORRECT! Our Sun is the nearest star.
+T:      Answer: The Sun (Sol)
+T:      Distance: ~150 million km (1 Astronomical Unit)
+T:      Surface temperature: about 5,500 degrees C
+T:      The next nearest star is Proxima Centauri
+T:      at 4.24 light-years away.
+T:
+T:  Q14. What planet in our solar system is
+T:       famous for its prominent ring system?
+A:
+M:saturn
+MT:  >> CORRECT! Saturn's rings are iconic.
+T:      Answer: Saturn
+T:      Saturn's rings are made mostly of ice particles
+T:      ranging from tiny grains to house-sized chunks.
+T:      The ring system spans up to 282,000 km but is
+T:      only about 10 meters thick on average.
+T:      Saturn also has 146 confirmed moons.
+T:
+T:  Q15. Approximately how old is the universe
+T:       (in billions of years)?
+A:
+M:13|13.8|fourteen|13.8 billion
+MT:  >> CORRECT! The universe is about 13.8 billion years old.
+T:      Answer: ~13.8 billion years
+T:      Determined by measurements of the cosmic
+T:      microwave background radiation (CMB).
+T:      The observable universe is about 93 billion
+T:      light-years in diameter due to expansion.
+T:      The first stars formed ~200 million years
+T:      after the Big Bang.
+T:
+E:

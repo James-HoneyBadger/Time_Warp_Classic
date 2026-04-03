@@ -269,6 +269,7 @@ class TimeWarpApp:
     def _init_interpreter(self):
         self.interpreter = Time_WarpInterpreter(self.output_text)
         self.interpreter.ide_turtle_canvas = self.turtle_canvas
+        self.interpreter.input_buffer = self.input_buffer
 
     # ------------------------------------------------------------------
     # Keyboard bindings
