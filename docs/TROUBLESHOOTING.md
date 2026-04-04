@@ -296,8 +296,8 @@ Look for debug settings in code or check terminal output verbosity.
 All working examples in `examples/` directory
 
 ### Check Demo Programs
-Each language has comprehensive demo in:
-`examples/[language]/comprehensive_demo.*`
+Each language has examples in:
+`examples/[language]/`
 
 ### Search for Keywords
 Use Find (Ctrl+F) in documentation

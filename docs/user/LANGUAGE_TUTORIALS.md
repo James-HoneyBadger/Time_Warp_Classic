@@ -167,7 +167,7 @@ END
 - User-defined functions
 
 ### Learn More
-- See: `examples/basic/comprehensive_demo.bas` and `examples/basic/showcase_demo.bas`
+- See: `examples/basic/finance_calculator.bas` and `examples/basic/sales_dashboard.bas`
 - Reference: [BASIC_REFERENCE.md](../languages/BASIC_REFERENCE.md)
 
 ---
@@ -341,7 +341,7 @@ print(word_count)
 - Generators
 
 ### Learn More
-- See: `examples/python/comprehensive_demo.py` and `examples/python/showcase_demo.py`
+- See: `examples/python/crypto_toolkit.py` and `examples/python/data_pipeline.py`
 - Reference: [PYTHON_REFERENCE.md](../languages/PYTHON_REFERENCE.md)
 
 ---
@@ -486,7 +486,7 @@ console.log(factorial(5));
 ```
 
 ### Learn More
-- See: `examples/javascript/comprehensive_demo.js` and `examples/javascript/showcase_demo.js`
+- See: `examples/javascript/sorting_showcase.js` and `examples/javascript/statistics_engine.js`
 - Reference: [JAVASCRIPT_REFERENCE.md](../languages/JAVASCRIPT_REFERENCE.md)
 
 ---
@@ -604,7 +604,7 @@ END.
 ```
 
 ### Learn More
-- See: `examples/pascal/comprehensive_demo.pas` and `examples/pascal/showcase_demo.pas`
+- See: `examples/pascal/gradebook.pas` and `examples/pascal/physics_calculator.pas`
 - Reference: [PASCAL_REFERENCE.md](../languages/PASCAL_REFERENCE.md)
 
 ---
@@ -689,7 +689,7 @@ sibling(X, Y) :- parent(Z, X), parent(Z, Y), X \= Y.
 ```
 
 ### Learn More
-- See: `examples/prolog/comprehensive_demo.pro` and `examples/prolog/showcase_demo.pro`
+- See: `examples/prolog/expert_system.pro` and `examples/prolog/geography_db.pro`
 - Reference: [PROLOG_REFERENCE.md](../languages/PROLOG_REFERENCE.md)
 
 ---
@@ -771,7 +771,7 @@ ANSWER .        \ 42
 ```
 
 ### Learn More
-- See: `examples/forth/comprehensive_demo.fth` and `examples/forth/showcase_demo.fth`
+- See: `examples/forth/engineering_calc.fth` and `examples/forth/number_theory.fth`
 - Reference: [FORTH_REFERENCE.md](../languages/FORTH_REFERENCE.md)
 
 ---
@@ -877,7 +877,7 @@ for my $word (sort keys %freq) {
 ```
 
 ### Learn More
-- See: `examples/perl/comprehensive_demo.pl` and `examples/perl/showcase_demo.pl`
+- See: `examples/perl/cipher_toolkit.pl` and `examples/perl/log_analyzer.pl`
 - Reference: [PERL_REFERENCE.md](../languages/PERL_REFERENCE.md)
 
 ---
@@ -969,7 +969,7 @@ STAR 100
 ```
 
 ### Learn More
-- See: `examples/logo/comprehensive_demo.logo` and `examples/logo/showcase_demo.logo`
+- See: `examples/logo/mandala_art.logo` and `examples/logo/spirograph_art.logo`
 - Reference: [LOGO_REFERENCE.md](../languages/LOGO_REFERENCE.md)
 
 ---
@@ -1077,7 +1077,7 @@ T:Your score: [score] out of 2
 ```
 
 ### Learn More
-- See: `examples/pilot/comprehensive_demo.pilot` and `examples/pilot/showcase_demo.pilot`
+- See: `examples/pilot/math_tutor.pilot` and `examples/pilot/science_quiz.pilot`
 - Reference: [PILOT_REFERENCE.md](../languages/PILOT_REFERENCE.md)
 
 ---
@@ -1105,7 +1105,7 @@ All languages + deep dives
 
 - **Specific language reference:** [../languages/](../languages/) directory
 - **Run examples:** [../../examples/](../../examples/)
-- **User guide:** [USER_GUIDE.md](USER_GUIDE.md)
+- **Documentation index:** [README.md](../README.md)
 
 ---
 

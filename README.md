@@ -160,46 +160,27 @@ Time_Warp_Classic includes a comprehensive test suite to ensure code quality and
 
 ### Running Tests
 
-#### From Command Line
-
-```bash
-# Run all tests
-python scripts/run_tests.py
-
-# Run specific test types
-python scripts/run_tests.py unit        # Unit tests only
-python scripts/run_tests.py integration # Integration tests only
-python scripts/run_tests.py smoke       # Quick smoke test
-
-# Run with coverage
-python scripts/run_tests.py --coverage
-```
-
 #### From Within the Application
 
 Use the **Test** menu in the IDE:
 
-- **Run Smoke Test** — Quick functionality check
-- **Run Full Test Suite** — Complete test suite with verbose output
+- **Run Smoke Test** — Quick functionality check (verifies all interpreters, menus, and example loading)
+- **Run Full Test Suite** — Complete test suite with verbose output (requires `scripts/run_tests.py`)
 
-### Test Structure
+#### From Command Line
 
-```text
-tests/
-├── conftest.py              # Shared fixtures and configuration
-├── test_interpreter.py      # Core interpreter tests
-├── test_basic.py            # BASIC language tests
-├── test_logo.py             # Logo language tests
-├── test_pilot.py            # PILOT language tests
-├── test_pascal.py           # Pascal language tests
-├── test_prolog.py           # Prolog language tests
-├── test_forth.py            # Forth language tests
-├── test_executors.py        # Subprocess executor tests
-├── test_all_commands.py     # Cross-language command tests
-├── test_gui.py              # GUI tests
-├── test_stubs.py            # Stub class tests
-└── test_languages_package.py # Language package tests
+```bash
+# Launch the IDE and use the Test menu
+python Time_Warp.py
 ```
+
+### Test Approach
+
+Time_Warp_Classic uses built-in smoke testing accessible through the IDE's Test menu. The smoke test verifies:
+
+- All 9 language interpreters initialize correctly
+- Menu and example file loading works
+- GUI components render properly
 
 ---
 

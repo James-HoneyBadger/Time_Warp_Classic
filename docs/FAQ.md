@@ -192,8 +192,7 @@ Other languages focus on text output.
 ### Where can I find example programs?
 
 Each language has example programs in the `examples/` directory:
-- `comprehensive_demo` — A broad feature walkthrough for each language
-- `showcase_demo` — An advanced demonstration of language capabilities
+- Two example programs per language demonstrating real-world use
 - Additional examples (hello world, specific features)
 
 ---

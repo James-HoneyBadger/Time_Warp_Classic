@@ -537,7 +537,6 @@ END
 
 ## See Also
 
-- [USER_GUIDE.md](../user/USER_GUIDE.md)
 - [LANGUAGE_TUTORIALS.md](../user/LANGUAGE_TUTORIALS.md)
 - [examples/basic/](../../examples/basic/)
 

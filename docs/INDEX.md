@@ -101,13 +101,13 @@ QUICK_START.md
   ↓
 BASIC_REFERENCE.md
   ↓
-Try examples/basic/comprehensive_demo.bas
+Try examples/basic/finance_calculator.bas
   ↓
 PYTHON_REFERENCE.md
   ↓
-Try examples/python/comprehensive_demo.py
+Try examples/python/crypto_toolkit.py
   ↓
-USER_GUIDE.md (full)
+LANGUAGE_TUTORIALS.md (full)
 ```
 
 ### Path 2: Multi-Language Explorer (Intermediate)

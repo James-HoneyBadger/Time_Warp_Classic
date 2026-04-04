@@ -98,8 +98,7 @@ Time_Warp_Classic/
 │       └── safe_eval.py      # AST-based safe expression evaluator
 ├── docs/                     # Documentation
 ├── examples/                 # Example programs (one dir per language)
-├── scripts/                  # Launch and test scripts
-└── tests/                    # Test suite
+└── scripts/                  # Launch scripts
 ```
 
 ### Core Module Descriptions
@@ -490,10 +489,7 @@ The interpreter caches evaluated expressions to avoid redundant computation.
 
 ### Benchmarking
 
-Run comprehensive demo for each language:
-```bash
-python scripts/run_tests.py
-```
+Run examples for each language using the IDE's **File → Open Examples** menu, or use the **Test → Run Smoke Test** menu to verify all interpreters.
 
 ### Profiling
 
@@ -519,9 +515,10 @@ cd Time_Warp_Classic
 pip install -r requirements.txt
 ```
 
-3. **Run tests:**
+3. **Run smoke test:**
 ```bash
-python scripts/run_tests.py
+python Time_Warp.py
+# Then use Test → Run Smoke Test from the menu
 ```
 
 4. **Start development:**
