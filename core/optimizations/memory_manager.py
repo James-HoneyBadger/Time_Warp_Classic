@@ -251,7 +251,7 @@ class ResourceManager:
 
     def cleanup_resources(self) -> Dict[str, Any]:
         """Perform comprehensive resource cleanup."""
-        results = {
+        results: Dict[str, Any] = {
             'object_pools_cleared': False,
             'dead_references_cleaned': 0,
             'garbage_collected': 0,
@@ -313,7 +313,7 @@ class ResourceManager:
             # Clear any cached bytecode
             import sys
             if hasattr(sys, '_clear_type_cache'):
-                sys._clear_type_cache()
+                sys._clear_type_cache()  # pylint: disable=protected-access
                 results['type_cache_cleared'] = True
             else:
                 results['type_cache_cleared'] = False

@@ -234,7 +234,7 @@ def show_about(parent):
     about_text = (
         f"{sep}\n"
         "Time Warp Classic\n"
-        "Version 1.3.0\n\n"
+        "Version 1.3.4\n\n"
         "Back-to-basics Tkinter IDE for 9 vintage\n"
         "+ modern languages with turtle graphics.\n\n"
         "FEATURES:\n"

@@ -5,4 +5,5 @@ include SETUP.md
 recursive-include docs *
 recursive-include examples *
 recursive-include core *
+recursive-include gui *
 recursive-include scripts *

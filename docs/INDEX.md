@@ -5,16 +5,20 @@ Welcome to the Time Warp Classic comprehensive documentation. This is your compl
 ## 📚 Documentation Categories
 
 ### Getting Started
+
 - **[QUICK_START.md](QUICK_START.md)** - Launch and run your first program in 5 minutes
 - **[../SETUP.md](../SETUP.md)** - Installation, setup, and troubleshooting guide
 
 ### User Documentation
+
 - **[LANGUAGE_TUTORIALS.md](user/LANGUAGE_TUTORIALS.md)** - Learn all 9 programming languages
 
 ### Developer Documentation
+
 - **[TECHNICAL_REFERENCE.md](dev/TECHNICAL_REFERENCE.md)** - Architecture, API, and implementation details
 
 ### Language Guides
+
 - **[BASIC_REFERENCE.md](languages/BASIC_REFERENCE.md)** - Complete BASIC language reference
 - **[PYTHON_REFERENCE.md](languages/PYTHON_REFERENCE.md)** - Python language reference
 - **[JAVASCRIPT_REFERENCE.md](languages/JAVASCRIPT_REFERENCE.md)** - JavaScript language reference
@@ -26,18 +30,20 @@ Welcome to the Time Warp Classic comprehensive documentation. This is your compl
 - **[PILOT_REFERENCE.md](languages/PILOT_REFERENCE.md)** - PILOT language reference
 
 ### Project Information
+
 - **[../examples/README.md](../examples/README.md)** - Example programs and code samples
 - **[TROUBLESHOOTING.md](TROUBLESHOOTING.md)** - Common issues and solutions
 - **[FAQ.md](FAQ.md)** - Frequently asked questions
 
 ### Release Publishing (Maintainers)
+
 - **[QUICK_START.md](QUICK_START.md)** - Tag-based release commands for TestPyPI and PyPI
 - **[../.github/workflows/publish-testpypi.yml](../.github/workflows/publish-testpypi.yml)** - Prerelease publish workflow
 - **[../.github/workflows/publish-pypi.yml](../.github/workflows/publish-pypi.yml)** - Stable publish workflow
 
 ## 🚀 Quick Navigation
 
-### I want to...
+### I want to
 
 **Get started immediately**
 → [QUICK_START.md](QUICK_START.md)
@@ -69,24 +75,28 @@ Welcome to the Time Warp Classic comprehensive documentation. This is your compl
 ## 📖 Reading Recommendations
 
 ### For Absolute Beginners
+
 1. Read [QUICK_START.md](QUICK_START.md)
 2. Try running an example in [../examples/](../examples/)
 3. Follow [LANGUAGE_TUTORIALS.md](user/LANGUAGE_TUTORIALS.md) - BASIC section
 
 ### For Experienced Programmers
+
 1. Read [QUICK_START.md](QUICK_START.md) for IDE overview
 2. Check language reference for your chosen language in [languages/](languages/)
 3. Review [TECHNICAL_REFERENCE.md](dev/TECHNICAL_REFERENCE.md)
 4. Explore [examples/](../examples/) for advanced patterns
 
 ### For IDE Developers
+
 1. Read [TECHNICAL_REFERENCE.md](dev/TECHNICAL_REFERENCE.md)
 2. Check source code in [core/](../core/) directory
 
 ## 🎯 Learning Paths
 
 ### Path 1: Programming Fundamentals (Beginner)
-```
+
+```text
 QUICK_START.md
   ↓
 BASIC_REFERENCE.md
@@ -101,7 +111,8 @@ USER_GUIDE.md (full)
 ```
 
 ### Path 2: Multi-Language Explorer (Intermediate)
-```
+
+```text
 QUICK_START.md
   ↓
 LANGUAGE_TUTORIALS.md
@@ -114,7 +125,8 @@ Advanced examples in examples/
 ```
 
 ### Path 3: IDE Developer (Advanced)
-```
+
+```text
 TECHNICAL_REFERENCE.md
   ↓
 Review core/interpreter.py
@@ -126,7 +138,7 @@ Study gui/ package
 
 ## 📋 File Organization
 
-```
+```text
 docs/
 ├── INDEX.md (this file)
 ├── README.md
@@ -166,7 +178,7 @@ docs/
 
 ## 📞 Support Resources
 
-- **Official Repository:** https://github.com/James-HoneyBadger/Time_Warp_Classic
+- **Official Repository:** <https://github.com/James-HoneyBadger/Time_Warp_Classic>
 - **Issue Tracker:** Report bugs and feature requests
 - **Discussions:** Community Q&A and knowledge sharing
 - **Code Examples:** [../examples/](../examples/) directory
@@ -181,6 +193,6 @@ See [../License.md](../License.md) for full license information.
 ---
 
 **Last Updated:** February 2026  
-**Version:** 1.3.0 Stable
+**Version:** 1.3.4 Stable
 
 **Start with [QUICK_START.md](QUICK_START.md) →**

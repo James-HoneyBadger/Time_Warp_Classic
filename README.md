@@ -4,7 +4,7 @@
 
 Time Warp Classic is an educational multi-language IDE that bridges the past and present of programming, supporting 9 programming languages through an elegant graphical interface with integrated turtle graphics, inspired by the golden age of computing.
 
-[![Version](https://img.shields.io/badge/version-1.3.0-blue.svg)](https://github.com/James-HoneyBadger/Time_Warp_Classic)
+[![Version](https://img.shields.io/badge/version-1.3.4-blue.svg)](https://github.com/James-HoneyBadger/Time_Warp_Classic)
 [![Python](https://img.shields.io/badge/python-3.9+-green.svg)](https://www.python.org/)
 [![License](https://img.shields.io/badge/license-MIT-orange.svg)](LICENSE)
 [![education](https://img.shields.io/badge/topic-education-lightgrey)](https://github.com/topics/education)
@@ -18,9 +18,11 @@ Time Warp Classic is an educational multi-language IDE that bridges the past and
 ## 🌟 Features
 
 ### Multi-Language Support
+
 Execute code in 9 different programming languages — six with full built-in interpreters and three delegating to external runtimes:
 
 **Built-in Interpreters:**
+
 - **PILOT** (1968) — Educational computer-assisted instruction
 - **BASIC** (1964) — Classic line-numbered programming with turtle graphics
 - **Logo** (1967) — Visual turtle graphics programming
@@ -29,11 +31,13 @@ Execute code in 9 different programming languages — six with full built-in int
 - **Forth** (1970) — Stack-based concatenative programming
 
 **External Runtime Executors:**
+
 - **Perl** (1987) — Text processing and pattern matching (requires `perl`)
 - **Python** (1991) — Modern general-purpose programming (uses host Python)
 - **JavaScript** (1995) — Web scripting with ES6+ features (requires Node.js)
 
 ### Professional IDE Interface
+
 - **Menu System** — File, Edit, Program, Debug, Test, Performance, Preferences, About
 - **Syntax Highlighting** — Real-time syntax coloring via Pygments (with plain-text fallback)
 - **Line Numbers** — Always-visible line numbering for easy navigation
@@ -47,6 +51,7 @@ Execute code in 9 different programming languages — six with full built-in int
 - **Settings Persistence** — Theme, font, and preferences saved to `~/.timewarp_settings.json`
 
 ### Educational Focus
+
 - **Enhanced Error Messages** — Detailed error reporting with line numbers and context
 - **Debug Tools** — Breakpoint support, debug mode, error history
 - **Testing Framework** — Built-in smoke tests and full test suite via menu
@@ -59,6 +64,7 @@ Execute code in 9 different programming languages — six with full built-in int
 ## 📦 Installation
 
 ### Prerequisites
+
 - **Python 3.9 or higher** (tested up to 3.14)
 - **tkinter** (usually included with Python)
 - **pip** package manager
@@ -68,24 +74,29 @@ Execute code in 9 different programming languages — six with full built-in int
 ### Quick Start
 
 1. **Clone the repository:**
+
    ```bash
    git clone https://github.com/James-HoneyBadger/Time_Warp_Classic.git
    cd Time_Warp_Classic
    ```
 
 2. **Launch with the setup script (recommended):**
+
    ```bash
    python3 run.py
    ```
+
    This automatically creates a virtual environment, installs dependencies, and launches the IDE.
 
    Or use the platform-specific scripts:
+
    ```bash
    ./run.sh          # Linux / macOS
    run.bat            # Windows
    ```
 
 3. **Or install manually:**
+
    ```bash
    python -m venv venv
    source venv/bin/activate  # On Windows: venv\Scripts\activate
@@ -150,6 +161,7 @@ Time_Warp_Classic includes a comprehensive test suite to ensure code quality and
 ### Running Tests
 
 #### From Command Line
+
 ```bash
 # Run all tests
 python scripts/run_tests.py
@@ -164,12 +176,15 @@ python scripts/run_tests.py --coverage
 ```
 
 #### From Within the Application
+
 Use the **Test** menu in the IDE:
+
 - **Run Smoke Test** — Quick functionality check
 - **Run Full Test Suite** — Complete test suite with verbose output
 
 ### Test Structure
-```
+
+```text
 tests/
 ├── conftest.py              # Shared fixtures and configuration
 ├── test_interpreter.py      # Core interpreter tests
@@ -202,6 +217,7 @@ When you launch Time_Warp.py, you'll see the main IDE interface:
 ### Quick Example
 
 Try this Logo program:
+
 ```logo
 REPEAT 4 [
   FORWARD 100
@@ -210,6 +226,7 @@ REPEAT 4 [
 ```
 
 Or this BASIC program:
+
 ```basic
 10 PRINT "Hello from the past!"
 20 FOR I = 1 TO 5
@@ -221,11 +238,13 @@ Or this BASIC program:
 ### Loading Examples
 
 **Via Menu:**
+
 1. **Program → Load Example**
 2. Select a language submenu
 3. Choose an example program
 
 **Via File Menu:**
+
 1. **File → Open File...**
 2. Navigate to `examples/[language]/`
 3. Select an example file
@@ -235,19 +254,23 @@ Or this BASIC program:
 ## 📚 Documentation
 
 ### User Documentation
+
 - **[Quick Start Guide](docs/QUICK_START.md)** — Get up and running in 5 minutes
 - **[Language Tutorials](docs/user/LANGUAGE_TUTORIALS.md)** — Guided tutorials for all 9 languages
 - **[Example Programs](examples/README.md)** — Guided tour of example programs
 
 ### Technical Documentation
+
 - **[Technical Reference](docs/dev/TECHNICAL_REFERENCE.md)** — Architecture and implementation details
 
 ### Additional References
+
 - **[Documentation Index](docs/README.md)** — Full doc suite overview
 - **[FAQ](docs/FAQ.md)** — Frequently asked questions
 - **[Troubleshooting](docs/TROUBLESHOOTING.md)** — Common issues and solutions
 
 ### Language References
+
 Individual reference docs for each language are in [`docs/languages/`](docs/languages/):
 PILOT, BASIC, Logo, Pascal, Prolog, Forth, Perl, Python, JavaScript.
 
@@ -256,7 +279,9 @@ PILOT, BASIC, Logo, Pascal, Prolog, Forth, Perl, Python, JavaScript.
 ### Vintage Languages (Built-in Interpreters)
 
 #### PILOT (1968)
+
 Computer-Assisted Instruction language designed for educational software.
+
 ```pilot
 T:Welcome to PILOT programming!
 A:What is your name?
@@ -264,7 +289,9 @@ T:Hello, *NAME*!
 ```
 
 #### BASIC (1964)
+
 The classic beginner's language with line numbers and turtle graphics.
+
 ```basic
 10 PRINT "Drawing a square..."
 20 FOR I = 1 TO 4
@@ -274,7 +301,9 @@ The classic beginner's language with line numbers and turtle graphics.
 ```
 
 #### Logo (1967)
+
 Educational language famous for turtle graphics.
+
 ```logo
 REPEAT 36 [
   FORWARD 100
@@ -283,7 +312,9 @@ REPEAT 36 [
 ```
 
 #### Pascal (1970)
+
 Structured programming language emphasizing clear code.
+
 ```pascal
 program Hello;
 begin
@@ -292,7 +323,9 @@ end.
 ```
 
 #### Prolog (1972)
+
 Logic programming with facts, rules, and queries.
+
 ```prolog
 parent(john, mary).
 parent(john, tom).
@@ -300,7 +333,9 @@ sibling(X, Y) :- parent(P, X), parent(P, Y), X \= Y.
 ```
 
 #### Forth (1970)
+
 Stack-based concatenative programming language.
+
 ```forth
 : SQUARE DUP * ;
 5 SQUARE .
@@ -309,7 +344,9 @@ Stack-based concatenative programming language.
 ### Modern Languages (External Runtime Executors)
 
 #### Perl (1987)
+
 Powerful text processing and scripting. Requires `perl` on PATH.
+
 ```perl
 my @numbers = (1, 2, 3, 4, 5);
 my $sum = 0;
@@ -318,7 +355,9 @@ print "Sum: $sum\n";
 ```
 
 #### Python (1991)
+
 Clean, readable general-purpose programming. Uses the host Python interpreter.
+
 ```python
 numbers = [1, 2, 3, 4, 5]
 squares = [n**2 for n in numbers]
@@ -326,7 +365,9 @@ print(f"Squares: {squares}")
 ```
 
 #### JavaScript (1995)
+
 Modern web scripting with ES6+ features. Requires Node.js on PATH.
+
 ```javascript
 const numbers = [1, 2, 3, 4, 5];
 const squares = numbers.map(n => n ** 2);
@@ -337,7 +378,7 @@ console.log(`Squares: ${squares}`);
 
 ## �️ Project Structure
 
-```
+```text
 Time_Warp_Classic/
 ├── Time_Warp.py              # Thin entry point (launches gui.app.TimeWarpApp)
 ├── run.py                    # Cross-platform launcher with venv/dependency setup
@@ -397,15 +438,18 @@ Time_Warp_Classic/
 ## ⌨️ Keyboard Shortcuts
 
 ### Program Execution
+
 - **F5** — Run current program
 
 ### File Operations
+
 - **Ctrl+N** — New file
 - **Ctrl+O** — Open file
 - **Ctrl+S** — Save file
 - **Ctrl+Q** — Exit application
 
 ### Editing
+
 - **Ctrl+Z** — Undo
 - **Ctrl+Y** — Redo
 - **Ctrl+X** — Cut
@@ -420,18 +464,21 @@ Time_Warp_Classic/
 ## 🎯 Use Cases
 
 ### Education
+
 - **Learn Programming Fundamentals** - Start with PILOT or BASIC
 - **Explore Programming Paradigms** - Compare procedural, logic, and functional styles
 - **Visual Learning** - Use Logo for immediate visual feedback
 - **Historical Perspective** - Experience the evolution of programming languages
 
 ### Hobbyist Programming
+
 - **Retro Computing** - Experience classic languages on modern hardware
 - **Creative Coding** - Use turtle graphics for artistic expression
 - **Language Exploration** - Try 9 languages without multiple installations
 - **Quick Prototyping** - Test algorithms in different paradigms
 
 ### Teaching
+
 - **Classroom Tool** - Teach multiple languages with one IDE
 - **Interactive Lessons** - Use example programs as teaching aids
 - **Comparative Learning** - Show same concepts across languages
@@ -442,26 +489,31 @@ Time_Warp_Classic/
 ## 🔧 System Requirements
 
 ### Minimum Requirements
+
 - **OS:** Windows 7+, macOS 10.12+, Linux (any modern distribution)
 - **Python:** 3.9 or higher
 - **RAM:** 512 MB
 - **Display:** 1024x768 or higher
 
 ### Recommended Requirements
+
 - **OS:** Windows 10+, macOS 11+, Fedora 40+, Ubuntu 22.04+
 - **Python:** 3.11 or higher
 - **RAM:** 2 GB
 - **Display:** 1920x1080 or higher
 
 ### Required
+
 - **tkinter** — GUI framework (usually included with Python)
 
 ### Recommended (Optional)
+
 - **pygame-ce** — Graphics and multimedia support (community edition; or `pygame`)
 - **Pillow** — Image processing features
 - **Pygments** — Syntax highlighting in the editor
 
 ### Development Only
+
 - **pytest** — Testing framework
 - **black** — Code formatting
 - **flake8** — Linting
@@ -540,12 +592,15 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 ## 🎓 Learning Resources
 
 ### For Beginners
+
 Start with PILOT or BASIC, then try Logo for visual programming.
 
 ### For Intermediate Programmers
+
 Explore Pascal for structured programming, then try Prolog for logic programming or Forth for stack-based thinking.
 
 ### For Advanced Users
+
 Compare implementations across all 9 languages, study the [Technical Reference](docs/dev/TECHNICAL_REFERENCE.md), or extend the interpreter with new features.
 
 ---

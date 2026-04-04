@@ -105,7 +105,7 @@ class _SafeEvaluator:
             return tuple(self.evaluate(e) for e in node.elts)
         if isinstance(node, ast.Dict):
             return {
-                self.evaluate(k): self.evaluate(v)
+                self.evaluate(k): self.evaluate(v)  # type: ignore[arg-type]
                 for k, v in zip(node.keys, node.values)
             }
 
@@ -185,13 +185,13 @@ class _SafeEvaluator:
             value = self.evaluate(node.value)
             slc = node.slice
             if hasattr(ast, "Index") and isinstance(slc, ast.Index):  # Python <3.9
-                return value[self.evaluate(slc.value)]  # type: ignore[attr-defined]
+                return value[self.evaluate(slc.value)]  # type: ignore[attr-defined,index]
             if isinstance(slc, ast.Slice):
                 lower = self.evaluate(slc.lower) if slc.lower else None
                 upper = self.evaluate(slc.upper) if slc.upper else None
                 step = self.evaluate(slc.step) if slc.step else None
-                return value[lower:upper:step]
-            return value[self.evaluate(slc)]
+                return value[lower:upper:step]  # type: ignore[index]
+            return value[self.evaluate(slc)]  # type: ignore[index]
 
         # --- attribute access (limited to safe string methods) ---
         if isinstance(node, ast.Attribute):

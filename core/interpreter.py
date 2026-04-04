@@ -180,6 +180,7 @@ class Time_WarpInterpreter:  # pylint: disable=too-many-public-methods
         self.match_flag = False  # PILOT Y/N match flag
         self._last_match_set = False  # Internal PILOT flag
         self.running = False  # Execution state flag
+        self.input_buffer = []  # GUI input buffer for get_user_input
 
         # Debugging and breakpoints
         self.debug_mode = False

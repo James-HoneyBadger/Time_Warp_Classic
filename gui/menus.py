@@ -127,41 +127,41 @@ def _build_edit_menu(menubar, app):
 
 _EXAMPLES = [
     ("PILOT", [
-        ("Quiz Demo", "examples/pilot/quiz_pilot.pilot"),
-        ("Comprehensive Demo", "examples/pilot/comprehensive_demo.pilot"),
+        ("Math Tutor", "examples/pilot/math_tutor.pilot"),
+        ("Science Quiz", "examples/pilot/science_quiz.pilot"),
     ]),
     ("BASIC", [
-        ("Hello World + Turtle Graphics", "examples/basic/hello_basic.bas"),
-        ("Comprehensive Demo", "examples/basic/comprehensive_demo.bas"),
+        ("Finance Calculator", "examples/basic/finance_calculator.bas"),
+        ("Sales Dashboard", "examples/basic/sales_dashboard.bas"),
         ("Index Menu", "examples/basic/INDEX.bas"),
     ]),
     ("Logo", [
-        ("Colorful Spiral", "examples/logo/spiral_logo.logo"),
-        ("Comprehensive Demo", "examples/logo/comprehensive_demo.logo"),
+        ("Mandala Art", "examples/logo/mandala_art.logo"),
+        ("Spirograph Art", "examples/logo/spirograph_art.logo"),
     ]),
     ("Pascal", [
-        ("Hello World + Functions", "examples/pascal/hello_pascal.pas"),
-        ("Comprehensive Demo", "examples/pascal/comprehensive_demo.pas"),
+        ("Gradebook", "examples/pascal/gradebook.pas"),
+        ("Physics Calculator", "examples/pascal/physics_calculator.pas"),
     ]),
     ("Prolog", [
-        ("Facts & Rules", "examples/prolog/facts_prolog.pro"),
-        ("Comprehensive Demo", "examples/prolog/comprehensive_demo.pro"),
+        ("Expert System", "examples/prolog/expert_system.pro"),
+        ("Geography Database", "examples/prolog/geography_db.pro"),
     ]),
     ("Forth", [
-        ("Stack Operations", "examples/forth/stack_forth.fth"),
-        ("Comprehensive Demo", "examples/forth/comprehensive_demo.fth"),
+        ("Engineering Calculator", "examples/forth/engineering_calc.fth"),
+        ("Number Theory", "examples/forth/number_theory.fth"),
     ]),
     ("Perl", [
-        ("Patterns & Text Processing", "examples/perl/patterns_perl.pl"),
-        ("Comprehensive Demo", "examples/perl/comprehensive_demo.pl"),
+        ("Cipher Toolkit", "examples/perl/cipher_toolkit.pl"),
+        ("Log Analyzer", "examples/perl/log_analyzer.pl"),
     ]),
     ("Python", [
-        ("Modern Python Features", "examples/python/modern_python.py"),
-        ("Comprehensive Demo", "examples/python/comprehensive_demo.py"),
+        ("Crypto Toolkit", "examples/python/crypto_toolkit.py"),
+        ("Data Pipeline", "examples/python/data_pipeline.py"),
     ]),
     ("JavaScript", [
-        ("Modern JavaScript (ES6+)", "examples/javascript/interactive_javascript.js"),
-        ("Comprehensive Demo", "examples/javascript/comprehensive_demo.js"),
+        ("Sorting Showcase", "examples/javascript/sorting_showcase.js"),
+        ("Statistics Engine", "examples/javascript/statistics_engine.js"),
     ]),
 ]
 
