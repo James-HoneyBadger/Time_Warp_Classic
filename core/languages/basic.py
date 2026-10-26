@@ -547,6 +547,7 @@ class TwBasicExecutor:
 
         # Evaluate each part and concatenate
         result_parts = []
+        failed = False
         for part in parts:
             if part.startswith('"') and part.endswith('"'):
                 # String literal
@@ -555,6 +556,11 @@ class TwBasicExecutor:
                 # Expression or variable
                 try:
                     evaluated = self.interpreter.evaluate_expression(part)
+                    if isinstance(evaluated, str) and evaluated.startswith("ERROR:"):
+                        # The expression already reported the error; stop the
+                        # statement instead of printing the marker text.
+                        failed = True
+                        break
                     # Handle string variables properly
                     if isinstance(evaluated, str) and not part.startswith('"'):
                         # This was a string variable, use its value
@@ -570,6 +576,9 @@ class TwBasicExecutor:
                         result_parts.append(str(self.interpreter.variables[var_name]))
                     else:
                         result_parts.append(str(part))
+
+        if failed:
+            return "error"
 
         # Join parts without extra spaces for cleaner output
         result = "".join(result_parts) if parts else ""

@@ -238,13 +238,21 @@ examples/logo/mandala_art.logo            # Mandala art generator
 ... (all 9 languages have example programs)
 ```
 
-### Tip 2: Use Keyboard Shortcuts
-- Ctrl+Enter: Run program
+### Tip 2: Try BASIC Direct Mode
+Select **BASIC**, then use the **Console** bar at the bottom like an old machine:
+`PRINT 2+2`, `10 PRINT "HELLO"`, `LIST`, `RUN`, `RENUMBER`, `NEW`, `HELP`.
+
+### Tip 3: Use Keyboard Shortcuts
+- F5: Run program
+- F9: Set or clear a breakpoint on the current line
+- Ctrl+.: Stop a running program
 - Ctrl+F: Find
 - Ctrl+H: Find & Replace
 - Ctrl+S: Save file
+- Ctrl+Shift+S: Save As
+- Click an `?ERROR IN n` line in the output to jump to line n
 
-### Tip 3: Check Output Carefully
+### Tip 4: Check Output Carefully
 The output explains what each command does!
 
 ### Tip 4: Modify & Experiment

@@ -219,13 +219,18 @@ class TwPilotExecutor:
             var_name = "%answer"
             prompt = "Input: "
         else:
-            var_name = var_spec
+            # A:[name] uses brackets to mark the variable, as in the manual.
+            var_name = var_spec.strip("[]")
             prompt = f"Enter value for {var_name}: "
 
         # Log the input prompt to user output
         self.interpreter.log_output(f"Awaiting input: {prompt}")
 
         value = self.interpreter.get_user_input(prompt)
+
+        # M: always matches the last input, so record it even when the answer
+        # was stored in a named variable.
+        self.system_vars["answer"] = value if value is not None else ""
 
         # Store in system variables if it's a % variable
         if var_name.startswith("%"):
@@ -247,6 +252,13 @@ class TwPilotExecutor:
             else:
                 self.interpreter.variables[var_name] = ""
 
+        # Y:/N: test the match flag, so an input answer that is affirmative
+        # counts as a match even without a following M:.
+        if value is not None:
+            self.interpreter.match_flag = (
+                value.strip().upper() in {"Y", "YES", "TRUE", "1"}
+            )
+
         # Debug: show type and value of input variable
         if var_name.startswith("%"):
             self.interpreter.debug_output(
@@ -260,8 +272,15 @@ class TwPilotExecutor:
         return "continue"
 
     def _handle_yes_condition(self, command):
-        """Handle Y: match if condition is true"""
-        condition = command[2:].strip()
+        """Handle Y: — run the rest of the line when the match flag is set."""
+        payload = command[2:].strip()
+        if self._looks_like_instruction(payload):
+            if self.interpreter.match_flag:
+                return self.execute_command(payload)
+            return "continue"
+
+        # Legacy form: Y:<expression> sets the match flag from the expression.
+        condition = payload
         try:
             result = self.interpreter.evaluate_expression(condition)
             self.interpreter.match_flag = bool(result)
@@ -273,8 +292,15 @@ class TwPilotExecutor:
         return "continue"
 
     def _handle_no_condition(self, command):
-        """Handle N: match if condition is false"""
-        condition = command[2:].strip()
+        """Handle N: — run the rest of the line when the match flag is clear."""
+        payload = command[2:].strip()
+        if self._looks_like_instruction(payload):
+            if not self.interpreter.match_flag:
+                return self.execute_command(payload)
+            return "continue"
+
+        # Legacy form: N:<expression> sets the match flag to its negation.
+        condition = payload
         try:
             result = self.interpreter.evaluate_expression(condition)
             # N: is the negation of Y: — match when the condition is FALSE.
@@ -358,6 +384,18 @@ class TwPilotExecutor:
             )
         return "continue"
 
+    # Command prefixes that mark the payload of Y:/N: as an instruction to
+    # run conditionally, per PILOT ("Y:T:Great!").
+    _INSTRUCTION_PREFIX = re.compile(
+        r"^(T|TH|A|Y|N|M|MT|J|L|U|C|E|R|S|DT|MATH|GAME|AUDIO|F|W|D|BRANCH|"
+        r"MULTIMEDIA|STORAGE|HELP|TIME|DATE|RESET|LIVES|BEEP|STOP):",
+        re.IGNORECASE,
+    )
+
+    def _looks_like_instruction(self, payload):
+        """Return True when *payload* is a PILOT command, not an expression."""
+        return bool(payload) and bool(self._INSTRUCTION_PREFIX.match(payload))
+
     def _handle_match_jump(self, command):
         """Handle M: pattern matching command (PILOT 73 compatible)"""
         pattern = command[2:].strip()
@@ -440,7 +478,7 @@ class TwPilotExecutor:
             return "continue"
         if "=" in payload:
             var_part, expr_part = payload.split("=", 1)
-            var_name = var_part.strip().rstrip(":")
+            var_name = var_part.strip().rstrip(":").strip("[]")
             expr = expr_part.strip()
             try:
                 value = self.interpreter.evaluate_expression(expr)

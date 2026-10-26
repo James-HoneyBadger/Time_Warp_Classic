@@ -95,7 +95,8 @@ def _build_file_menu(menubar, app):
     menu.add_command(label="New File", command=app.new_file, accelerator="Ctrl+N")
     menu.add_command(label="Open File...", command=app.load_file, accelerator="Ctrl+O")
     menu.add_separator()
-    menu.add_command(label="Save File...", command=app.save_file, accelerator="Ctrl+S")
+    menu.add_command(label="Save", command=app.save_file, accelerator="Ctrl+S")
+    menu.add_command(label="Save As...", command=app.save_file_as, accelerator="Ctrl+Shift+S")
     menu.add_separator()
     menu.add_command(label="Exit", command=app.exit_app, accelerator="Ctrl+Q")
 
@@ -202,8 +203,13 @@ def _build_debug_menu(menubar, app):
     )
     menu.add_separator()
     menu.add_command(
+        label="Toggle Breakpoint at Cursor",
+        command=app.toggle_breakpoint_at_cursor,
+        accelerator="F9",
+    )
+    menu.add_command(
         label="Clear All Breakpoints",
-        command=lambda: app.interpreter.breakpoints.clear(),
+        command=app.clear_breakpoints,
     )
     menu.add_separator()
     menu.add_command(

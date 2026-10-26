@@ -10,8 +10,8 @@ python3 run.py
 ```
 
 This will:
-1. Create a Python virtual environment (if needed)
-2. Install all required dependencies
+1. Create a Python virtual environment (if needed) and bootstrap `pip` inside it
+2. Install missing system packages (for example `tkinter`) and Python dependencies
 3. Verify the installation
 4. Launch the GUI
 
@@ -67,16 +67,23 @@ python3 run.py --help
 - Works on Windows, macOS, and Linux
 - Automatic Python 3.9+ checking
 - Clear colored output with progress indicators
+- Bootstraps `pip` when a virtual environment was created without it
+- Installs the OS `tkinter` package when it is missing (`apt-get`, `dnf`,
+  `yum`, `zypper`, `pacman`, `apk`, or Homebrew — prompting for `sudo`
+  credentials only when required)
+- Warns early when no graphical display is available
 - Handles both tkinter checks and optional dependencies
 - Self-contained - no external shell required
 
 **What it does:**
 1. Verifies Python 3.9+ is installed
 2. Creates `venv/` directory with isolated Python environment
-3. Upgrades pip, setuptools, and wheel
-4. Installs all dependencies from `requirements.txt`
-5. Verifies tkinter (required) and optional packages
-6. Launches `Time_Warp.py`
+3. Bootstraps `pip` inside the venv if it is missing
+4. Installs the system `tkinter` package when the interpreter lacks it
+5. Upgrades pip, setuptools, and wheel
+6. Installs all dependencies from `requirements.txt`
+7. Verifies tkinter (required) and optional packages
+8. Launches `Time_Warp.py`
 
 ### Method 2: Bash Script (Linux/macOS)
 
@@ -447,6 +454,9 @@ pip install -e .
 # Run tests
 pytest
 
+# Run tests with a coverage report (needs the "test" extra: pip install -e .[test])
+pytest --cov
+
 # Check code quality
 black . --check
 flake8 .
@@ -490,6 +500,7 @@ See `License.md` for full license information.
 | Manual venv activate (Windows) | `venv\Scripts\activate` |
 | Manual venv deactivate | `deactivate` |
 | Run tests | `python3 -m pytest tests/` |
+| Run tests with coverage | `python3 -m pytest --cov tests/` |
 | Format code | `black .` |
 | Check code | `flake8 .` |
 

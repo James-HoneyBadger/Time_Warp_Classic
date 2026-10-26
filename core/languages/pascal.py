@@ -461,132 +461,404 @@ class TwPascalExecutor:
             self.interpreter.debug_output(f"Assignment error: {e}")
         return "continue"
 
-    def _handle_if(self, command):
-        """Handle IF statement"""
-        try:
-            # IF condition THEN statement [ELSE statement]
-            match = re.match(
-                r"IF\s+(.+?)\s+THEN\s+(.+?)(?:\s+ELSE\s+(.+))?$",
-                command,
-                re.IGNORECASE,
-            )
-            if match:
-                condition = match.group(1).strip()
-                then_stmt = match.group(2).strip()
-                else_stmt = match.group(3).strip() if match.group(3) else None
+    # ---- block helpers -------------------------------------------------
 
-                cond_result = self._evaluate_expression(condition)
-                if cond_result:
-                    # Execute THEN statement
-                    return self.execute_command(then_stmt)
-                elif else_stmt:
-                    # Execute ELSE statement
-                    return self.execute_command(else_stmt)
+    def _lines(self):
+        """Program lines as (number, text) pairs."""
+        return self.interpreter.program_lines
+
+    def _next_code_line(self, start):
+        """Index of the next non-blank line at or after *start*, else None."""
+        lines = self._lines()
+        idx = start
+        while idx < len(lines):
+            if (lines[idx][1] or "").strip():
+                return idx
+            idx += 1
+        return None
+
+    def _matching_block_end(self, opener_index):
+        """Index of the END; closing the BEGIN on *opener_index*."""
+        lines = self._lines()
+        depth = 1
+        idx = opener_index + 1
+        while idx < len(lines):
+            cmd = (lines[idx][1] or "").strip().upper()
+            if re.match(r"^BEGIN\b", cmd):
+                depth += 1
+            elif re.match(r"^END\b(?!\.)", cmd):
+                depth -= 1
+                if depth == 0:
+                    return idx
+            idx += 1
+        return None
+
+    def _matching_until(self, repeat_index):
+        """Index of the UNTIL line closing the REPEAT on *repeat_index*."""
+        lines = self._lines()
+        depth = 1
+        idx = repeat_index + 1
+        while idx < len(lines):
+            cmd = (lines[idx][1] or "").strip().upper()
+            if re.match(r"^REPEAT\b", cmd):
+                depth += 1
+            elif re.match(r"^UNTIL\b", cmd):
+                depth -= 1
+                if depth == 0:
+                    return idx
+            idx += 1
+        return None
+
+    def _execute_block(self, start, end):
+        """Run program lines ``start``..``end`` (exclusive) in place.
+
+        ``interpreter.current_line`` follows the executing line so nested
+        IF/WHILE/REPEAT handlers can locate their own blocks.
+        """
+        lines = self._lines()
+        saved_line = self.interpreter.current_line
+        idx = start
+        steps = 0
+        outcome = "continue"
+        try:
+            while idx < end:
+                steps += 1
+                if steps > 100_000:
+                    self.interpreter.log_output(
+                        "Block terminated: maximum steps reached"
+                    )
+                    break
+                self.interpreter.current_line = idx
+                cmd = (lines[idx][1] or "").strip()
+                if cmd:
+                    result = self.execute_command(cmd)
+                    if result == "end":
+                        outcome = result
+                        break
+                    if isinstance(result, str) and result.startswith("jump:"):
+                        try:
+                            target = int(result.split(":")[1])
+                        except (ValueError, IndexError):
+                            break
+                        if target <= idx:
+                            break
+                        idx = target
+                        continue
+                idx += 1
+        finally:
+            self.interpreter.current_line = saved_line
+        return outcome
+
+    def _find_else(self, after):
+        """Describe an ELSE that follows an IF block, if there is one."""
+        lines = self._lines()
+        idx = self._next_code_line(after)
+        if idx is None:
+            return None
+        text = (lines[idx][1] or "").strip()
+        if not re.match(r"^ELSE\b", text, re.IGNORECASE):
+            return None
+
+        rest = re.sub(r"^ELSE\b", "", text, flags=re.IGNORECASE).strip()
+        if not rest:
+            opener = self._next_code_line(idx + 1)
+            if opener is not None and (lines[opener][1] or "").strip().upper().startswith("BEGIN"):
+                block_end = self._matching_block_end(opener)
+                if block_end is not None:
+                    return {"kind": "block", "start": opener + 1,
+                            "end": block_end, "after": block_end + 1}
+            return {"kind": "inline", "command": "", "line": idx, "after": idx + 1}
+
+        if rest.upper().startswith("BEGIN"):
+            block_end = self._matching_block_end(idx)
+            if block_end is not None:
+                return {"kind": "block", "start": idx + 1,
+                        "end": block_end, "after": block_end + 1}
+            return {"kind": "inline", "command": "", "line": idx, "after": idx + 1}
+
+        return {"kind": "inline", "command": rest, "line": idx, "after": idx + 1}
+
+    def _run_branch(self, branch):
+        """Execute an ELSE description and report where execution continues."""
+        saved_line = self.interpreter.current_line
+        try:
+            self.interpreter.current_line = branch.get("line", saved_line)
+            if branch["kind"] == "inline":
+                result = (
+                    self.execute_command(branch["command"])
+                    if branch["command"]
+                    else "continue"
+                )
+            else:
+                result = self._execute_block(branch["start"], branch["end"])
+        finally:
+            self.interpreter.current_line = saved_line
+        if isinstance(result, str) and result.startswith("jump:"):
+            return result
+        if result == "end":
+            return result
+        return f"jump:{branch['after']}"
+
+    def _handle_if(self, command):
+        """Handle IF statement, inline or with BEGIN...END blocks."""
+        try:
+            match = re.match(
+                r"IF\s+(.+?)\s+THEN\b(.*)$",
+                command.strip(),
+                re.IGNORECASE | re.DOTALL,
+            )
+            if not match:
+                return "continue"
+
+            condition = match.group(1).strip()
+            then_part = match.group(2).strip()
+
+            is_block = not then_part or re.match(
+                r"^BEGIN\b", then_part, re.IGNORECASE
+            )
+            if not is_block:
+                # Single-statement form: IF cond THEN stmt [ELSE stmt]
+                inline_else = None
+                else_match = re.match(
+                    r"(.+?)\s+ELSE\s+(.+)$", then_part, re.IGNORECASE | re.DOTALL
+                )
+                if else_match:
+                    then_part = else_match.group(1).strip()
+                    inline_else = else_match.group(2).strip()
+                if self._evaluate_expression(condition):
+                    return self.execute_command(then_part)
+                if inline_else:
+                    return self.execute_command(inline_else)
+                return "continue"
+
+            lines = self._lines()
+            if then_part:
+                opener = self.interpreter.current_line
+                body_start = opener + 1
+            else:
+                opener = self._next_code_line(self.interpreter.current_line + 1)
+                if opener is None or not (lines[opener][1] or "").strip().upper().startswith("BEGIN"):
+                    return "continue"
+                body_start = opener + 1
+
+            block_end = self._matching_block_end(opener)
+            if block_end is None:
+                self.interpreter.log_output("IF block without matching END")
+                return "continue"
+
+            branch = self._find_else(block_end + 1)
+            if self._evaluate_expression(condition):
+                result = self._execute_block(body_start, block_end)
+                if result == "end":
+                    return result
+                if isinstance(result, str) and result.startswith("jump:"):
+                    return result
+                return f"jump:{branch['after'] if branch else block_end + 1}"
+            if branch:
+                return self._run_branch(branch)
+            return f"jump:{block_end + 1}"
         except Exception as e:
             self.interpreter.debug_output(f"IF statement error: {e}")
         return "continue"
 
     def _handle_while(self, command):
-        """Handle WHILE loop"""
+        """Handle WHILE loop, inline or with a BEGIN...END body."""
         try:
-            # WHILE condition DO statement
-            match = re.match(r"WHILE\s+(.+?)\s+DO\s+(.+)", command, re.IGNORECASE)
-            if match:
-                condition = match.group(1).strip()
-                statement = match.group(2).strip()
+            match = re.match(
+                r"WHILE\s+(.+?)\s+DO\b(.*)$",
+                command.strip(),
+                re.IGNORECASE | re.DOTALL,
+            )
+            if not match:
+                return "continue"
 
-                max_iterations = 10000
+            condition = match.group(1).strip()
+            statement = match.group(2).strip()
+
+            body_start = None
+            block_end = None
+            if not statement or re.match(r"^BEGIN\b", statement, re.IGNORECASE):
+                opener = (
+                    self.interpreter.current_line
+                    if statement
+                    else self._next_code_line(self.interpreter.current_line + 1)
+                )
+                if opener is not None:
+                    text = (self._lines()[opener][1] or "").strip().upper()
+                    if text.startswith("BEGIN"):
+                        block_end = self._matching_block_end(opener)
+                        body_start = opener + 1
+                if block_end is None and not statement:
+                    return "continue"
+
+            if block_end is not None:
                 iterations = 0
-                while iterations < max_iterations:
-                    cond_result = self._evaluate_expression(condition)
-                    if not cond_result:
-                        break
-                    result = self.execute_command(statement)
-                    if result != "continue":
+                while self._evaluate_expression(condition):
+                    result = self._execute_block(body_start, block_end)
+                    if result == "end":
+                        return result
+                    if isinstance(result, str) and result.startswith("jump:"):
                         return result
                     iterations += 1
-                if iterations >= max_iterations:
-                    self.interpreter.log_output("WHILE loop terminated: maximum iterations reached")
+                    if iterations >= 10000:
+                        self.interpreter.log_output(
+                            "WHILE loop terminated: maximum iterations reached"
+                        )
+                        break
+                return f"jump:{block_end + 1}"
+
+            iterations = 0
+            while iterations < 10000:
+                if not self._evaluate_expression(condition):
+                    break
+                result = self.execute_command(statement)
+                if result != "continue":
+                    return result
+                iterations += 1
+            if iterations >= 10000:
+                self.interpreter.log_output(
+                    "WHILE loop terminated: maximum iterations reached"
+                )
         except Exception as e:
             self.interpreter.debug_output(f"WHILE loop error: {e}")
         return "continue"
 
     def _handle_for(self, command):
-        """Handle FOR loop"""
+        """Handle FOR loops with inline, next-line, or BEGIN...END bodies."""
         try:
-            # FOR variable := start TO/DOWNTO end DO statement
             match = re.match(
-                r"FOR\s+(\w+)\s*:=\s*(.+?)\s+(TO|DOWNTO)\s+(.+?)\s+DO\s+(.+)",
-                command,
-                re.IGNORECASE,
+                r"FOR\s+(\w+)\s*:=\s*(.+?)\s+(TO|DOWNTO)\s+(.+?)\s+DO\b(.*)$",
+                command.strip(),
+                re.IGNORECASE | re.DOTALL,
             )
-            if match:
-                var_name = match.group(1).upper()
-                start_expr = match.group(2).strip()
-                direction = match.group(3).upper()
-                end_expr = match.group(4).strip()
-                statement = match.group(5).strip()
+            if not match:
+                return "continue"
 
-                start_val = int(self._evaluate_expression(start_expr))
-                end_val = int(self._evaluate_expression(end_expr))
+            var_name = match.group(1).upper()
+            start_expr = match.group(2).strip()
+            direction = match.group(3).upper()
+            end_expr = match.group(4).strip().rstrip(";").strip()
+            statement = match.group(5).strip()
 
-                # Initialize loop variable
-                current_val = start_val
-                self.variables[var_name] = current_val
-                self.interpreter.variables[var_name] = current_val
+            body_line = None
+            body_start = None
+            block_end = None
+            if statement and re.match(r"^BEGIN\b", statement, re.IGNORECASE):
+                opener = self.interpreter.current_line
+                block_end = self._matching_block_end(opener)
+                body_start = opener + 1
+                if block_end is None:
+                    self.interpreter.log_output("FOR block without matching END")
+                    return "continue"
+            elif not statement:
+                candidate = self._next_code_line(self.interpreter.current_line + 1)
+                if candidate is None:
+                    return "continue"
+                if (self._lines()[candidate][1] or "").strip().upper().startswith("BEGIN"):
+                    block_end = self._matching_block_end(candidate)
+                    if block_end is None:
+                        self.interpreter.log_output("FOR block without matching END")
+                        return "continue"
+                    body_start = candidate + 1
+                else:
+                    body_line = candidate
 
-                max_iterations = 10000
-                iterations = 0
-                while iterations < max_iterations:
-                    # Check loop condition
-                    if direction == "TO" and current_val > end_val:
-                        break
-                    elif direction == "DOWNTO" and current_val < end_val:
-                        break
+            start_val = int(self._evaluate_expression(start_expr))
+            end_val = int(self._evaluate_expression(end_expr))
+            step = 1 if direction == "TO" else -1
+            current = start_val
+            iterations = 0
 
-                    # Execute statement
+            while current <= end_val if step > 0 else current >= end_val:
+                if iterations >= 10000:
+                    self.interpreter.log_output(
+                        "FOR loop terminated: maximum iterations reached"
+                    )
+                    break
+                self.variables[var_name] = current
+                self.interpreter.variables[var_name] = current
+
+                if block_end is not None:
+                    result = self._execute_block(body_start, block_end)
+                elif body_line is not None:
+                    saved_line = self.interpreter.current_line
+                    self.interpreter.current_line = body_line
+                    try:
+                        result = self.execute_command(
+                            (self._lines()[body_line][1] or "").strip()
+                        )
+                    finally:
+                        self.interpreter.current_line = saved_line
+                else:
                     result = self.execute_command(statement)
-                    if result != "continue":
-                        return result
 
-                    # Increment/decrement
-                    if direction == "TO":
-                        current_val += 1
-                    else:
-                        current_val -= 1
-                    self.variables[var_name] = current_val
-                    self.interpreter.variables[var_name] = current_val
-                    iterations += 1
+                if result == "end":
+                    return result
+                if isinstance(result, str) and result.startswith("jump:"):
+                    return result
 
-                if iterations >= max_iterations:
-                    self.interpreter.log_output("FOR loop terminated: maximum iterations reached")
+                current += step
+                iterations += 1
+
+            # Pascal leaves the counter one step past the range.
+            self.variables[var_name] = current
+            self.interpreter.variables[var_name] = current
+            if block_end is not None:
+                return f"jump:{block_end + 1}"
+            if body_line is not None:
+                return f"jump:{body_line + 1}"
         except Exception as e:
             self.interpreter.debug_output(f"FOR loop error: {e}")
         return "continue"
 
     def _handle_repeat(self, command):
-        """Handle REPEAT loop"""
+        """Handle REPEAT ... UNTIL, inline or as a block."""
         try:
-            # REPEAT statement UNTIL condition
-            match = re.match(r"REPEAT\s+(.+?)\s+UNTIL\s+(.+)", command, re.IGNORECASE)
-            if match:
-                statement = match.group(1).strip()
-                condition = match.group(2).strip()
-
-                max_iterations = 10000
+            rest = re.sub(r"^REPEAT\b", "", command.strip(), flags=re.IGNORECASE).strip()
+            inline = re.match(r"(.+?)\s+UNTIL\s+(.+)$", rest, re.IGNORECASE | re.DOTALL)
+            if inline:
+                statement = inline.group(1).strip()
+                condition = inline.group(2).strip()
                 iterations = 0
-                while iterations < max_iterations:
-                    # Execute statement
+                while iterations < 10000:
                     result = self.execute_command(statement)
                     if result != "continue":
                         return result
-                    # Check condition - exit when true
-                    cond_result = self._evaluate_expression(condition)
-                    if cond_result:
+                    if self._evaluate_expression(condition):
                         break
                     iterations += 1
-                if iterations >= max_iterations:
-                    self.interpreter.log_output("REPEAT loop terminated: maximum iterations reached")
+                if iterations >= 10000:
+                    self.interpreter.log_output(
+                        "REPEAT loop terminated: maximum iterations reached"
+                    )
+                return "continue"
+
+            until_index = self._matching_until(self.interpreter.current_line)
+            if until_index is None:
+                self.interpreter.log_output("REPEAT without matching UNTIL")
+                return "continue"
+            until_text = (self._lines()[until_index][1] or "").strip()
+            condition = re.sub(
+                r"^UNTIL\b", "", until_text, flags=re.IGNORECASE
+            ).strip().rstrip(";")
+
+            iterations = 0
+            while iterations < 10000:
+                result = self._execute_block(
+                    self.interpreter.current_line + 1, until_index
+                )
+                if result == "end":
+                    return result
+                if isinstance(result, str) and result.startswith("jump:"):
+                    return result
+                if self._evaluate_expression(condition):
+                    break
+                iterations += 1
+            if iterations >= 10000:
+                self.interpreter.log_output(
+                    "REPEAT loop terminated: maximum iterations reached"
+                )
+            return f"jump:{until_index + 1}"
         except Exception as e:
             self.interpreter.debug_output(f"REPEAT loop error: {e}")
         return "continue"

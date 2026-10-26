@@ -3,8 +3,8 @@
 Time Warp Classic - Complete Setup & Run Script (Cross-Platform)
 
 This script:
-1. Creates a Python virtual environment (if needed)
-2. Installs all required Python dependencies (individually for resilience)
+1. Creates a Python virtual environment (if needed) and bootstraps pip inside it
+2. Installs missing system packages (tkinter) and Python dependencies
 3. Launches the Time Warp Classic GUI
 
 Usage:
@@ -18,6 +18,7 @@ Copyright © 2025–2026 Honey Badger Universe
 
 import os
 import sys
+import shutil
 import subprocess
 import argparse
 import platform
@@ -118,13 +119,125 @@ def check_python():
     return True
 
 
+def has_module(python_exe, module):
+    """Return True when `module` can be imported by the given interpreter"""
+    result = run_command(
+        [python_exe, '-c', f'import {module}'], capture_output=True, check=False
+    )
+    return bool(result) and result.returncode == 0
+
+
+def run_install(cmd, privileged=True):
+    """Run an install command, escalating with sudo only when required"""
+    if not privileged or os.name != 'posix' or os.geteuid() == 0:
+        result = run_command(cmd, check=False)
+        return bool(result) and result.returncode == 0
+
+    sudo = shutil.which('sudo')
+    if not sudo:
+        return False
+
+    # Try password-less sudo first so non-interactive runs never block
+    result = run_command([sudo, '-n'] + cmd, capture_output=True, check=False)
+    if result and result.returncode == 0:
+        return True
+
+    if not sys.stdin.isatty():
+        return False
+
+    result = run_command([sudo] + cmd, check=False)
+    return bool(result) and result.returncode == 0
+
+
+def ensure_pip(venv_path):
+    """Make sure the virtual environment has a working pip"""
+    python_exe = get_python_exe(venv_path)
+
+    result = run_command(
+        [python_exe, '-m', 'pip', '--version'], capture_output=True, check=False
+    )
+    if result and result.returncode == 0:
+        print_success("pip available")
+        return True
+
+    print("📥 Bootstrapping pip inside the virtual environment...")
+    result = run_command(
+        [python_exe, '-m', 'ensurepip', '--upgrade'], capture_output=True, check=False
+    )
+    if result and result.returncode == 0:
+        print_success("pip bootstrapped")
+        return True
+
+    print_warning("pip is missing and could not be bootstrapped automatically")
+    if platform.system() == 'Linux':
+        print("  Install the venv/pip support package, then re-run:")
+        print("    Debian/Ubuntu: sudo apt-get install python3-venv")
+        print("    Fedora:        sudo dnf install python3-pip")
+    elif platform.system() == 'Darwin':
+        print("  Try: python3 -m ensurepip --upgrade")
+    else:
+        print("  Reinstall Python and enable pip in the installer")
+    return False
+
+
+def ensure_tkinter(venv_path):
+    """Install the system tkinter package when the interpreter lacks it"""
+    python_exe = get_python_exe(venv_path)
+
+    if has_module(python_exe, 'tkinter'):
+        print_success("tkinter available")
+        return True
+
+    print_warning("tkinter (GUI toolkit) is missing — attempting to install it")
+    installed = False
+    system = platform.system()
+
+    if system == 'Linux':
+        managers = (
+            ('apt-get', ['apt-get', 'install', '-y', 'python3-tk']),
+            ('dnf', ['dnf', 'install', '-y', 'python3-tkinter']),
+            ('yum', ['yum', 'install', '-y', 'python3-tkinter']),
+            ('zypper', ['zypper', '--non-interactive', 'install', 'python3-tk']),
+            ('pacman', ['pacman', '-S', '--noconfirm', 'tk']),
+            ('apk', ['apk', 'add', 'python3-tkinter']),
+        )
+        for binary, cmd in managers:
+            if shutil.which(binary):
+                print(f"📦 Running: {' '.join(cmd)}")
+                installed = run_install(cmd, privileged=True)
+                break
+    elif system == 'Darwin' and shutil.which('brew'):
+        tag = f"python-tk@{sys.version_info.major}.{sys.version_info.minor}"
+        print(f"📦 Running: brew install {tag}")
+        installed = run_install(['brew', 'install', tag], privileged=False)
+
+    if installed and has_module(python_exe, 'tkinter'):
+        print_success("tkinter installed")
+        return True
+
+    print_error("tkinter is still unavailable — the GUI cannot start")
+    return False
+
+
+def check_display():
+    """Warn when no graphical display is available"""
+    if platform.system() != 'Linux':
+        return True
+    if os.environ.get('DISPLAY') or os.environ.get('WAYLAND_DISPLAY'):
+        return True
+
+    print_warning("No graphical display detected (DISPLAY/WAYLAND_DISPLAY unset)")
+    print("  Tk needs an X11 or Wayland session. On headless machines try:")
+    print("    xvfb-run -a python3 run.py --no-install\n")
+    return False
+
+
 def setup_venv(venv_path, clean=False):
     """Setup virtual environment"""
     print_step(2, "Setting up Virtual Environment")
 
     if clean and venv_path.exists():
         print("🗑️  Removing existing virtual environment...")
-        import shutil
         shutil.rmtree(venv_path)
 
     if not venv_path.exists():
@@ -132,10 +245,16 @@ def setup_venv(venv_path, clean=False):
         result = run_command(f"{sys.executable} -m venv {venv_path}", check=True)
         if not result:
             print_error("Failed to create virtual environment")
+            if platform.system() == 'Linux':
+                print("  Install the venv support package, then re-run:")
+                print("    Debian/Ubuntu: sudo apt-get install python3-venv")
+                print("    Fedora:        sudo dnf install python3-venv")
             return False
         print_success("Virtual environment created")
     else:
         print_success("Virtual environment already exists")
+
+    ensure_pip(venv_path)
 
     print()
     return True
@@ -158,6 +277,10 @@ def install_dependencies(venv_path, no_install=False):
     print_step(3, "Installing Python dependencies")
 
     python_exe = get_python_exe(venv_path)
+
+    # --- System packages (tkinter ships with the OS, not pip) ---
+    print(f"{Colors.CYAN}  ── System packages ──{Colors.END}")
+    ensure_tkinter(venv_path)
 
     # Upgrade pip
     print("📥 Upgrading pip...")
@@ -199,6 +322,7 @@ def install_dependencies(venv_path, no_install=False):
     # --- Development packages (non-blocking) ---
     print(f"{Colors.CYAN}  ── Development packages ──{Colors.END}")
     install_pkg("pytest>=7.0.0", "pytest (testing)")
+    install_pkg("pytest-cov>=4.0.0", "pytest-cov (coverage)")
     install_pkg("black>=22.0.0", "black (formatting)")
     install_pkg("flake8>=4.0.0", "flake8 (linting)")
 
@@ -266,6 +390,9 @@ def launch_gui(venv_path):
         print_error("Time_Warp.py not found!")
         return False
 
+    if not check_display():
+        return False
+
     # Run the IDE
     try:
         subprocess.run([python_exe, 'Time_Warp.py'], check=False)
@@ -290,7 +417,7 @@ Examples:
     parser.add_argument('--clean', action='store_true',
                         help='Delete and recreate the virtual environment')
     parser.add_argument('--no-install', action='store_true',
-                        help='Skip dependency installation')
+                        help='Skip dependency installation (pip and system packages)')
 
     args = parser.parse_args()
 

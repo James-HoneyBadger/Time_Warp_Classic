@@ -186,6 +186,15 @@ class Time_WarpInterpreter:  # pylint: disable=too-many-public-methods
         self.debug_mode = False
         self.breakpoints = set()
 
+        # Execution control / host integration
+        self.pump_callback = None  # called every line so a GUI stays responsive
+        self.input_provider = None  # callable(prompt) -> str | None
+        self.stop_requested = False
+        self.interrupted = False
+        # Safety cap for unattended runs (None = run until stopped, as the
+        # original machines did).  Hosts that offer a Stop control disable it.
+        self.max_iterations = 10000
+
         # Turtle graphics system (initialized lazily)
         self.turtle_graphics = None
 
@@ -321,10 +330,10 @@ class Time_WarpInterpreter:  # pylint: disable=too-many-public-methods
             self.get_performance_stats = self.optimizations.get_performance_stats
             self.optimize_for_production = self.optimizations.optimize_for_production
             self.cleanup_resources = self.optimizations.cleanup_resources
-            self.log_output("🚀 Performance optimizations enabled")
+            self.log_output("Interpreter ready.")
         else:
             self.optimizations = None
-            self.log_output("ℹ️  Performance optimizations not available")
+            self.log_output("Interpreter ready (compatibility mode).")
 
     def set_language_mode(self, mode):
         """Set the current language mode for script execution"""
@@ -721,6 +730,8 @@ class Time_WarpInterpreter:  # pylint: disable=too-many-public-methods
         self.match_flag = False
         self._last_match_set = False
         self.running = False
+        self.stop_requested = False
+        self.interrupted = False
 
         # Reset Time_Warp animation and media systems
         self.tweens = []
@@ -747,11 +758,15 @@ class Time_WarpInterpreter:  # pylint: disable=too-many-public-methods
         return datetime.now().isoformat()
 
     def log_error(self, error_msg, line_num=None):
-        """Log error with enhanced formatting and line number information"""
+        """Log an error, naming the executing line when one is not supplied."""
+        if line_num is None and self.running and self.program_lines:
+            # Attribute mid-run errors to the line being executed so the IDE
+            # can offer "click the message to jump there".
+            line_num = self.current_line + 1
         if line_num is not None:
-            formatted_error = f"❌ ERROR (Line {line_num}): {error_msg}"
+            formatted_error = f"?ERROR IN {line_num}: {error_msg}"
         else:
-            formatted_error = f"❌ ERROR: {error_msg}"
+            formatted_error = f"?ERROR: {error_msg}"
 
         # Add error to error history for debugging
         self.error_history.append({
@@ -956,42 +971,73 @@ class Time_WarpInterpreter:  # pylint: disable=too-many-public-methods
             flags=re.IGNORECASE,
         )
 
-        # Handle array access first (e.g., BULLETS(I,0) -> array value)
-        array_pattern = r"([A-Za-z_][A-Za-z0-9_]*)\(([^)]+)\)"
-
-        def replace_array_access(match):
-            array_name = match.group(1)
-            indices_str = match.group(2)
+        # Handle array access (e.g., BULLETS(I,0) -> array value).
+        # Parentheses are matched by depth so accesses nested inside function
+        # calls -- INT((A(4) - A(1)) / A(1)) -- are substituted too.
+        def array_element(array_name, indices_str):
+            """Return the element's text, or None when this is not an array."""
+            if array_name in allowed_names or array_name not in self.variables:
+                return None
+            array_var = self.variables[array_name]
+            if not isinstance(array_var, (dict, list)):
+                return None
             try:
-                # Check if this is actually a function call, not array access
-                # If the name is in allowed_names, it's a function call
-                if array_name in allowed_names:
-                    return match.group(0)  # Return unchanged
-
-                if array_name in self.variables:
-                    array_var = self.variables[array_name]
-                    if isinstance(array_var, (dict, list)):
-                        # Evaluate each index
-                        indices = [
-                            int(self.evaluate_expression(idx.strip()))
-                            for idx in indices_str.split(",")
-                        ]
-
-                        # Navigate through the array structure
-                        current = array_var
-                        for idx in indices:
-                            if isinstance(current, dict) and idx in current:
-                                current = current[idx]
-                            elif isinstance(current, list) and 0 <= idx < len(current):
-                                current = current[idx]
-                            else:
-                                return "0"  # Default value for uninitialized array elements
-                        return str(current)
-                return "0"
+                indices = [
+                    int(self.evaluate_expression(idx.strip()))
+                    for idx in indices_str.split(",")
+                ]
             except Exception:
                 return "0"
 
-        expr = re.sub(array_pattern, replace_array_access, expr)
+            current = array_var
+            for idx in indices:
+                if isinstance(current, dict) and idx in current:
+                    current = current[idx]
+                elif isinstance(current, list) and 0 <= idx < len(current):
+                    current = current[idx]
+                else:
+                    return "0"  # Default value for uninitialized elements
+            return str(current)
+
+        def substitute_arrays(text):
+            """Replace array references, descending into call arguments."""
+            out = []
+            i = 0
+            while i < len(text):
+                name_match = re.match(r"[A-Za-z_][A-Za-z0-9_]*", text[i:])
+                if not name_match:
+                    out.append(text[i])
+                    i += 1
+                    continue
+
+                name = name_match.group(0)
+                end = i + len(name)
+                if end < len(text) and text[end] == "(":
+                    depth = 0
+                    close = end
+                    while close < len(text):
+                        if text[close] == "(":
+                            depth += 1
+                        elif text[close] == ")":
+                            depth -= 1
+                            if depth == 0:
+                                break
+                        close += 1
+                    if depth == 0 and close < len(text):
+                        inner = text[end + 1:close]
+                        value = array_element(name, inner)
+                        if value is not None:
+                            out.append(value)
+                        else:
+                            out.append(f"{name}({substitute_arrays(inner)})")
+                        i = close + 1
+                        continue
+
+                out.append(name)
+                i = end
+            return "".join(out)
+
+        expr = substitute_arrays(expr)
 
         # Then replace bare variable names using word boundaries to avoid
         # accidental substring replacements (e.g. A vs AB).
@@ -1086,6 +1132,22 @@ class Time_WarpInterpreter:  # pylint: disable=too-many-public-methods
 
         expr = re.sub(r"RIGHT\$\(([^)]+)\)", replace_right_func, expr)
 
+        # MID$(s,start,length) - $ names are not valid Python identifiers, so
+        # they must be folded into string literals before evaluation.
+        def replace_mid_func(match):
+            args = match.group(1).split(",")
+            if len(args) == 3:
+                try:
+                    s = str(self.evaluate_expression(args[0].strip()))
+                    start = int(self.evaluate_expression(args[1].strip())) - 1
+                    length = int(self.evaluate_expression(args[2].strip()))
+                    return f'"{s[start:start + length]}"'
+                except Exception:
+                    pass
+            return '""'
+
+        expr = re.sub(r"MID\$\(([^)]+)\)", replace_mid_func, expr)
+
         # LEFT(s,n) and RIGHT(s,n) without $ suffix
         expr = re.sub(r"(?<!\$)\bLEFT\(([^)]+)\)", replace_left_func, expr)
         expr = re.sub(r"(?<!\$)\bRIGHT\(([^)]+)\)", replace_right_func, expr)
@@ -1169,6 +1231,7 @@ class Time_WarpInterpreter:  # pylint: disable=too-many-public-methods
         for var_name, var_value in self.variables.items():
             text = text.replace(f"*{var_name}*", str(var_value))
             text = text.replace("{" + var_name + "}", str(var_value))
+            text = text.replace("[" + var_name + "]", str(var_value))
 
         # Then evaluate expression-like tokens remaining between *...*
         try:
@@ -1195,17 +1258,35 @@ class Time_WarpInterpreter:  # pylint: disable=too-many-public-methods
 
         return text
 
+    def pump(self):
+        """Let the host process events. Returns True when a stop was requested."""
+        if self.pump_callback is not None:
+            try:
+                self.pump_callback()
+            except Exception:  # noqa: BLE001 — a flaky host hook must not kill the program
+                pass
+        return self.stop_requested
+
     def get_user_input(self, prompt=""):
         """Get input from user.
 
         Checks the GUI input buffer first (populated by the bottom input
-        field). Falls back to a modal dialog in GUI mode or console input
-        in headless mode.
+        field), then delegates to the host input provider, and finally falls
+        back to a modal dialog in GUI mode or console input in headless mode.
         """
         # Check if there is buffered input from the GUI input field
         if hasattr(self, "input_buffer") and self.input_buffer:
             value = self.input_buffer.pop(0)
             self.log_output(value)
+            return value
+
+        if self.input_provider is not None:
+            value = self.input_provider(prompt)
+            if value is None:
+                # Input cancelled by the user (or a stop request) — abort the
+                # program instead of pretending an empty line was entered.
+                self.stop_requested = True
+                return ""
             return value
 
         if self.output_widget:
@@ -1616,6 +1697,11 @@ class Time_WarpInterpreter:  # pylint: disable=too-many-public-methods
             self.current_language = language.lower()
             self.current_language_mode = language.lower()
 
+        # Per-run flags apply to every language, including the subprocess ones
+        # that return early below.
+        self.stop_requested = False
+        self.interrupted = False
+
         # External-process languages (JavaScript, Python, Perl) must be
         # executed as a single script so that variables, functions, etc.
         # persist across lines.  Delegate to the appropriate executor and
@@ -1634,19 +1720,26 @@ class Time_WarpInterpreter:  # pylint: disable=too-many-public-methods
 
         self.running = True
         self.current_line = 0
-        max_iterations = 10000  # Prevent infinite loops
         iterations = 0
 
         try:
-            while (
-                self.current_line < len(self.program_lines)
-                and self.running
-                and iterations < max_iterations
-            ):
+            while self.current_line < len(self.program_lines) and self.running:
                 iterations += 1
 
+                if self.max_iterations is not None and iterations > self.max_iterations:
+                    self.log_error(
+                        "Program stopped: Maximum iterations reached (possible infinite loop)",
+                        self.current_line + 1,
+                    )
+                    break
+
+                # Let the host breathe (and notice a Stop request) before each line.
+                if self.pump():
+                    self.interrupted = True
+                    break
+
                 if self.debug_mode and self.current_line in self.breakpoints:
-                    self.log_output(f"🔍 DEBUG: Breakpoint hit at line {self.current_line + 1}")
+                    self.log_output(f"BREAK IN {self.current_line + 1}")
                     break
 
                 _line_num, command = self.program_lines[self.current_line]
@@ -1658,7 +1751,7 @@ class Time_WarpInterpreter:  # pylint: disable=too-many-public-methods
 
                 # Log current execution line in debug mode
                 if self.debug_mode:
-                    self.debug_output(f"Executing line {self.current_line + 1}: {command[:50]}{'...' if len(command) > 50 else ''}")
+                    self.debug_output(f"[{self.current_line + 1}] {command[:50]}{'...' if len(command) > 50 else ''}")
 
                 try:
                     result = self.execute_line(command)
@@ -1676,7 +1769,10 @@ class Time_WarpInterpreter:  # pylint: disable=too-many-public-methods
                 if isinstance(result, str) and result.startswith("jump:"):
                     try:
                         jump_target = int(result.split(":")[1])
-                        if jump_target < 0 or jump_target >= len(self.program_lines):
+                        # A target equal to the program length means "past the
+                        # last line": loop exits normally (e.g. WHILE whose
+                        # WEND is the final statement).
+                        if jump_target < 0 or jump_target > len(self.program_lines):
                             self.log_error(f"Invalid jump target: {jump_target}", self.current_line + 1)
                             break
                         self.current_line = jump_target
@@ -1686,25 +1782,25 @@ class Time_WarpInterpreter:  # pylint: disable=too-many-public-methods
                         break
                 elif result == "error":
                     if not self.debug_mode:
-                        self.log_output("🛑 Program terminated due to error")
                         break
                     # In debug mode, continue execution
                     self.log_output("⚠️  Continuing execution after error (debug mode)")
 
                 self.current_line += 1
 
-            if iterations >= max_iterations:
-                self.log_error("Program stopped: Maximum iterations reached (possible infinite loop)", self.current_line + 1)
-
         except Exception as e:
             error_msg = f"Critical runtime error at line {self.current_line + 1}: {str(e)}"
             self.log_error(error_msg, self.current_line + 1)
         finally:
             self.running = False
-            if self.error_history:
-                self.log_output(f"📊 Execution completed with {len(self.error_history)} error(s)")
+            if self.stop_requested:
+                # A stop that arrived while blocked (e.g. at INPUT) leaves the
+                # loop via `running`, not via pump(), so record it here.
+                self.interrupted = True
+            if self.interrupted:
+                self.log_output(self._break_message())
             else:
-                self.log_output("✅ Program execution completed successfully")
+                self.log_output("READY.")
 
         return True
 
@@ -1722,17 +1818,18 @@ class Time_WarpInterpreter:  # pylint: disable=too-many-public-methods
         }
         executor = executors.get(lang)
         if executor is None:
-            self.log_output(f"❌ No executor found for language: {lang}")
+            self.log_output(f"?NO EXECUTOR for language: {lang}")
             return False
 
         try:
             result = executor.execute_command(program_text)
-            if result == "error":
-                self.log_output("🛑 Program terminated due to error")
+            if result == "stopped":
+                self.interrupted = True
+                self.log_output("BREAK")
             else:
-                self.log_output("✅ Program execution completed successfully")
+                self.log_output("READY.")
         except Exception as e:  # noqa: BLE001
-            self.log_output(f"❌ Critical runtime error: {e}")
+            self.log_output(f"?ERROR: {e}")
         return True
 
     # Additional methods for debugger control, etc.
@@ -1741,7 +1838,7 @@ class Time_WarpInterpreter:  # pylint: disable=too-many-public-methods
         if not self.program_lines:
             return
         if self.current_line >= len(self.program_lines):
-            self.log_output("✅ End of program reached.")
+            self.log_output("End of program.")
             self.running = False
             return
 
@@ -1771,19 +1868,52 @@ class Time_WarpInterpreter:  # pylint: disable=too-many-public-methods
         self.current_line += 1
 
     def stop_program(self):
-        """Stop program execution"""
+        """Request that the running program stops."""
+        self.stop_requested = True
         self.running = False
+
+    def _break_message(self):
+        """Classic BREAK report, naming the line that was executing."""
+        line = self.current_line + 1
+        if 0 < line <= len(self.program_lines):
+            return f"BREAK IN {line}"
+        return "BREAK"
 
     def set_debug_mode(self, enabled):
         """Enable/disable debug mode"""
         self.debug_mode = enabled
 
+    def set_profiling(self, enabled):
+        """Enable/disable profiling, including the optimizer's timer.
+
+        ``execute_line`` checks the interpreter flag, while the profiler itself
+        checks the optimizer flag; both must agree or timings are never
+        recorded.  Returns ``False`` when profiling is unavailable.
+        """
+        if not hasattr(self, "enable_profiling"):
+            return False
+        self.enable_profiling = bool(enabled)
+        optimizations = getattr(self, "optimizations", None)
+        if optimizations is not None and hasattr(optimizations, "enable_profiling"):
+            optimizations.enable_profiling = bool(enabled)
+        return True
+
     def toggle_breakpoint(self, line_number):
-        """Toggle breakpoint at line"""
-        if line_number in self.breakpoints:
-            self.breakpoints.remove(line_number)
+        """Toggle a breakpoint on *line_number* (1-based, as shown in the IDE)."""
+        index = line_number - 1
+        if index in self.breakpoints:
+            self.breakpoints.remove(index)
         else:
-            self.breakpoints.add(line_number)
+            self.breakpoints.add(index)
+        return self.breakpoints
+
+    def is_breakpoint(self, line_number):
+        """Return True when *line_number* (1-based) has a breakpoint."""
+        return (line_number - 1) in self.breakpoints
+
+    def clear_breakpoints(self):
+        """Remove every breakpoint."""
+        self.breakpoints.clear()
 
     def turtle_circle(self, radius):
         """Draw a circle with given radius"""

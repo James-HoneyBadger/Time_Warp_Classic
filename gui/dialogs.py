@@ -73,13 +73,18 @@ class FindDialog:
         if not search_term:
             return
         self.editor.clear_search_highlights()
+        options = {
+            "case_sensitive": self.case_var.get(),
+            "whole_word": self.whole_var.get(),
+            "regex": self.regex_var.get(),
+        }
         match = self.editor.find_text(
-            search_term,
-            start_pos=self.editor.index(tk.INSERT),
-            case_sensitive=self.case_var.get(),
-            whole_word=self.whole_var.get(),
-            regex=self.regex_var.get(),
+            search_term, start_pos=self.editor.index(tk.INSERT), **options
         )
+        if not match:
+            # Wrap around: a search from the caret at the end of the buffer
+            # should still find matches earlier in the file.
+            match = self.editor.find_text(search_term, start_pos="1.0", **options)
         if match:
             start_idx, end_idx = match
             self.editor.tag_remove("sel", "1.0", tk.END)
@@ -168,14 +173,22 @@ class ReplaceDialog:
         replace_term = self.replace_var.get()
         if not search_term:
             return
+        options = {
+            "case_sensitive": self.case_var.get(),
+            "whole_word": self.whole_var.get(),
+            "regex": self.regex_var.get(),
+        }
         replaced = self.editor.replace_text(
             search_term,
             replace_term,
             start_pos=self.editor.index(tk.INSERT),
-            case_sensitive=self.case_var.get(),
-            whole_word=self.whole_var.get(),
-            regex=self.regex_var.get(),
+            **options,
         )
+        if not replaced:
+            # Wrap around to the top of the buffer, like Find does.
+            replaced = self.editor.replace_text(
+                search_term, replace_term, start_pos="1.0", **options
+            )
         if replaced:
             self.output.insert(
                 tk.END, f"Replaced '{search_term}' with '{replace_term}'\n"
@@ -234,7 +247,7 @@ def show_about(parent):
     about_text = (
         f"{sep}\n"
         "Time Warp Classic\n"
-        "Version 1.3.4\n\n"
+        "Version 1.4.0\n\n"
         "Back-to-basics Tkinter IDE for 9 vintage\n"
         "+ modern languages with turtle graphics.\n\n"
         "FEATURES:\n"

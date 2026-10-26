@@ -21,6 +21,47 @@ Complete reference for BASIC syntax and features in Time Warp Classic.
 | Turtle | `FORWARD dist` | `FORWARD 100` |
 | Sound | `BEEP` / `PLAY freq` | `PLAY 440` |
 
+## Direct Mode (the `READY.` console)
+
+While no program is running, the **Console** bar at the bottom of the window
+behaves like a home computer's prompt.
+
+```basic
+>PRINT 2+2
+4
+>10 PRINT "HELLO"
+OK
+>LIST
+10 PRINT "HELLO"
+>RUN
+HELLO
+READY.
+```
+
+| Type this | What happens |
+|-----------|--------------|
+| `10 PRINT "HI"` | Stores (or replaces) program line 10 in the editor |
+| `10` | Deletes line 10 |
+| `LIST` | Lists the program in memory |
+| `RUN` | Runs the whole program |
+| `RUN 100` | Runs the program from line 100 |
+| `RENUMBER` | Renumbers the program 10, 20, 30 … |
+| `NEW` | Clears the program and variables |
+| `HELP` | Shows the console commands |
+| `PRINT 2+2`, `LET A=5`, `A=5` | Executes immediately |
+| `INPUT A` | Waits for a value entered in the Console bar |
+
+Statements that only make sense inside a stored program (`FOR`, `NEXT`,
+`GOTO`, `GOSUB`, `IF`, …) reply `?ILLEGAL DIRECT`, just as the originals did.
+Unknown statements reply `?SYNTAX ERROR`, and a stopped program reports
+`BREAK IN <line>`.
+
+`RUN` always starts with a clean slate: variables and loop stacks from the
+console are discarded, so a program cannot inherit leftovers from an earlier
+session.
+
+---
+
 ## Statements
 
 ### Variable Declaration & Assignment

@@ -79,6 +79,7 @@ Time_Warp_Classic/
 │   ├── languages/            # Language executor modules
 │   │   ├── __init__.py       # Exports all executors
 │   │   ├── base.py           # SubprocessExecutor base class
+│   │   ├── basic_console.py  # BASIC direct mode (READY. console)
 │   │   ├── pilot.py          # TwPilotExecutor
 │   │   ├── basic.py          # TwBasicExecutor
 │   │   ├── logo.py           # TwLogoExecutor
@@ -168,7 +169,7 @@ Performance optimization modules.
 
 - `performance_optimizer.py` — Code caching, expression optimization, profiling
 - `memory_manager.py` — Variable scope management, memory limits
-- `gui_optimizer.py` — Output buffering, refresh rate optimization
+- `gui_optimizer.py` — Optional batched-draw/text-refresh helpers
 
 #### utilities/safe_eval.py
 AST-based safe expression evaluator that replaces Python's `eval()` throughout the codebase.
@@ -198,7 +199,13 @@ All user-provided expressions are evaluated through `core/utilities/safe_eval.py
 External language executors (Python, JavaScript, Perl) run user code in isolated subprocesses with:
 - **30-second timeout** — prevents infinite loops and resource exhaustion
 - **Temporary file execution** — code written to temp file, executed, file cleaned up
-- **Output capture** — stdout/stderr captured and displayed in the IDE
+- **Streamed output** — merged stdout/stderr is forwarded line-by-line as it is produced
+  (`stdbuf` forces line buffering; Python runs with `-u`, Perl gets `$| = 1;`)
+- **Console input** — lines typed in the IDE console are written to the script's stdin,
+  so `input()`, `<>` and `readline` work
+- **Error line mapping** — the script line named by the runtime's traceback is reported as
+  `?ERROR IN <line>: <message>`, which the IDE makes clickable
+- **Stop support** — the IDE's Stop control kills the process immediately
 - **No shell=True** — subprocess calls use argument lists, not shell interpretation
 
 ### Input Validation
@@ -245,6 +252,20 @@ class Time_WarpInterpreter:
 5. **Output Capture:** Results routed through `log_output()` to the IDE output widget
 6. **Error Handling:** Errors logged via `log_error()` with line numbers and timestamps
 
+While the loop runs it calls `interpreter.pump()` before every line. The host
+hooks it relies on are:
+
+| Hook | Purpose |
+|------|---------|
+| `pump_callback` | Lets the GUI process events so the window stays responsive |
+| `stop_requested` | Set by Stop (button or Ctrl+.), ends the run at the next line |
+| `input_provider` | Supplies a console line for `INPUT` instead of a modal dialog |
+| `max_iterations` | Safety cap for unattended runs; the IDE sets it to `None` |
+
+`run_program()` resets `stop_requested`/`interrupted` per run, and `reset()`
+(used by the IDE before each RUN) clears variables and loop stacks so a new
+run starts clean.
+
 ### Language Detection Strategy
 
 Detects language by looking for:
@@ -261,11 +282,10 @@ Detects language by looking for:
 - **Runtime Errors:** Execution errors, caught per-line with `try/except`
 - **Timeout Errors:** External scripts that exceed the 30-second timeout
 
-All errors display:
-- Error message with ❌ prefix
-- Line number (if available)
+All errors display in classic form:
+- `?ERROR IN <line>: message` (no line number when it is unknown)
 - Timestamp (stored in `error_history`)
-- Summary at end of execution (error count or success message)
+- `READY.` when execution finishes, or `BREAK IN <line>` when the user stops it
 
 ---
 
@@ -374,13 +394,14 @@ The main application class owns the `tk.Tk` root window and orchestrates:
 ### Menu Bar (gui/menus.py)
 
 `build_menu_bar(app)` constructs all menus:
-- **File:** New, Open, Save, Save As, Recent Files, Examples, Exit
+- **File:** New, Open, Save, Save As, Load Example, Exit
 - **Edit:** Undo, Redo, Cut, Copy, Paste, Select All, Find, Replace
-- **View:** Themes, Fonts, Font Sizes
-- **Run:** Execute, Clear Output, Clear Canvas
-- **Tools:** Performance Stats, Profiling, Optimization
+- **Program:** Run Program, Load Example
+- **Debug:** Debug Mode, Toggle Breakpoint at Cursor (F9), Clear All Breakpoints, Error History
 - **Test:** Smoke Test, Full Test Suite
-- **Help:** About, Documentation, FAQ
+- **Performance:** Show Statistics, Optimize Performance, Toggle Profiling
+- **Preferences:** Themes, Font Family, Font Size
+- **About:** Version and credits
 
 ### Dialogs (gui/dialogs.py)
 
@@ -479,8 +500,13 @@ The interpreter caches evaluated expressions to avoid redundant computation.
 - Cleanup unused variables
 - Limit memory per execution
 
-#### 3. GUI Optimization
-- Output buffering via `core/optimizations/gui_optimizer.py`
+#### 3. GUI Responsiveness
+- The run loop pumps Tk events (`pump_callback`) so the window stays live
+- **Performance → Show Statistics** reports measured figures: event pumps/sec,
+  pending input lines, scheduled callbacks and output size
+- `core/optimizations/gui_optimizer.py` ships batched-draw helpers
+  (`OptimizedCanvas`, `AsyncTextUpdate`, `EventBatcher`) for embedders; the IDE
+  itself writes directly to its widgets
 - Refresh rate limiting
 
 #### 4. Execution Optimization
@@ -491,12 +517,27 @@ The interpreter caches evaluated expressions to avoid redundant computation.
 
 Run examples for each language using the IDE's **File → Open Examples** menu, or use the **Test → Run Smoke Test** menu to verify all interpreters.
 
+### Breakpoints
+
+Breakpoints are keyed by the 1-based line number shown in the editor:
+
+```python
+interpreter.toggle_breakpoint(20)   # set or clear line 20
+interpreter.is_breakpoint(20)       # -> True
+interpreter.clear_breakpoints()
+```
+
+A run stops before the breakpoint line executes and reports `BREAK IN n`.
+
 ### Profiling
 
-Toggle profiling from the Tools menu, or programmatically:
+Toggle profiling from the **Performance → Toggle Profiling** menu, or
+programmatically:
 ```python
-interpreter.profile_enabled = True
+interpreter.set_profiling(True)   # sets both the interpreter and optimizer flags
 ```
+
+Timings then appear under **Performance → Show Statistics** (`Profiler:`).
 
 ---
 
@@ -510,9 +551,9 @@ git clone <repo>
 cd Time_Warp_Classic
 ```
 
-2. **Install dependencies:**
+2. **Install dependencies** (runtime + dev tools):
 ```bash
-pip install -r requirements.txt
+pip install -r requirements-dev.txt
 ```
 
 3. **Run smoke test:**

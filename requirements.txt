@@ -1,23 +1,12 @@
-# Time_Warp IDE Requirements
-# Core dependencies for the Educational Programming IDE
+# Time_Warp runtime requirements
+# Keep in sync with [project.dependencies] in pyproject.toml.
+#
+# Standard-library modules used at runtime need no install:
+# tkinter, json, os, sys, threading, subprocess, turtle, pathlib
 
-# Runtime dependencies (most included with Python standard library)
-# - tkinter (GUI framework)
-# - json (configuration management)
-# - os, sys (system interface)
-# - threading (concurrent execution)
-# - subprocess (process management)
-# - turtle (graphics engine)
-# - pathlib (file system operations)
-
-# Required runtime dependencies
 pygame-ce>=2.0.0        # Graphics and multimedia support (community edition)
 pygments>=2.15.0        # Syntax highlighting for code editor
+Pillow>=8.0.0           # Image processing (PIL)
 
-# Development dependencies
-pytest>=7.0.0          # Testing framework
-black>=22.0.0           # Code formatting
-flake8>=4.0.0          # Linting
-
-# Runtime dependencies for enhanced features
-Pillow>=8.0.0        # Image processing (PIL)
+# Optional: real memory figures in Performance -> Show Statistics
+# psutil>=5.9.0

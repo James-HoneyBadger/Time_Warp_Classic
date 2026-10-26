@@ -92,7 +92,18 @@ Click the "Clear Output" button or use the menu.
 
 ### Can I save my code?
 
-Yes, use File > Save or Ctrl+S to save your programs.
+Yes. **File > Save** (Ctrl+S) writes to the file you opened; if the program has
+never been saved, it asks where to put it. **File > Save As...**
+(Ctrl+Shift+S) always asks, and proposes the extension that matches the
+selected language (`.bas` for BASIC, `.logo` for Logo, and so on).
+
+The title bar and status bar show a `*` while there are unsaved changes, and
+New/Open ask before throwing them away. Closing the window asks first too.
+
+### What does the status bar show?
+
+The selected language, the file name (with `*` when modified), the caret
+position (`Ln 12, Col 5`) and whether a program is `Ready` or `Running`.
 
 ### What file formats are supported?
 
@@ -124,9 +135,12 @@ Check:
 ### How do I debug my code?
 
 1. Add PRINT statements to trace execution
-2. Run simpler versions of your program
-3. Check output for error messages
-4. Compare with example programs
+2. Type `TRON` in the BASIC console to trace every line that runs, `TROFF`
+   to stop
+3. Click an error message such as `?ERROR IN 120: ...` (or `BREAK IN 120`) to
+   jump straight to that line in the editor
+4. Run simpler versions of your program
+5. Compare with example programs
 
 ### Can I use multiple languages in one program?
 
@@ -140,16 +154,34 @@ You can write very large programs, but performance depends on:
 - Computer resources
 - Language efficiency
 
+### Can I try BASIC statements without writing a whole program?
+
+Yes — select **BASIC** and type into the **Console** bar. Statements run
+immediately (`PRINT 2+2`), numbered lines are stored in the editor
+(`10 PRINT "HI"`), and `LIST` / `RUN` / `RENUMBER` / `NEW` / `HELP` work as
+they did on a home computer.
+
+### Can Python, JavaScript or Perl programs ask for input?
+
+Yes. When such a program calls `input()` (or reads stdin), type the answer in the
+**Console** bar and press Enter — the line is passed to the running script.
+Output is streamed line by line as it is printed. (A prompt written without a
+newline, such as `input("Name: ")`, is shown together with your answer rather
+than on its own line.)
+
+If the script fails, the console reports `?ERROR IN <line>: <message>` using the
+line number from the script itself; click that line to jump to it in the editor.
+
 ### Is there a time limit for execution?
 
-**For built-in languages** (BASIC, Logo, PILOT, Pascal, Prolog, Forth): No timeout — programs run until completion or manual stop.
+**For built-in languages** (BASIC, Logo, PILOT, Pascal, Prolog, Forth): No timeout — programs run until completion or manual stop. Press the red **Stop** button (or Ctrl+.) to end a run, including endless loops.
 
 **For subprocess languages** (Python, JavaScript, Perl): Yes — a **30-second timeout** is enforced. If your program takes longer than 30 seconds, it will be terminated automatically.
 
 ### What happens if I create an infinite loop?
 
-**Built-in languages:** The program will run until you stop it manually via the GUI.
-**Subprocess languages:** The 30-second timeout will kill the process automatically.
+**Built-in languages:** The program runs until you press **Stop** (or Ctrl+.) in the GUI — there is no artificial iteration limit. The console then reports `BREAK IN <line>`.
+**Subprocess languages:** Press **Stop** to kill the process, or let the 30-second timeout end it automatically.
 
 ---
 

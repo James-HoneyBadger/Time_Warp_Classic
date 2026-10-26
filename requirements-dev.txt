@@ -1,0 +1,10 @@
+# Development requirements (tests, formatting, linting)
+# Install with: pip install -r requirements-dev.txt
+-r requirements.txt
+
+pytest>=7.0.0           # Testing framework
+pytest-cov>=4.0.0       # Coverage reporting (`pytest --cov`)
+pytest-mock>=3.10.0     # mocker fixture
+pytest-xdist>=3.0.0     # Parallel test runs (`-n auto`)
+black>=22.0.0           # Code formatting
+flake8>=4.0.0           # Linting

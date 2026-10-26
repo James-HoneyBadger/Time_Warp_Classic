@@ -92,11 +92,6 @@ class _SafeEvaluator:
         if isinstance(node, ast.Constant):
             return node.value
 
-        # Python <3.8 compat (ast.Num / ast.Str deprecated, removed in 3.12)
-        if hasattr(ast, "Num") and isinstance(node, ast.Num):   # type: ignore[attr-defined]
-            return node.n                                        # type: ignore[attr-defined]
-        if hasattr(ast, "Str") and isinstance(node, ast.Str):   # type: ignore[attr-defined]
-            return node.s                                        # type: ignore[attr-defined]
 
         # --- containers ---
         if isinstance(node, ast.List):

@@ -193,6 +193,6 @@ See [../License.md](../License.md) for full license information.
 ---
 
 **Last Updated:** February 2026  
-**Version:** 1.3.4 Stable
+**Version:** 1.4.0 Stable
 
 **Start with [QUICK_START.md](QUICK_START.md) →**

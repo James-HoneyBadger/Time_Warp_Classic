@@ -42,6 +42,7 @@ class PythonExecutor(SubprocessExecutor):
     # Use the same Python that runs Time_Warp, but execute via subprocess
     # so user scripts cannot access IDE internals.
     executable_candidates = [sys.executable, "python3", "python"]
+    extra_args = ("-u",)  # unbuffered, so output streams as it is printed
 
     # ---- convenience aliases (backward-compat) ----
 

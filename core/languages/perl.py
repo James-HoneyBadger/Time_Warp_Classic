@@ -43,7 +43,9 @@ class PerlExecutor(SubprocessExecutor):
         script_text = command if isinstance(command, str) else str(command)
         if not script_text.endswith("\n"):
             script_text += "\n"
-        return self._execute_script(script_text)
+        # Autoflush STDOUT so output streams; prepended on line 1 so the
+        # line numbers in error messages still match the editor.
+        return self._execute_script("$| = 1; " + script_text)
 
     # ---- convenience aliases (backward-compat) ----
 

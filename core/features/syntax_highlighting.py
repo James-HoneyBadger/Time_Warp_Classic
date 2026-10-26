@@ -14,13 +14,52 @@ from typing import Dict, Tuple, Optional
 try:
     from pygments.lexers import (
         PythonLexer, JavascriptLexer, PerlLexer,
-        DelphiLexer as PascalLexer, PrologLexer, CLexer, TextLexer
+        DelphiLexer as PascalLexer, PrologLexer, TextLexer,
+        ForthLexer,
     )
     from pygments.token import Token
     PYGMENTS_AVAILABLE = True
 except ImportError as e:
     PYGMENTS_AVAILABLE = False
     print(f"⚠️  Pygments not available - syntax highlighting disabled: {e}")
+
+try:
+    # Classic line-numbered BASIC
+    from pygments.lexers import CbmBasicV2Lexer as BasicLexer
+except ImportError:  # pragma: no cover - Pygments without the CBM lexer
+    try:
+        from pygments.lexers import QBasicLexer as BasicLexer
+    except ImportError:
+        BasicLexer = None
+
+
+# Languages without a Pygments lexer get a small rule set instead.  Each
+# entry is (compiled pattern, tag) applied in order, so later rules win.
+_RULE_SETS = {
+    "logo": (
+        (re.compile(r";[^\n]*"), "syntax_comment"),
+        (re.compile(r'"[^"\n]*'), "syntax_string"),
+        (re.compile(r"\b\d+(?:\.\d+)?\b"), "syntax_number"),
+        (re.compile(
+            r"\b(?:FORWARD|FD|BACK|BK|LEFT|LT|RIGHT|RT|PENUP|PU|PENDOWN|PD|"
+            r"CLEARSCREEN|CS|HOME|REPEAT|IF|IFELSE|STOP|OUTPUT|OP|MAKE|"
+            r"PRINT|PR|SHOW|SETPC|SETPENSIZE|SETHEADING|SETH|HIDETURTLE|HT|"
+            r"SHOWTURTLE|ST|ARC|CIRCLE|TO|END|WAIT|TYPE|SUM|PRODUCT)\b",
+            re.IGNORECASE,
+        ), "syntax_keyword"),
+    ),
+    "pilot": (
+        (re.compile(r"^\s*\*.*$", re.MULTILINE), "syntax_comment"),
+        (re.compile(r"\[[A-Za-z_]\w*\]|\{[A-Za-z_]\w*\}|%\w+"),
+         "syntax_variable"),
+        (re.compile(
+            r"^\s*(?:T|TH|A|M|MT|Y|N|J|U|C|R|S|DT|MATH|GAME|AUDIO|F|W|D|"
+            r"BRANCH|MULTIMEDIA|STORAGE|E|L|HELP|TIME|DATE|RESET|LIVES|BEEP|"
+            r"STOP)\s*:",
+            re.IGNORECASE | re.MULTILINE,
+        ), "syntax_keyword"),
+    ),
+}
 
 
 class SyntaxHighlightingText(tk.Frame):
@@ -50,6 +89,7 @@ class SyntaxHighlightingText(tk.Frame):
         self.theme = theme
         self.lexer = None
         self._highlight_tags = {}  # Store tag configurations
+        self._rules = ()  # Regex rules for languages without a lexer
         self._last_highlighted_text = ""
         self._highlight_scheduled = False
 
@@ -96,35 +136,35 @@ class SyntaxHighlightingText(tk.Frame):
 
     def _setup_syntax_highlighting(self):
         """Set up syntax highlighting for the current language."""
-        if not PYGMENTS_AVAILABLE:
-            return
+        language = self.language.lower()
+        self._rules = _RULE_SETS.get(language, ())
 
         # Clear existing tags
         for tag in self.text.tag_names():
             if tag.startswith('syntax_'):
                 self.text.tag_delete(tag)
 
-        # Set up lexer based on language
+        self._setup_highlight_tags()
+
+        if not PYGMENTS_AVAILABLE:
+            self.lexer = None
+            return
+
         lexer_map = {
             'python': PythonLexer,
             'javascript': JavascriptLexer,
             'perl': PerlLexer,
             'pascal': PascalLexer,
             'prolog': PrologLexer,
-            'basic': CLexer,  # Use C lexer as fallback for BASIC
-            'logo': TextLexer,  # No specific lexer for Logo
-            'forth': TextLexer,  # No specific lexer for Forth
-            'pilot': TextLexer,  # No specific lexer for PILOT
+            'forth': ForthLexer,
         }
-
-        lexer_class = lexer_map.get(self.language.lower(), TextLexer)
+        lexer_class = lexer_map.get(language, TextLexer)
+        if language == 'basic' and BasicLexer is not None:
+            lexer_class = BasicLexer
         try:
             self.lexer = lexer_class()
         except Exception:
             self.lexer = TextLexer()
-
-        # Set up syntax highlighting tags based on theme
-        self._setup_highlight_tags()
 
     def _setup_highlight_tags(self):
         """Set up syntax highlighting tags based on current theme."""
@@ -209,7 +249,8 @@ class SyntaxHighlightingText(tk.Frame):
 
     def _highlight_text(self):
         """Apply syntax highlighting to the current text."""
-        if not PYGMENTS_AVAILABLE or not self.lexer:
+        rules = getattr(self, "_rules", ())
+        if not rules and (not PYGMENTS_AVAILABLE or not self.lexer):
             return
 
         current_text = self.text.get('1.0', tk.END)
@@ -224,6 +265,10 @@ class SyntaxHighlightingText(tk.Frame):
         for tag in self.text.tag_names():
             if tag.startswith('syntax_'):
                 self.text.tag_remove(tag, '1.0', tk.END)
+
+        if rules:
+            self._apply_rules(current_text, rules)
+            return
 
         try:
             # Get tokens from pygments
@@ -252,6 +297,20 @@ class SyntaxHighlightingText(tk.Frame):
 
         except Exception:
             # If highlighting fails, just continue without it
+            pass
+
+    def _apply_rules(self, text, rules):
+        """Tag *text* using the simple regex rules for this language."""
+        try:
+            for pattern, tag in rules:
+                for match in pattern.finditer(text):
+                    self.text.tag_add(
+                        tag,
+                        self._char_to_index(match.start()),
+                        self._char_to_index(match.end()),
+                    )
+                self.text.tag_raise(tag)
+        except tk.TclError:
             pass
 
     def _get_tag_for_token(self, token_type) -> Optional[str]:

@@ -115,9 +115,10 @@ class TwPrologExecutor:
 
                 self.database[predicate].append({"type": "fact", "args": args})
 
-                self.interpreter.log_output(
-                    f"📚 Fact added: {predicate}({', '.join(map(str, args))})"
+                rendered = ", ".join(
+                    TwPrologExecutor.format_term(arg) for arg in args
                 )
+                self.interpreter.log_output(f"📚 Fact added: {predicate}({rendered})")
         except Exception as e:
             self.interpreter.debug_output(f"Fact definition error: {e}")
         return "continue"
@@ -163,8 +164,11 @@ class TwPrologExecutor:
                         {"type": "rule", "head_args": head_args, "body": goals}
                     )
 
+                    head_text = ", ".join(
+                        TwPrologExecutor.format_term(arg) for arg in head_args
+                    )
                     self.interpreter.log_output(
-                        f"📋 Rule added: {predicate}({', '.join(map(str, head_args))}) "
+                        f"📋 Rule added: {predicate}({head_text}) "
                         f":- {', '.join(goals)}"
                     )
         except Exception as e:
@@ -195,15 +199,34 @@ class TwPrologExecutor:
                 if buf:
                     goals.append("".join(buf).strip())
 
+                query_vars = {
+                    name
+                    for goal in goals
+                    for name in re.findall(r"\b[A-Z_]\w*\b", goal)
+                }
+
                 # Execute query
                 results = self._execute_query(goals)
 
                 if results:
                     self.interpreter.log_output("✅ Query succeeded")
                     for result in results[:5]:  # Limit output
-                        if result:
-                            var_bindings = [f"{k} = {v}" for k, v in result.items()]
-                            self.interpreter.log_output(f"   {', '.join(var_bindings)}")
+                        if result is None:
+                            continue
+                        pairs = []
+                        for name, value in result.items():
+                            if query_vars and name not in query_vars:
+                                continue
+                            resolved = self._resolve_binding(result, value)
+                            if (
+                                isinstance(resolved, dict)
+                                and resolved.get("type") == "variable"
+                            ):
+                                continue
+                            pairs.append(f"{name} = {self.format_term(resolved)}")
+                        self.interpreter.log_output(
+                            f"   {', '.join(pairs) if pairs else 'yes'}"
+                        )
                     if len(results) > 5:
                         self.interpreter.log_output(
                             f"   ... and {len(results) - 5} more solutions"
@@ -213,6 +236,40 @@ class TwPrologExecutor:
         except Exception as e:
             self.interpreter.debug_output(f"Query execution error: {e}")
         return "continue"
+
+    @staticmethod
+    def _resolve_binding(bindings, term, seen=None):
+        """Follow variable-to-variable bindings until a value is reached."""
+        seen = seen or set()
+        while isinstance(term, dict) and term.get("type") == "variable":
+            name = term.get("name")
+            if name in seen or name not in bindings:
+                break
+            seen.add(name)
+            term = bindings[name]
+        return term
+
+    @staticmethod
+    def format_term(term):
+        """Render a term the way Prolog prints it (``bob``, ``X``, ``f(a)``)."""
+        if not isinstance(term, dict):
+            return str(term)
+        kind = term.get("type")
+        if kind in ("atom", "variable"):
+            return str(term.get("name", ""))
+        if kind in ("number", "string"):
+            return str(term.get("value", ""))
+        if kind == "list":
+            return "[" + ", ".join(
+                TwPrologExecutor.format_term(item) for item in term.get("elements", [])
+            ) + "]"
+        name = term.get("name") or term.get("functor") or ""
+        args = term.get("args") or term.get("arguments") or []
+        if args:
+            return f"{name}(" + ", ".join(
+                TwPrologExecutor.format_term(arg) for arg in args
+            ) + ")"
+        return str(name) or str(term)
 
     def _handle_listing(self):
         """Handle LISTING command - show database contents"""

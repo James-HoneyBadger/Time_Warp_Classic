@@ -6,9 +6,12 @@ and delegates actions to the interpreter and helper modules.
 """
 # pylint: disable=C0301,W0718
 
+import gc
 import json
 import os
+import re
 import sys
+import time
 import subprocess
 from pathlib import Path
 
@@ -16,6 +19,7 @@ import tkinter as tk
 from tkinter import scrolledtext, messagebox, filedialog
 
 from core.interpreter import Time_WarpInterpreter
+from core.languages.basic_console import BasicConsole
 from core.features.syntax_highlighting import SyntaxHighlightingText, LineNumberedText
 from gui.themes import (
     THEMES, FONT_SIZES, LINE_NUMBER_BG, SUPPORTED_LANGUAGES,
@@ -23,15 +27,6 @@ from gui.themes import (
 from gui.menus import build_menu_bar, detect_language_from_extension
 
 # Optional imports
-try:
-    from core.optimizations.gui_optimizer import (  # pylint: disable=ungrouped-imports
-        initialize_gui_optimizer,
-    )
-    _GUI_OPT = True
-except ImportError:
-    _GUI_OPT = False
-    initialize_gui_optimizer = None  # type: ignore[assignment]
-
 try:
     import pygments  # noqa: F401
     _PYGMENTS = True
@@ -49,6 +44,23 @@ SETTINGS_FILE = Path.home() / ".timewarp_settings.json"
 
 class TimeWarpApp:
     """Main GUI application for Time Warp Classic."""
+
+    # Languages that can draw on the turtle canvas (BASIC has DRAW/turtle
+    # commands, Logo is turtle-first).
+    _GRAPHICS_LANGUAGES = {"logo", "basic"}
+
+    # Default file extension per language (Save As follows the language).
+    LANGUAGE_EXTENSIONS = {
+        "pilot": ".pilot",
+        "basic": ".bas",
+        "logo": ".logo",
+        "pascal": ".pas",
+        "prolog": ".pro",
+        "forth": ".fth",
+        "perl": ".pl",
+        "python": ".py",
+        "javascript": ".js",
+    }
 
     # ------------------------------------------------------------------
     # Construction
@@ -73,15 +85,24 @@ class TimeWarpApp:
         self.interpreter = None
         self.language_var = None
         self.input_entry = None
-        self.gui_optimizer = None
         self.input_buffer = []
+
+        # Execution state
+        self._program_running = False
+        self.graphics_visible = True
+        self._last_pump = 0.0
+
+        # UI responsiveness counters used by Performance -> Show Statistics
+        self._pump_count = 0
+        self._pumps_per_second = 0.0
+        self._pump_window_start = time.monotonic()
+
+        # Document state
+        self.current_file = None
+        self.modified = False
 
         # References for theme updates
         self._layout_widgets = {}
-
-        # Initialize GUI optimizer
-        if _GUI_OPT and callable(initialize_gui_optimizer):
-            self.gui_optimizer = initialize_gui_optimizer(self.root)
 
         self._build_layout()
         self._init_interpreter()
@@ -93,6 +114,17 @@ class TimeWarpApp:
         self.apply_font_size(self.current_font)
 
         self._show_welcome()
+        self._update_graphics_visibility()
+
+        # The window-manager close button must not discard work silently.
+        self.root.protocol("WM_DELETE_WINDOW", self.on_window_close)
+
+        editor = self._text_widget()
+        editor.bind("<<Modified>>", self._on_editor_modified, add="+")
+        editor.bind("<KeyRelease>", lambda _e: self._update_cursor_status(), add="+")
+        editor.bind("<ButtonRelease-1>", lambda _e: self._update_cursor_status(), add="+")
+        self._update_title()
+        self._update_status()
 
     # ------------------------------------------------------------------
     # Settings persistence
@@ -135,7 +167,6 @@ class TimeWarpApp:
         main_paned = tk.PanedWindow(
             self.root, orient=tk.HORIZONTAL, sashwidth=5, bg="#252526"
         )
-        main_paned.pack(fill=tk.BOTH, expand=True, padx=5, pady=5)
 
         # --- Left panel (editor) ---
         left_panel = tk.Frame(main_paned, bg="#252526")
@@ -196,6 +227,8 @@ class TimeWarpApp:
             bg="#1e1e1e", fg="#d4d4d4", insertbackground="#d4d4d4",
         )
         self.output_text.pack(fill=tk.BOTH, expand=True)
+        self.output_text.bind("<Button-1>", self._on_output_click, add="+")
+        self.output_text.bind("<Motion>", self._on_output_hover, add="+")
 
         # Turtle graphics
         graphics_frame = tk.LabelFrame(
@@ -212,10 +245,9 @@ class TimeWarpApp:
 
         # Input bar
         input_frame = tk.Frame(self.root, bg="#252526")
-        input_frame.pack(fill=tk.X, padx=10, pady=(0, 10))
 
         tk.Label(
-            input_frame, text="Input:", font=("Arial", 10),
+            input_frame, text="Console:", font=("Arial", 10),
             bg="#252526", fg="#d4d4d4",
         ).pack(side=tk.LEFT, padx=(0, 5))
 
@@ -232,23 +264,52 @@ class TimeWarpApp:
 
         # Button bar
         button_frame = tk.Frame(self.root, bg="#252526")
-        button_frame.pack(fill=tk.X, padx=10, pady=(0, 10))
 
-        tk.Button(
+        self.run_button = tk.Button(
             button_frame, text="\u25b6 Run", command=self.run_code,
-            bg="#4CAF50", fg="white", font=("Arial", 10, "bold"), padx=20,
-        ).pack(side=tk.LEFT, padx=5)
+            bg="#4CAF50", fg="white", font=("Arial", 10, "bold"), padx=16,
+        )
+        self.run_button.pack(side=tk.LEFT, padx=5)
+        self.stop_button = tk.Button(
+            button_frame, text="\u25a0 Stop", command=self.stop_program,
+            bg="#8e2f2f", fg="white", font=("Arial", 10, "bold"), padx=12,
+            state=tk.DISABLED,
+        )
+        self.stop_button.pack(side=tk.LEFT, padx=5)
         for label, cmd in [
-            ("\U0001f4c2 Open", self.load_file),
-            ("\U0001f4be Save", self.save_file),
-            ("\U0001f5d1\ufe0f Clear Editor", self.clear_editor),
-            ("\U0001f4c4 Clear Output", self.clear_output),
-            ("\U0001f3a8 Clear Graphics", self.clear_canvas),
+            ("Open", self.load_file),
+            ("Save", self.save_file),
+            ("Clear Editor", self.clear_editor),
+            ("Clear Output", self.clear_output),
+            ("Clear Graphics", self.clear_canvas),
         ]:
             tk.Button(
-                button_frame, text=label, command=cmd, padx=15,
+                button_frame, text=label, command=cmd, padx=8,
                 bg="#3e3e3e", fg="#d4d4d4",
-            ).pack(side=tk.LEFT, padx=5)
+            ).pack(side=tk.LEFT, padx=4)
+
+        # Status bar (always the bottom-most row)
+        status_frame = tk.Frame(self.root, bg="#1e1e1e")
+        self.status_language = tk.Label(
+            status_frame, text="PILOT", bg="#1e1e1e", fg="#d4d4d4",
+            font=("Courier", 9), padx=8, pady=2,
+        )
+        self.status_language.pack(side=tk.LEFT)
+        self.status_file = tk.Label(
+            status_frame, text="Untitled", bg="#1e1e1e", fg="#9d9d9d",
+            font=("Courier", 9), padx=8, pady=2,
+        )
+        self.status_file.pack(side=tk.LEFT)
+        self.status_state = tk.Label(
+            status_frame, text="Ready", bg="#1e1e1e", fg="#9d9d9d",
+            font=("Courier", 9), padx=8, pady=2,
+        )
+        self.status_state.pack(side=tk.RIGHT)
+        self.status_cursor = tk.Label(
+            status_frame, text="Ln 1, Col 1", bg="#1e1e1e", fg="#9d9d9d",
+            font=("Courier", 9), padx=8, pady=2,
+        )
+        self.status_cursor.pack(side=tk.RIGHT)
 
         # Keep widget references for theme updates
         self._layout_widgets = {
@@ -260,7 +321,17 @@ class TimeWarpApp:
             "input_frame": input_frame,
             "button_frame": button_frame,
             "editor_header": editor_header,
+            "status_frame": status_frame,
         }
+        self.right_paned = right_paned
+        self.graphics_frame = graphics_frame
+
+        # Pack the bottom bars first so the expanding split view cannot clip
+        # them off the window.
+        status_frame.pack(side=tk.BOTTOM, fill=tk.X)
+        button_frame.pack(side=tk.BOTTOM, fill=tk.X, padx=10, pady=(0, 10))
+        input_frame.pack(side=tk.BOTTOM, fill=tk.X, padx=10, pady=(0, 10))
+        main_paned.pack(fill=tk.BOTH, expand=True, padx=5, pady=5)
 
     # ------------------------------------------------------------------
     # Interpreter init
@@ -271,16 +342,36 @@ class TimeWarpApp:
         self.interpreter.ide_turtle_canvas = self.turtle_canvas
         self.interpreter.input_buffer = self.input_buffer
 
+        # Host hooks: keep the window responsive, route INPUT to the console,
+        # and let the Stop control end a program (no iteration cap needed).
+        self.interpreter.pump_callback = self._pump_events
+        self.interpreter.input_provider = self._request_input
+        self.interpreter.max_iterations = None
+        # Direct-mode statements must run in the language shown in the menu.
+        self.interpreter.set_language_mode(self.language_var.get().lower())
+
+        # BASIC direct mode ("READY." console)
+        self.basic_console = BasicConsole(
+            self.interpreter,
+            get_program=self._editor_program,
+            set_program=self._set_editor_program,
+            run_program=self._run_from_console,
+            execute_direct=self._execute_basic_direct,
+        )
+
     # ------------------------------------------------------------------
     # Keyboard bindings
     # ------------------------------------------------------------------
 
     def _bind_keys(self):
         self.root.bind("<F5>", lambda e: self.run_code())
+        self.root.bind("<F9>", lambda e: self.toggle_breakpoint_at_cursor())
         self.root.bind("<Control-n>", lambda e: self.new_file())
         self.root.bind("<Control-o>", lambda e: self.load_file())
         self.root.bind("<Control-s>", lambda e: self.save_file())
+        self.root.bind("<Control-Shift-S>", lambda e: self.save_file_as())
         self.root.bind("<Control-q>", lambda e: self.exit_app())
+        self.root.bind("<Control-period>", lambda e: self.stop_program())
         self.root.bind("<Control-z>", lambda e: self.undo())
         self.root.bind("<Control-y>", lambda e: self.redo())
         self.root.bind("<Control-a>", lambda e: self.select_all())
@@ -296,12 +387,17 @@ class TimeWarpApp:
         """Update syntax highlighting when the language selector changes."""
         lang = self.language_var.get()
         lang_to_syntax = {
-            "PILOT": "text", "BASIC": "text", "Logo": "text",
-            "Pascal": "pascal", "Prolog": "prolog", "Forth": "text",
+            "PILOT": "pilot", "BASIC": "basic", "Logo": "logo",
+            "Pascal": "pascal", "Prolog": "prolog", "Forth": "forth",
             "Perl": "perl", "Python": "python", "JavaScript": "javascript",
         }
         if hasattr(self.editor_text, "set_language"):
             self.editor_text.set_language(lang_to_syntax.get(lang, "text"))
+        self._update_graphics_visibility()
+        self.interpreter.set_language_mode(lang.lower())
+        self._update_status()
+        if lang.lower() == "basic" and not self._program_running and self.output_text is not None:
+            self.output_text.insert(tk.END, "\nREADY.\n")
 
     # ------------------------------------------------------------------
     # Welcome message
@@ -309,7 +405,7 @@ class TimeWarpApp:
 
     def _show_welcome(self):
         self.output_text.insert("1.0", (
-            "Welcome to Time Warp Classic! \U0001f680\n\n"
+            "TIME WARP CLASSIC\n\n"
             "Supported Languages:\n"
             "\u2022 PILOT   - Educational language (T:, A:, J:, Y:, N: commands)\n"
             "\u2022 BASIC   - Classic line-numbered programming\n"
@@ -320,21 +416,32 @@ class TimeWarpApp:
             "\u2022 Perl    - Scripting language\n"
             "\u2022 Python  - Modern programming\n"
             "\u2022 JavaScript - Web scripting\n\n"
-            "Enter your code in the left panel and click Run to execute!\n"
+            "Enter your code in the left panel and click Run to execute.\n"
+            "BASIC direct mode: type a statement in the Console bar and press\n"
+            "Enter (LIST, RUN, NEW, RENUMBER, HELP).\n"
         ))
 
     # ------------------------------------------------------------------
     # File operations
     # ------------------------------------------------------------------
 
-    def new_file(self):  # noqa: C0116 — thin UI wrappers
-        """Create a new empty file in the editor."""
-        if messagebox.askyesno("New File", "Clear current editor content?"):
-            self.editor_text.delete("1.0", tk.END)
-            self.output_text.insert(tk.END, "\U0001f4c4 New file created\n")
+    def new_file(self):
+        """Start a new, empty program."""
+        if not self._confirm_discard():
+            return
+        self.editor_text.delete("1.0", tk.END)
+        self._discard_breakpoints()
+        self._text_widget().edit_modified(False)
+        self.current_file = None
+        self.modified = False
+        self._update_title()
+        self._update_status()
+        self.output_text.insert(tk.END, "New file\n")
 
     def load_file(self):
         """Open a file dialog and load the selected file into the editor."""
+        if not self._confirm_discard():
+            return
         filename = filedialog.askopenfilename(
             title="Open Program File",
             filetypes=[
@@ -349,57 +456,200 @@ class TimeWarpApp:
         if not filename:
             return
         try:
-            with open(filename, "r", encoding="utf-8") as f:
-                content = f.read()
-            self.editor_text.delete("1.0", tk.END)
-            self.editor_text.insert("1.0", content)
-            lang = detect_language_from_extension(filename, content)
-            if lang:
-                self.language_var.set(lang)
-                self.output_text.insert(tk.END, f"\U0001f4c2 Loaded: {filename} ({lang})\n")
-            else:
-                self.output_text.insert(tk.END, f"\U0001f4c2 Loaded: {filename}\n")
-        except Exception as e:
+            content = Path(filename).read_text(encoding="utf-8")
+        except OSError as e:
             messagebox.showerror("Error", f"Failed to load file:\n{e}")
-
-    def save_file(self):
-        """Save the current editor content to a file."""
-        filename = filedialog.asksaveasfilename(
-            title="Save Program File",
-            defaultextension=".pilot",
-            filetypes=[
-                ("PILOT Files", "*.pilot"), ("BASIC Files", "*.bas"),
-                ("Logo Files", "*.logo"), ("Python Files", "*.py"),
-                ("JavaScript Files", "*.js"), ("Perl Files", "*.pl"),
-                ("Pascal Files", "*.pas"), ("Forth Files", "*.fth"),
-                ("Prolog Files", "*.pro"), ("All Files", "*.*"),
-            ],
-        )
-        if not filename:
             return
+
+        self.editor_text.delete("1.0", tk.END)
+        self.editor_text.insert("1.0", content)
+        self._discard_breakpoints()
+        self._text_widget().edit_modified(False)
+        self.current_file = filename
+        self.modified = False
+        lang = detect_language_from_extension(filename, content)
+        if lang:
+            self.language_var.set(lang)
+        self._update_title()
+        self._update_status()
+        suffix = f" ({lang})" if lang else ""
+        self.output_text.insert(tk.END, f"Loaded: {filename}{suffix}\n")
+
+    def save_file(self, save_as=False):
+        """Save the buffer, asking for a path on first save or Save As."""
+        path = None if save_as else self.current_file
+        if not path:
+            path = filedialog.asksaveasfilename(
+                title="Save Program File",
+                initialdir=str(Path(self.current_file).parent) if self.current_file else None,
+                initialfile=Path(self.current_file).name if self.current_file else None,
+                defaultextension=self._default_extension(),
+                filetypes=self._save_filetypes(),
+            )
+            if not path:
+                return False
+
         try:
-            content = self.editor_text.get("1.0", tk.END)
-            with open(filename, "w", encoding="utf-8") as f:
-                f.write(content)
-            self.output_text.insert(tk.END, f"\U0001f4be Saved: {filename}\n")
-        except Exception as e:
+            Path(path).write_text(self._editor_program(), encoding="utf-8")
+        except OSError as e:
             messagebox.showerror("Error", f"Failed to save file:\n{e}")
+            return False
+
+        self.current_file = path
+        self.modified = False
+        self._update_title()
+        self._update_status()
+        self.output_text.insert(tk.END, f"Saved: {path}\n")
+        return True
+
+    def save_file_as(self):
+        """Save the buffer under a new name."""
+        return self.save_file(save_as=True)
 
     def load_example(self, filepath):
         """Load an example program from *filepath* into the editor."""
+        if not self._confirm_discard():
+            return
         try:
-            with open(filepath, "r", encoding="utf-8") as f:
-                content = f.read()
-            self.editor_text.delete("1.0", tk.END)
-            self.editor_text.insert("1.0", content)
-            lang = detect_language_from_extension(filepath, content)
-            if lang:
-                self.language_var.set(lang)
-                self.output_text.insert(tk.END, f"\U0001f4da Loaded example: {filepath} ({lang})\n")
-            else:
-                self.output_text.insert(tk.END, f"\U0001f4da Loaded example: {filepath}\n")
-        except Exception as e:
+            content = Path(filepath).read_text(encoding="utf-8")
+        except OSError as e:
             messagebox.showerror("Error", f"Failed to load example:\n{e}")
+            return
+
+        self.editor_text.delete("1.0", tk.END)
+        self.editor_text.insert("1.0", content)
+        self._discard_breakpoints()
+        self._text_widget().edit_modified(False)
+        # Examples are samples: Save prompts for a name instead of overwriting.
+        self.current_file = None
+        self.modified = False
+        lang = detect_language_from_extension(filepath, content)
+        if lang:
+            self.language_var.set(lang)
+        self._update_title()
+        self._update_status()
+        suffix = f" ({lang})" if lang else ""
+        self.output_text.insert(tk.END, f"Loaded example: {filepath}{suffix}\n")
+
+    # ------------------------------------------------------------------
+    # Document state, title and status bar
+    # ------------------------------------------------------------------
+
+    def _text_widget(self):
+        """Return the real tk.Text widget behind the editor wrapper."""
+        return getattr(self.editor_text, "text", self.editor_text)
+
+    def _default_extension(self):
+        """Return the file extension matching the selected language."""
+        return self.LANGUAGE_EXTENSIONS.get(self.language_var.get().lower(), ".txt")
+
+    def _save_filetypes(self):
+        """File-type filters, with the current language first."""
+        ext = self._default_extension()
+        filters = [(f"{self.language_var.get()} Files", f"*{ext}")]
+        for language, suffix in self.LANGUAGE_EXTENSIONS.items():
+            if suffix != ext:
+                filters.append((f"{language.capitalize()} Files", f"*{suffix}"))
+        filters.append(("All Files", "*.*"))
+        return filters
+
+    def _on_editor_modified(self, _event=None):
+        """Track whether the document has unsaved changes."""
+        widget = self._text_widget()
+        try:
+            changed = bool(widget.edit_modified())
+            widget.edit_modified(False)
+        except tk.TclError:
+            return
+        if changed and not self.modified:
+            self.modified = True
+            self._update_title()
+            self._update_status()
+
+    def _confirm_discard(self):
+        """Offer to save unsaved work before the buffer is replaced."""
+        if not self.modified:
+            return True
+        answer = messagebox.askyesnocancel(
+            "Unsaved Changes", "Save changes before continuing?"
+        )
+        if answer is None:
+            return False
+        if answer:
+            self.save_file()
+            return not self.modified
+        return True
+
+    def _update_title(self):
+        """Show the document name and modified marker in the title bar."""
+        name = Path(self.current_file).name if self.current_file else "Untitled"
+        star = " *" if self.modified else ""
+        self.root.title(f"{name}{star} - Time Warp Classic")
+
+    def _update_status(self):
+        """Refresh the status bar."""
+        try:
+            self.status_language.config(text=self.language_var.get())
+            name = Path(self.current_file).name if self.current_file else "Untitled"
+            self.status_file.config(text=name + (" *" if self.modified else ""))
+            self.status_state.config(text="Running" if self._program_running else "Ready")
+        except (AttributeError, tk.TclError):
+            pass
+        self._update_cursor_status()
+
+    def _update_cursor_status(self):
+        """Show the caret position (line and column) in the status bar."""
+        try:
+            line, column = self._text_widget().index(tk.INSERT).split(".")
+            self.status_cursor.config(text=f"Ln {line}, Col {int(column) + 1}")
+        except (AttributeError, ValueError, tk.TclError):
+            pass
+
+    # ------------------------------------------------------------------
+    # Output -> editor navigation
+    # ------------------------------------------------------------------
+
+    def _error_line_at(self, x, y):
+        """Return the line number named on the clicked output line, if any."""
+        try:
+            index = self.output_text.index(f"@{x},{y}")
+            text = self.output_text.get(f"{index} linestart", f"{index} lineend")
+        except tk.TclError:
+            return None
+        match = re.search(r"(?:ERROR IN|BREAK IN)\s+(\d+)", text)
+        return int(match.group(1)) if match else None
+
+    def _on_output_click(self, event):
+        """Jump to the editor line named by an error or BREAK message."""
+        line = self._error_line_at(event.x, event.y)
+        if line is None:
+            return None
+        self._goto_editor_line(line)
+        return "break"
+
+    def _on_output_hover(self, event):
+        """Show a hand cursor over clickable error lines."""
+        try:
+            self.output_text.config(
+                cursor="hand2" if self._error_line_at(event.x, event.y) else ""
+            )
+        except tk.TclError:
+            pass
+
+    def _goto_editor_line(self, line):
+        """Select *line* in the editor and scroll it into view."""
+        widget = self._text_widget()
+        target = f"{line}.0"
+        try:
+            widget.tag_remove("highlight", "1.0", tk.END)
+            widget.tag_configure("highlight", background="#264f78")
+            widget.tag_add("highlight", target, f"{line}.end")
+            widget.mark_set(tk.INSERT, target)
+            widget.see(target)
+            widget.focus_set()
+        except tk.TclError:
+            return
+        self._update_cursor_status()
 
     # ------------------------------------------------------------------
     # Edit operations
@@ -450,6 +700,7 @@ class TimeWarpApp:
     def clear_editor(self):
         """Clear the editor content."""
         self.editor_text.delete("1.0", tk.END)
+        self._discard_breakpoints()
 
     def clear_output(self):
         """Clear the output panel."""
@@ -464,12 +715,19 @@ class TimeWarpApp:
     # Code execution
     # ------------------------------------------------------------------
 
-    def run_code(self):
-        """Execute the current editor content using the selected language."""
-        code = self.editor_text.get("1.0", tk.END)
+    def run_code(self, program_text=None, clear_output=True):
+        """Execute the editor contents (or *program_text*) in the chosen language."""
+        if self._program_running:
+            return
+
+        code = program_text if program_text is not None else self.editor_text.get("1.0", tk.END)
         lang = self.language_var.get().lower()
-        self.output_text.delete("1.0", tk.END)
-        self.output_text.insert(tk.END, "\U0001f680 Running program...\n\n")
+        if clear_output:
+            self.output_text.delete("1.0", tk.END)
+            self.output_text.insert(tk.END, "RUN\n\n")
+
+        self._program_running = True
+        self._set_running_state(True)
         try:
             self.interpreter.ide_turtle_canvas = self.turtle_canvas
             if lang == "logo":
@@ -478,21 +736,209 @@ class TimeWarpApp:
                 self.interpreter.turtle_graphics = None
                 self.interpreter.init_turtle_graphics()
                 self.interpreter.clear_turtle_screen()
+            # A classic RUN starts from a clean slate: variables and loop
+            # stacks left over from the previous run are discarded.
+            self.interpreter.reset()
             self.interpreter.run_program(code, language=lang)
-            self.output_text.insert(tk.END, "\n\u2705 Program completed.\n")
         except Exception as e:
             self.output_text.insert(tk.END, f"\n\u274c Error: {e}\n")
+        finally:
+            self._program_running = False
+            self._set_running_state(False)
+            try:
+                self.output_text.see(tk.END)
+            except tk.TclError:
+                pass  # the window was closed while the program was running
+
+    def stop_program(self):
+        """Ask the interpreter to abort the program that is running."""
+        if self._program_running:
+            self.interpreter.stop_program()
+
+    def _set_running_state(self, running):
+        """Enable/disable the Run and Stop controls for the current state."""
+        try:
+            self.run_button.config(state=tk.DISABLED if running else tk.NORMAL)
+            self.stop_button.config(state=tk.NORMAL if running else tk.DISABLED)
+            self.root.config(cursor="watch" if running else "")
+        except tk.TclError:
+            pass
+        self._update_status()
+
+    def _pump_events(self, *_args):
+        """Keep the window alive while the interpreter is executing."""
+        if not self._program_running:
+            return
+        now = time.monotonic()
+        if now - self._last_pump < 0.03:
+            return
+        self._last_pump = now
+        self._pump_count += 1
+        elapsed = now - self._pump_window_start
+        if elapsed >= 1.0:
+            self._pumps_per_second = self._pump_count / elapsed
+            self._pump_count = 0
+            self._pump_window_start = now
+        try:
+            self.root.update()
+        except tk.TclError:
+            # The window went away mid-run: stop the interpreter so the run
+            # loop terminates instead of spinning without a UI.
+            self.interpreter.stop_program()
+
+    def _request_input(self, prompt=""):
+        """Wait for one console line from the input bar.
+
+        Pumps UI events while waiting so Stop and window controls stay live,
+        and returns ``None`` when the run is stopped instead of guessing.
+        """
+        if prompt:
+            self.output_text.insert(tk.END, prompt)
+            self.output_text.see(tk.END)
+        try:
+            self.input_entry.focus_set()
+        except tk.TclError:
+            return None
+
+        while not self.input_buffer:
+            if self.interpreter.stop_requested:
+                self.output_text.insert(tk.END, "\n")
+                return None
+            try:
+                self.root.update()
+            except tk.TclError:
+                return None
+            time.sleep(0.02)
+
+        value = self.input_buffer.pop(0)
+        self.output_text.insert(tk.END, f"{value}\n")
+        self.output_text.see(tk.END)
+        return value
+
+    def _update_graphics_visibility(self):
+        """Show the turtle canvas only for languages that can draw."""
+        graphics_frame = getattr(self, "graphics_frame", None)
+        right_paned = getattr(self, "right_paned", None)
+        if graphics_frame is None or right_paned is None or self.language_var is None:
+            return
+        wanted = self.language_var.get().lower() in self._GRAPHICS_LANGUAGES
+        if wanted == self.graphics_visible:
+            return
+        try:
+            if wanted:
+                right_paned.add(graphics_frame, height=300)
+            else:
+                right_paned.forget(graphics_frame)
+            self.graphics_visible = wanted
+        except tk.TclError:
+            pass
+
+    # ------------------------------------------------------------------
+    # Breakpoints
+    # ------------------------------------------------------------------
+
+    BREAKPOINT_TAG = "breakpoint"
+
+    def toggle_breakpoint_at_cursor(self):
+        """Set or clear a breakpoint on the line holding the caret."""
+        try:
+            line = int(self._text_widget().index(tk.INSERT).split(".")[0])
+        except (AttributeError, ValueError, tk.TclError):
+            return
+        self.interpreter.toggle_breakpoint(line)
+        self._refresh_breakpoint_marks()
+        state = "Set" if self.interpreter.is_breakpoint(line) else "Cleared"
+        self.output_text.insert(tk.END, f"{state} breakpoint on line {line}\n")
+
+    def clear_breakpoints(self):
+        """Remove every breakpoint and its marker."""
+        self.interpreter.clear_breakpoints()
+        self._refresh_breakpoint_marks()
+        self.output_text.insert(tk.END, "Breakpoints cleared\n")
+
+    def _refresh_breakpoint_marks(self):
+        """Paint a marker on every line that has a breakpoint."""
+        widget = self._text_widget()
+        try:
+            widget.tag_remove(self.BREAKPOINT_TAG, "1.0", tk.END)
+            if not self.interpreter.breakpoints:
+                return
+            widget.tag_configure(self.BREAKPOINT_TAG, background="#7a1f1f")
+            for index in sorted(self.interpreter.breakpoints):
+                line = index + 1
+                widget.tag_add(self.BREAKPOINT_TAG, f"{line}.0", f"{line}.end")
+            widget.tag_raise(self.BREAKPOINT_TAG)
+        except tk.TclError:
+            pass
+
+    def _discard_breakpoints(self):
+        """Drop breakpoints when the program in the editor is replaced."""
+        if self.interpreter is None or not self.interpreter.breakpoints:
+            return
+        self.interpreter.clear_breakpoints()
+        self._refresh_breakpoint_marks()
 
     # ------------------------------------------------------------------
     # Input
     # ------------------------------------------------------------------
 
     def _submit_input(self):
-        """Handle user input submission from the input entry field."""
+        """Handle a line typed at the console.
+
+        While a program is running the line answers INPUT; otherwise, in BASIC
+        mode, it is handled by direct mode (statements run immediately,
+        numbered lines edit the program).
+        """
         value = self.input_entry.get()
-        self.input_buffer.append(value)
-        self.output_text.insert(tk.END, f">> {value}\n")
         self.input_entry.delete(0, tk.END)
+        if self._program_running:
+            self.input_buffer.append(value)
+            return
+        if not value.strip():
+            return
+
+        self.output_text.insert(tk.END, f">{value}\n")
+        if self.language_var.get().lower() != "basic":
+            self.output_text.insert(
+                tk.END,
+                "Nothing is running. Press F5 (or Run) to execute the program.\n",
+            )
+            self.output_text.see(tk.END)
+            return
+
+        try:
+            response = self.basic_console.submit(value)
+        except Exception as exc:  # noqa: BLE001 — never lose the console to a bug
+            response = [f"?ERROR: {exc}"]
+        # TRON/TROFF change the interpreter directly; keep the menu in step.
+        if hasattr(self, "debug_enabled"):
+            self.debug_enabled.set(self.interpreter.debug_mode)
+        for line in response:
+            self.output_text.insert(tk.END, f"{line}\n")
+        self.output_text.see(tk.END)
+
+    def _editor_program(self):
+        """Return the editor contents (the program in memory)."""
+        return self.editor_text.get("1.0", "end-1c")
+
+    def _set_editor_program(self, text):
+        """Replace the editor contents (used by direct mode commands)."""
+        self.editor_text.delete("1.0", tk.END)
+        self.editor_text.insert("1.0", text)
+
+    def _run_from_console(self, program_text):
+        """Run a program supplied by the console (keeps the console history)."""
+        self.run_code(program_text, clear_output=False)
+
+    def _execute_basic_direct(self, statement):
+        """Run a BASIC direct-mode statement with the normal input controls."""
+        self._program_running = True
+        self._set_running_state(True)
+        try:
+            return self.interpreter.execute_line(statement)
+        finally:
+            self._program_running = False
+            self._set_running_state(False)
 
     # ------------------------------------------------------------------
     # Theme & font
@@ -542,6 +988,11 @@ class TimeWarpApp:
         w["input_frame"].config(bg=theme["frame_bg"])
         w["button_frame"].config(bg=theme["frame_bg"])
         w["editor_header"].config(bg=theme["frame_bg"])
+        if "status_frame" in w:
+            w["status_frame"].config(bg=theme["input_bg"])
+            for child in w["status_frame"].winfo_children():
+                if isinstance(child, tk.Label):
+                    child.config(bg=theme["input_bg"], fg=theme["text_fg"])
 
         # Input
         self.input_entry.config(
@@ -639,31 +1090,92 @@ class TimeWarpApp:
     # ------------------------------------------------------------------
 
     def show_performance_stats(self):
-        """Display interpreter and GUI performance statistics."""
+        """Display interpreter, UI and memory statistics."""
         self.output_text.delete("1.0", tk.END)
         self.output_text.insert(tk.END, "\U0001f4ca Performance Statistics\n")
         self.output_text.insert(tk.END, "=" * 50 + "\n\n")
         try:
-            if hasattr(self.interpreter, "get_performance_stats"):
-                stats = self.interpreter.get_performance_stats()
-                self.output_text.insert(tk.END, "Interpreter Performance:\n")
-                self.output_text.insert(tk.END, f"  Expression Cache: {stats.get('expression_cache', {}).get('hit_rate', 0):.2%} hit rate\n")
-                self.output_text.insert(tk.END, f"  Profiling: {stats.get('profiler', {})}\n")
-                self.output_text.insert(tk.END, f"  Memory: {stats.get('memory', {}).get('gc_objects', 0)} objects\n")
-                self.output_text.insert(tk.END, f"  Lazy Modules: {len(stats.get('lazy_loaded_modules', []))} loaded\n\n")
-            if self.gui_optimizer:
-                gs = self.gui_optimizer.get_performance_stats()
-                self.output_text.insert(tk.END, "GUI Performance:\n")
-                self.output_text.insert(tk.END, f"  Updates/sec: {gs.get('updates_per_second', 0):.1f}\n")
-                self.output_text.insert(tk.END, f"  Pending Tasks: {gs.get('pending_ui_tasks', 0)}\n\n")
-            if _PSUTIL:
-                process = psutil.Process(os.getpid())
-                mem = process.memory_info()
-                self.output_text.insert(tk.END, f"Memory Usage:\n  RSS: {mem.rss / 1024 / 1024:.1f} MB\n  VMS: {mem.vms / 1024 / 1024:.1f} MB\n\n")
-            else:
-                self.output_text.insert(tk.END, "Memory Usage: psutil not available\n\n")
+            self._write_interpreter_stats()
+            self._write_ui_stats()
+            self._write_memory_stats()
         except Exception as e:
-            self.output_text.insert(tk.END, f"\u274c Error getting performance stats: {e}\n")
+            self.output_text.insert(
+                tk.END, f"\u274c Error getting performance stats: {e}\n"
+            )
+
+    def _write_interpreter_stats(self):
+        """Interpreter cache, profiler and lazy-loading figures."""
+        if not hasattr(self.interpreter, "get_performance_stats"):
+            return
+        stats = self.interpreter.get_performance_stats()
+        cache = stats.get("expression_cache", {})
+        profiler = stats.get("profiler", {})
+        memory = stats.get("memory", {})
+
+        self.output_text.insert(tk.END, "Interpreter Performance:\n")
+        self.output_text.insert(
+            tk.END,
+            f"  Expression Cache: {cache.get('hit_rate', 0):.1%} hit rate "
+            f"({cache.get('hits', 0)} hits, {cache.get('misses', 0)} misses, "
+            f"{cache.get('size', 0)}/{cache.get('max_size', 0)} entries)\n",
+        )
+        if profiler:
+            operations = sum(item.get("count", 0) for item in profiler.values())
+            self.output_text.insert(
+                tk.END,
+                f"  Profiling: on, {operations} lines timed\n",
+            )
+        else:
+            self.output_text.insert(
+                tk.END, "  Profiling: off (Performance \u2192 Toggle Profiling)\n"
+            )
+        self.output_text.insert(
+            tk.END, f"  Memory: {memory.get('gc_objects', 0)} objects\n"
+        )
+        self.output_text.insert(
+            tk.END,
+            f"  Lazy Modules: {len(stats.get('lazy_loaded_modules', []))} loaded\n\n",
+        )
+
+    def _write_ui_stats(self):
+        """Responsiveness figures measured while programs run."""
+        try:
+            pending_callbacks = len(self.root.tk.call("after", "info"))
+        except tk.TclError:
+            pending_callbacks = 0
+        output_chars = len(self.output_text.get("1.0", "end-1c"))
+
+        self.output_text.insert(tk.END, "UI Performance:\n")
+        self.output_text.insert(
+            tk.END, f"  Event pumps/sec: {self._pumps_per_second:.1f}\n"
+        )
+        self.output_text.insert(
+            tk.END, f"  Pending input lines: {len(self.input_buffer)}\n"
+        )
+        self.output_text.insert(
+            tk.END, f"  Scheduled callbacks: {pending_callbacks}\n"
+        )
+        self.output_text.insert(
+            tk.END, f"  Output panel: {output_chars} characters\n\n"
+        )
+
+    def _write_memory_stats(self):
+        """Process memory, when psutil is installed."""
+        if not _PSUTIL:
+            self.output_text.insert(
+                tk.END,
+                "Memory Usage: psutil not available "
+                "(pip install psutil)\n\n",
+            )
+            return
+        process = psutil.Process(os.getpid())
+        mem = process.memory_info()
+        self.output_text.insert(
+            tk.END,
+            "Memory Usage:\n"
+            f"  RSS: {mem.rss / 1024 / 1024:.1f} MB\n"
+            f"  VMS: {mem.vms / 1024 / 1024:.1f} MB\n\n",
+        )
 
     def optimize_performance(self):
         """Apply runtime performance optimizations and report results."""
@@ -671,38 +1183,64 @@ class TimeWarpApp:
         self.output_text.insert(tk.END, "\u26a1 Applying Performance Optimizations...\n\n")
         try:
             if hasattr(self.interpreter, "optimize_for_production"):
-                r = self.interpreter.optimize_for_production()
-                self.output_text.insert(tk.END, f"Interpreter: cache_cleared={r.get('cache_cleared', False)}, objects_collected={r.get('objects_collected', 0)}\n")
-            if self.gui_optimizer and hasattr(self.gui_optimizer, "optimize_for_performance"):
-                r = self.gui_optimizer.optimize_for_performance()
-                self.output_text.insert(tk.END, f"GUI: canvases_flushed={r.get('canvases_flushed', 0)}, tasks_remaining={r.get('ui_tasks_remaining', 0)}\n")
+                result = self.interpreter.optimize_for_production()
+                self.output_text.insert(
+                    tk.END,
+                    "Interpreter: "
+                    f"cache_cleared={result.get('cache_cleared', False)}, "
+                    f"objects_collected={result.get('objects_collected', 0)}\n",
+                )
             try:
                 from core.optimizations import cleanup_all_resources
-                r = cleanup_all_resources()
-                self.output_text.insert(tk.END, f"Global: garbage_collected={r.get('garbage_collected', 0)}\n")
+                result = cleanup_all_resources()
+                self.output_text.insert(
+                    tk.END,
+                    f"Global: garbage_collected={result.get('garbage_collected', 0)}\n",
+                )
             except ImportError:
                 pass
+
+            collected = gc.collect()
+            self.root.update_idletasks()
+            self.output_text.insert(tk.END, f"UI: {collected} objects collected, "
+                                            "pending redraws flushed\n")
             self.output_text.insert(tk.END, "\n\u2705 Performance optimizations applied!\n")
         except Exception as e:
             self.output_text.insert(tk.END, f"\u274c Error: {e}\n")
 
     def toggle_profiling(self):
         """Toggle runtime performance profiling on or off."""
-        if hasattr(self.interpreter, "enable_profiling"):
-            self.interpreter.enable_profiling = not self.interpreter.enable_profiling
-            state = "enabled" if self.interpreter.enable_profiling else "disabled"
-            self.output_text.insert(tk.END, f"\U0001f50d Performance profiling {state}\n")
-        else:
+        if not hasattr(self.interpreter, "enable_profiling"):
             self.output_text.insert(tk.END, "\u2139\ufe0f  Profiling not available\n")
+            return
+        enabled = not self.interpreter.enable_profiling
+        setter = getattr(self.interpreter, "set_profiling", None)
+        if callable(setter):
+            setter(enabled)
+        else:
+            self.interpreter.enable_profiling = enabled
+        state = "enabled" if self.interpreter.enable_profiling else "disabled"
+        self.output_text.insert(tk.END, f"\U0001f50d Performance profiling {state}\n")
 
     # ------------------------------------------------------------------
     # Application lifecycle
     # ------------------------------------------------------------------
 
+    def on_window_close(self):
+        """Handle the window close button (clicking it by accident is common)."""
+        if self._program_running:
+            self.stop_program()
+        self.exit_app()
+
     def exit_app(self):
         """Prompt the user and exit the application."""
-        if messagebox.askyesno("Exit", "Are you sure you want to exit?"):
-            self.root.quit()
+        if self._program_running:
+            self.stop_program()
+        prompt = "Exit Time Warp Classic?"
+        if self._editor_program().strip():
+            prompt = "Exit Time Warp Classic?\nUnsaved editor contents will be lost."
+        if messagebox.askyesno("Exit", prompt):
+            self.root.destroy()
 
     def run(self):
         """Start the Tk main loop."""

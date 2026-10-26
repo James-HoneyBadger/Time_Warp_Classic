@@ -28,11 +28,19 @@ Your project has been successfully prepared for PyPI release. All necessary conf
    - ✅ Ensures all necessary files are packaged
 
 ### 4. **Built & Validated Distributions**
-   - ✅ Source distribution: `timewarp_classic-1.3.0.tar.gz` (427 KB)
-   - ✅ Wheel distribution: `timewarp_classic-1.3.0-py3-none-any.whl` (368 KB)
+   - ✅ Source distribution: `timewarp_classic-1.4.0.tar.gz` (427 KB)
+   - ✅ Wheel distribution: `timewarp_classic-1.4.0-py3-none-any.whl` (368 KB)
    - ✅ Both distributions passed twine validation
 
 ---
+
+## 🧪 Before Releasing
+
+```bash
+python -m pytest                 # full suite, no coverage plugin required
+python -m pytest --cov           # optional coverage report (pytest-cov)
+git status --short               # everything committed
+```
 
 ## 🚀 Ready to Release
 
@@ -40,8 +48,8 @@ Your package is now ready for PyPI publication. Two files are available in the `
 
 ```
 dist/
-├── timewarp_classic-1.3.0.tar.gz
-└── timewarp_classic-1.3.0-py3-none-any.whl
+├── timewarp_classic-1.4.0.tar.gz
+└── timewarp_classic-1.4.0-py3-none-any.whl
 ```
 
 ---
@@ -83,7 +91,7 @@ Three new reference files have been created:
 ### Package Name & Version
 ```toml
 name = "timewarp-classic"
-version = "1.3.0"
+version = "1.4.0"
 ```
 
 ### Entry Point
@@ -93,14 +101,17 @@ timewarp = "Time_Warp:main"
 ```
 Users will be able to run: `timewarp` from command line
 
-### Dependencies
-- pygame>=2.0.0
+### Dependencies (runtime)
+- pygame-ce>=2.0.0
 - Pillow>=8.0.0
-- pygments>=2.10.0
+- pygments>=2.15.0
+
+Development tooling lives in `requirements-dev.txt` (pytest, pytest-cov,
+pytest-mock, pytest-xdist, black, flake8).
 
 ### Python Support
 - Python 3.9+
-- Tested on Python 3.9, 3.10, 3.11, 3.12, 3.13
+- Classifiers cover 3.9 – 3.14
 
 ---
 
@@ -156,8 +167,8 @@ timewarp
 | pyproject.toml | ✅ | Fully configured |
 | LICENSE | ✅ | MIT License present |
 | MANIFEST.in | ✅ | All files included |
-| Source Distribution | ✅ | timewarp_classic-1.3.0.tar.gz |
-| Wheel Distribution | ✅ | timewarp_classic-1.3.0-py3-none-any.whl |
+| Source Distribution | ✅ | timewarp_classic-1.4.0.tar.gz |
+| Wheel Distribution | ✅ | timewarp_classic-1.4.0-py3-none-any.whl |
 | Metadata Validation | ✅ | Twine check passed |
 | Deprecation Warnings | ✅ | None (fixed) |
 

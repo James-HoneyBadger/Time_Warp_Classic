@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "timewarp-classic"
-version = "1.3.4"
+version = "1.4.0"
 description = "Back-to-basics Tkinter IDE for 9 vintage + modern languages with turtle graphics"
 readme = "README.md"
 requires-python = ">=3.9"
@@ -28,9 +28,9 @@ classifiers = [
     "Topic :: Software Development :: Interpreters",
 ]
 dependencies = [
-    "pygame>=2.0.0",
+    "pygame-ce>=2.0.0",
     "Pillow>=8.0.0",
-    "pygments>=2.10.0"
+    "pygments>=2.15.0"
 ]
 
 [project.urls]
@@ -43,6 +43,9 @@ Issues = "https://github.com/James-HoneyBadger/Time_Warp_Classic/issues"
 timewarp = "Time_Warp:main"
 
 [project.optional-dependencies]
+metrics = [
+    "psutil>=5.9.0",
+]
 test = [
     "pytest>=7.0.0",
     "pytest-cov>=4.0.0",
@@ -154,14 +157,26 @@ addopts = [
     "--tb=short",
     "--strict-markers",
     "--disable-warnings",
-    "--cov=.",
-    "--cov-report=term-missing",
-    "--cov-report=html:htmlcov",
-    "--cov-fail-under=80"
 ]
 markers = [
     "unit: Unit tests",
     "integration: Integration tests",
     "slow: Slow running tests",
-    "language: Language-specific tests"
+    "language: Language-specific tests",
+    "gui: Needs a display",
 ]
+
+# Coverage is opt-in: ``pytest --cov`` (requires the ``test`` extra).
+# Keeping it out of ``addopts`` lets a plain ``pytest`` run without the
+# coverage plugin and without failing on the aggregate gate.
+[tool.coverage.run]
+source = ["core", "gui"]
+omit = ["tests/*", "*/__pycache__/*"]
+
+[tool.coverage.report]
+exclude_lines = [
+    "pragma: no cover",
+    "if TYPE_CHECKING:",
+    "raise NotImplementedError",
+]
+show_missing = true

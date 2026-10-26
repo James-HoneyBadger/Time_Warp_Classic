@@ -13,6 +13,7 @@ import time
 from typing import Dict, Any, Callable
 import threading
 import gc
+import re
 
 
 class ExpressionCache:
@@ -216,6 +217,10 @@ class MemoryOptimizer:
 # Sentinel for cache misses (distinguishes None results from missing entries)
 _CACHE_MISS = object()
 
+# Results of these calls change on every evaluation, so they must never be
+# reused from the cache.
+_VOLATILE_EXPRESSION = re.compile(r"\bRND\b", re.IGNORECASE)
+
 
 class OptimizedInterpreterMixin:
     """Mixin class providing performance optimizations for interpreters."""
@@ -281,6 +286,11 @@ class OptimizedInterpreterMixin:
     def optimized_evaluate_expression(self, expr: str) -> Any:
         """Optimized expression evaluation with caching."""
         if not self.enable_caching:
+            return self.interpreter._evaluate_expression_original(expr)  # pylint: disable=protected-access
+
+        if _VOLATILE_EXPRESSION.search(expr):
+            # RND returns a new number each time; caching it would freeze
+            # random sequences that call it more than once.
             return self.interpreter._evaluate_expression_original(expr)  # pylint: disable=protected-access
 
         # Create cache key from expression and current variables

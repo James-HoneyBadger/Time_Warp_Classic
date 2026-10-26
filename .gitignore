@@ -79,6 +79,9 @@ config.json
 # Test and temporary files
 test_*.py
 *_test.py
+!tests/**
+__pycache__/
+*.py[cod]
 debug_*.py
 benchmark_*.py
 stress_test_*.py

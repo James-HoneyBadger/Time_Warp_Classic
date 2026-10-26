@@ -34,7 +34,7 @@ Usage:
     interpreter.run_program("T:Hello World!")
 """
 
-__version__ = "1.3.4"
+__version__ = "1.4.0"
 __author__ = "Honey Badger Universe"
 
 from .interpreter import Time_WarpInterpreter

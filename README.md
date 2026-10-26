@@ -4,7 +4,7 @@
 
 Time Warp Classic is an educational multi-language IDE that bridges the past and present of programming, supporting 9 programming languages through an elegant graphical interface with integrated turtle graphics, inspired by the golden age of computing.
 
-[![Version](https://img.shields.io/badge/version-1.3.4-blue.svg)](https://github.com/James-HoneyBadger/Time_Warp_Classic)
+[![Version](https://img.shields.io/badge/version-1.4.0-blue.svg)](https://github.com/James-HoneyBadger/Time_Warp_Classic)
 [![Python](https://img.shields.io/badge/python-3.9+-green.svg)](https://www.python.org/)
 [![License](https://img.shields.io/badge/license-MIT-orange.svg)](LICENSE)
 [![education](https://img.shields.io/badge/topic-education-lightgrey)](https://github.com/topics/education)
@@ -53,10 +53,11 @@ Execute code in 9 different programming languages — six with full built-in int
 ### Educational Focus
 
 - **Enhanced Error Messages** — Detailed error reporting with line numbers and context
-- **Debug Tools** — Breakpoint support, debug mode, error history
+- **Debug Tools** — Set breakpoints with F9 (marked in the editor), debug mode, error history
 - **Testing Framework** — Built-in smoke tests and full test suite via menu
 - **Example Programs** — Comprehensive demos for every language
-- **Immediate Feedback** — Run code with F5, see results instantly
+- **Immediate Feedback** — Run code with F5 and stop it with Ctrl+. — results stream live
+- **BASIC Direct Mode** — Type statements in the Console bar (`PRINT 2+2`, `LIST`, `RUN`, `RENUMBER`) exactly like a classic home computer
 - **Visual Programming** — Logo turtle graphics for immediate visual learning
 
 ---
@@ -192,8 +193,9 @@ When you launch Time_Warp.py, you'll see the main IDE interface:
 
 1. **Select Language** - Choose from the dropdown (PILOT, BASIC, Logo, etc.)
 2. **Write Code** - Use the left editor panel
-3. **Run Program** - Press **F5** or use **Program → Run Program**
-4. **View Results** - See output in the right panel and graphics below
+3. **Run Program** - Press **F5** or click **Run** (the window stays responsive; **Stop** or Ctrl+. halts long runs)
+4. **View Results** - See output in the right panel and graphics below (the graphics pane appears for Logo and BASIC)
+5. **Try Direct Mode** - With BASIC selected, type `PRINT 2+2` or `RUN` in the **Console** bar and press Enter
 
 ### Quick Example
 
@@ -365,7 +367,8 @@ Time_Warp_Classic/
 ├── run.py                    # Cross-platform launcher with venv/dependency setup
 ├── run.sh / run.bat          # Platform-specific launcher scripts
 ├── README.md                 # This file
-├── requirements.txt          # Python dependencies
+├── requirements.txt          # Runtime dependencies
+├── requirements-dev.txt      # Test/format/lint dependencies
 ├── pyproject.toml            # Python project metadata and tool config
 │
 ├── gui/                      # GUI package (tkinter IDE)
@@ -421,12 +424,15 @@ Time_Warp_Classic/
 ### Program Execution
 
 - **F5** — Run current program
+- **F9** — Set or clear a breakpoint on the current line (Debug menu)
+- **Ctrl+.** — Stop the running program (or use the red Stop button)
 
 ### File Operations
 
 - **Ctrl+N** — New file
 - **Ctrl+O** — Open file
-- **Ctrl+S** — Save file
+- **Ctrl+S** — Save file (asks for a location the first time)
+- **Ctrl+Shift+S** — Save As
 - **Ctrl+Q** — Exit application
 
 ### Editing
@@ -528,7 +534,7 @@ python -m venv venv
 source venv/bin/activate  # On Windows: venv\Scripts\activate
 
 # Install all dependencies (runtime + dev tools)
-pip install -r requirements.txt
+pip install -r requirements-dev.txt
 
 # Run tests
 pytest
