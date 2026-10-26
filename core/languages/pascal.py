@@ -159,7 +159,8 @@ class TwPascalExecutor:
                 "procedures": {},
                 "functions": {},
             }
-            self.interpreter.log_output(f"📦 Unit {unit_name} declared")
+            if self.interpreter.console_banner:
+                self.interpreter.log_output(f"📦 Unit {unit_name} declared")
         return "continue"
 
     def _handle_interface(self, command):
@@ -319,7 +320,8 @@ class TwPascalExecutor:
     def _handle_begin(self, command):
         """Handle BEGIN block"""
         # BEGIN - start of code block
-        self.interpreter.log_output("📦 Entering code block")
+        if self.interpreter.console_banner:
+            self.interpreter.log_output("📦 Entering code block")
         return "continue"
 
     def _handle_end(self, command):
@@ -327,10 +329,12 @@ class TwPascalExecutor:
         # END. - program end
         # END; - block end
         if command.strip().upper() == "END.":
-            self.interpreter.log_output("🏁 Program completed")
+            if self.interpreter.console_banner:
+                self.interpreter.log_output("🏁 Program completed")
             return "end"
         else:
-            self.interpreter.log_output("📦 Exiting code block")
+            if self.interpreter.console_banner:
+                self.interpreter.log_output("📦 Exiting code block")
             return "continue"
 
     def _handle_var(self, command):

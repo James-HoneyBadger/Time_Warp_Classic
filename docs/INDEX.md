@@ -18,6 +18,7 @@ Welcome to the Time Warp Classic comprehensive documentation. This is your compl
 - **[TECHNICAL_REFERENCE.md](dev/TECHNICAL_REFERENCE.md)** - Architecture, API, and implementation details
 - **[PLUGINS.md](dev/PLUGINS.md)** - Add a language with a JSON manifest
 - **[EXPORTING.md](dev/EXPORTING.md)** - Turn a program into a standalone runner
+- **[WEB.md](dev/WEB.md)** - Use the IDE from a browser, and the HTTP API
 
 ### Language Guides
 
@@ -67,6 +68,9 @@ Welcome to the Time Warp Classic comprehensive documentation. This is your compl
 
 **Hand someone a program that just runs**
 → [EXPORTING.md](dev/EXPORTING.md)
+
+**Program in the browser**
+→ [WEB.md](dev/WEB.md)
 
 **Troubleshoot a problem**
 → [TROUBLESHOOTING.md](TROUBLESHOOTING.md)

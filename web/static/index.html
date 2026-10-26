@@ -1,0 +1,283 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Time Warp Classic - Web IDE</title>
+<style>
+  :root {
+    --bg: #1e1e1e; --panel: #252526; --border: #3e3e3e;
+    --fg: #d4d4d4; --muted: #9d9d9d; --accent: #4caf50; --error: #f14c4c;
+  }
+  * { box-sizing: border-box; }
+  html, body { overflow: hidden; }  /* the panes do their own scrolling */
+  body {
+    margin: 0; height: 100vh; display: flex; flex-direction: column;
+    background: var(--bg); color: var(--fg);
+    font-family: "Courier New", Courier, monospace;
+  }
+  header {
+    display: flex; align-items: center; gap: 10px; padding: 8px 12px;
+    background: var(--panel); border-bottom: 1px solid var(--border);
+    flex-wrap: wrap;  /* the status line drops to its own row when narrow */
+  }
+  header h1 { font-size: 15px; margin: 0 12px 0 0; font-weight: bold; white-space: nowrap; }
+  #language { flex: 0 0 auto; max-width: 140px; }
+  #examples { flex: 1 1 160px; min-width: 110px; }
+  select, button {
+    background: #3e3e3e; color: var(--fg); border: 1px solid var(--border);
+    padding: 4px 8px; font: inherit; border-radius: 3px;
+  }
+  button.primary { background: var(--accent); color: #06220b; font-weight: bold; }
+  button:disabled { opacity: 0.5; }
+  #status {
+    margin-left: auto; color: var(--muted); font-size: 12px;
+    white-space: nowrap;
+  }
+  main { flex: 1; display: flex; min-height: 0; overflow: hidden; }
+  .pane { flex: 1; display: flex; flex-direction: column; min-width: 0; }
+  #divider {
+    width: 5px; cursor: col-resize; background: var(--border); flex: 0 0 5px;
+  }
+  #divider:hover { background: #5a5a5a; }
+  .pane h2 {
+    margin: 0; padding: 5px 10px; font-size: 12px; font-weight: normal;
+    color: var(--muted); background: var(--panel);
+    border-bottom: 1px solid var(--border);
+  }
+  .editor { flex: 1; display: flex; min-height: 0; }
+  #gutter {
+    margin: 0; padding: 10px 6px 10px 10px; text-align: right;
+    color: #6a6a6a; background: #1a1a1a; user-select: none; overflow: hidden;
+    line-height: 1.5; font-size: 13px;
+  }
+  #code {
+    flex: 1; resize: none; border: 0; outline: none; padding: 10px;
+    background: var(--bg); color: var(--fg); font: inherit; font-size: 13px;
+    line-height: 1.5; tab-size: 4; white-space: pre; overflow: auto;
+  }
+  #output {
+    flex: 1; margin: 0; padding: 10px; overflow: auto; white-space: pre-wrap;
+    font-size: 13px; line-height: 1.5;
+  }
+  #output .err { color: var(--error); }
+  .hint { padding: 2px 10px; color: var(--muted); font-size: 11px;
+          background: var(--panel); border-top: 1px solid var(--border); }
+</style>
+</head>
+<body>
+<header>
+  <h1>TIME WARP CLASSIC</h1>
+  <select id="language" title="Language"></select>
+  <button id="run" class="primary" title="Ctrl+Enter">&#9654; Run</button>
+  <select id="examples" title="Load an example">
+    <option value="">Examples&hellip;</option>
+  </select>
+  <span id="status">ready</span>
+</header>
+<main>
+  <section class="pane" id="left-pane">
+    <h2>Program</h2>
+    <div class="editor">
+      <pre id="gutter">1</pre>
+      <textarea id="code" spellcheck="false"
+        aria-label="Program source">10 PRINT "HELLO FROM THE BROWSER"
+20 FOR I = 1 TO 3
+30 PRINT "COUNT "; I
+40 NEXT I
+</textarea>
+    </div>
+    <div class="hint">Ctrl+Enter runs the program. Time limit applies to every run.</div>
+  </section>
+  <div id="divider" title="Drag to resize"></div>
+  <section class="pane">
+    <h2>Console</h2>
+    <pre id="output"></pre>
+  </section>
+</main>
+<script>
+(function () {
+  "use strict";
+
+  const languageSelect = document.getElementById("language");
+  const examplesSelect = document.getElementById("examples");
+  const code = document.getElementById("code");
+  const gutter = document.getElementById("gutter");
+  const output = document.getElementById("output");
+  const runButton = document.getElementById("run");
+  const status = document.getElementById("status");
+
+  function setStatus(text) { status.textContent = text; }
+
+  function appendLine(text, isError) {
+    const line = document.createElement("span");
+    line.textContent = text + "\n";
+    if (isError) line.className = "err";
+    output.appendChild(line);
+    output.scrollTop = output.scrollHeight;
+  }
+
+  function syncGutter() {
+    const count = code.value.split("\n").length;
+    const numbers = [];
+    for (let i = 1; i <= count; i += 1) numbers.push(i);
+    gutter.textContent = numbers.join("\n");
+    gutter.scrollTop = code.scrollTop;
+  }
+
+  async function loadLanguages() {
+    const response = await fetch("/api/languages");
+    const data = await response.json();
+    languageSelect.innerHTML = "";
+    data.languages.forEach(function (entry) {
+      const option = document.createElement("option");
+      option.value = entry.name;
+      option.textContent = entry.name;
+      if (entry.name === "BASIC") option.selected = true;
+      languageSelect.appendChild(option);
+    });
+  }
+
+  async function loadExamples() {
+    const response = await fetch("/api/examples");
+    const data = await response.json();
+    data.examples.forEach(function (entry) {
+      const option = document.createElement("option");
+      option.value = entry.path;
+      option.dataset.language = entry.language;
+      option.textContent = entry.name;
+      examplesSelect.appendChild(option);
+    });
+  }
+
+  async function openExample(path) {
+    if (!path) return;
+    const response = await fetch("/api/examples/" + encodeURI(path));
+    const data = await response.json();
+    if (data.error) { setStatus(data.error); return; }
+    code.value = data.source;
+    const option = examplesSelect.selectedOptions[0];
+    if (option && option.dataset.language) {
+      languageSelect.value = option.dataset.language;
+    }
+    syncGutter();
+    setStatus("loaded " + path);
+  }
+
+  function handleFrame(frame) {
+    let event = "message";
+    let payload = "";
+    frame.split("\n").forEach(function (line) {
+      if (line.startsWith("event:")) event = line.slice(6).trim();
+      else if (line.startsWith("data:")) payload += line.slice(5).trim();
+    });
+    if (!payload) return;
+    const data = JSON.parse(payload);
+    if (event === "done") {
+      const issues = data.errors > 0 || data.timed_out;
+      setStatus(
+        (data.timed_out ? "stopped after " : "finished in ") +
+        data.seconds.toFixed(2) + "s" + (issues ? " (with errors)" : "")
+      );
+      return;
+    }
+    if (event === "error") {
+      appendLine(data.error, true);
+      setStatus("error");
+      return;
+    }
+    if (typeof data.line === "string") {
+      appendLine(data.line, data.line.startsWith("?ERROR") || data.line.startsWith("?"));
+    }
+  }
+
+  async function run() {
+    runButton.disabled = true;
+    output.textContent = "";
+    setStatus("running\u2026");
+    try {
+      const response = await fetch("/api/run", {
+        method: "POST",
+        headers: { "Content-Type": "application/json", "Accept": "text/event-stream" },
+        body: JSON.stringify({ language: languageSelect.value, program: code.value })
+      });
+      if (!response.ok) {
+        const problem = await response.json();
+        appendLine(problem.error || ("HTTP " + response.status), true);
+        setStatus("error");
+        return;
+      }
+      const reader = response.body.getReader();
+      const decoder = new TextDecoder();
+      let buffer = "";
+      for (;;) {
+        const chunk = await reader.read();
+        if (chunk.done) break;
+        buffer += decoder.decode(chunk.value, { stream: true });
+        let split = buffer.indexOf("\n\n");
+        while (split >= 0) {
+          handleFrame(buffer.slice(0, split));
+          buffer = buffer.slice(split + 2);
+          split = buffer.indexOf("\n\n");
+        }
+      }
+      if (buffer.trim()) handleFrame(buffer);
+    } catch (err) {
+      appendLine("?ERROR: " + err.message, true);
+      setStatus("error");
+    } finally {
+      runButton.disabled = false;
+    }
+  }
+
+  code.addEventListener("input", syncGutter);
+  code.addEventListener("scroll", function () { gutter.scrollTop = code.scrollTop; });
+  code.addEventListener("keydown", function (event) {
+    if (event.key === "Tab") {
+      event.preventDefault();
+      const start = code.selectionStart;
+      code.setRangeText("  ", start, code.selectionEnd, "end");
+      syncGutter();
+    }
+    if (event.key === "Enter" && (event.ctrlKey || event.metaKey)) {
+      event.preventDefault();
+      run();
+    }
+  });
+  runButton.addEventListener("click", run);
+
+  (function enableSplitDrag() {
+    const divider = document.getElementById("divider");
+    const leftPane = document.getElementById("left-pane");
+    const workspace = document.querySelector("main");
+    let dragging = false;
+
+    divider.addEventListener("pointerdown", function (event) {
+      dragging = true;
+      divider.setPointerCapture(event.pointerId);
+      event.preventDefault();
+    });
+    divider.addEventListener("pointermove", function (event) {
+      if (!dragging) return;
+      const share = (event.clientX / workspace.clientWidth) * 100;
+      leftPane.style.flex = "0 0 " + Math.min(85, Math.max(15, share)) + "%";
+    });
+    function stop(event) {
+      if (!dragging) return;
+      dragging = false;
+      divider.releasePointerCapture(event.pointerId);
+    }
+    divider.addEventListener("pointerup", stop);
+    divider.addEventListener("pointercancel", stop);
+  }());
+  examplesSelect.addEventListener("change", function () {
+    openExample(examplesSelect.value);
+  });
+
+  syncGutter();
+  loadLanguages().catch(function (err) { setStatus("offline: " + err.message); });
+  loadExamples().catch(function () {});
+}());
+</script>
+</body>
+</html>

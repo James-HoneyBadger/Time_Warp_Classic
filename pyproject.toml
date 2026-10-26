@@ -65,8 +65,11 @@ include-package-data = true
 
 [tool.setuptools.packages.find]
 where = ["."]
-include = ["core*", "gui*"]
+include = ["core*", "gui*", "web*"]
 exclude = ["tests*", "docs*", "examples*"]
+
+[tool.setuptools.package-data]
+web = ["static/*.html"]
 
 [tool.black]
 line-length = 88

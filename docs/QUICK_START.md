@@ -256,7 +256,14 @@ and the interpreter. Anyone with Python 3.9+ runs it with
 `python myprog.pyz` — no install, no IDE. Built-in languages are fully
 self-contained. Details: [dev/EXPORTING.md](dev/EXPORTING.md).
 
-### Tip 5: Use Keyboard Shortcuts
+### Tip 5: Run It in a Browser
+
+`python Time_Warp.py --web` serves the same editor at
+<http://127.0.0.1:8000/>; **Program → Open Web IDE** does the same from the
+desktop app. Output streams as the program runs. Details and the HTTP API:
+[dev/WEB.md](dev/WEB.md).
+
+### Tip 6: Use Keyboard Shortcuts
 - F5: Run program
 - F9: Set or clear a breakpoint on the current line
 - Ctrl+.: Stop a running program

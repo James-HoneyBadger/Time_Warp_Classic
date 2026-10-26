@@ -53,6 +53,22 @@ def _parse_args(argv=None):
         "--version", "-V", action="store_true",
         help="print the version and exit",
     )
+    parser.add_argument(
+        "--web", action="store_true",
+        help="serve the web IDE instead of opening the desktop window",
+    )
+    parser.add_argument(
+        "--host", default="127.0.0.1",
+        help="address for --web (default 127.0.0.1; use 0.0.0.0 in containers)",
+    )
+    parser.add_argument(
+        "--port", type=int, default=8000,
+        help="port for --web (default 8000, 0 picks a free port)",
+    )
+    parser.add_argument(
+        "--timeout", type=float, default=10.0,
+        help="seconds a web program may run before it is stopped (default 10)",
+    )
     return parser.parse_args(argv)
 
 
@@ -92,6 +108,12 @@ def main(argv=None):
 
     if args.run:
         return _run_file(args.run, args.language)
+
+    if args.web:
+        from web.server import serve
+
+        serve(host=args.host, port=args.port, timeout=args.timeout)
+        return EXIT_OK
 
     print("\U0001f680 Launching Time Warp Classic...")
     try:

@@ -6,4 +6,5 @@ recursive-include docs *
 recursive-include examples *
 recursive-include core *
 recursive-include gui *
+recursive-include web *
 recursive-include scripts *

@@ -30,16 +30,30 @@ from .memory_manager import (
     cleanup_all_resources
 )
 
-from .gui_optimizer import (
-    UIThreadManager,
-    AsyncTextUpdate,
-    UIRefreshManager,
-    OptimizedCanvas,
-    EventBatcher,
-    GUIOptimizer,
-    initialize_gui_optimizer,
-    get_gui_stats
-)
+try:
+    from .gui_optimizer import (
+        UIThreadManager,
+        AsyncTextUpdate,
+        UIRefreshManager,
+        OptimizedCanvas,
+        EventBatcher,
+        GUIOptimizer,
+        initialize_gui_optimizer,
+        get_gui_stats
+    )
+    GUI_OPTIMIZER_AVAILABLE = True
+except ImportError:  # pragma: no cover - headless installs without Tk
+    # The web UI and exported runners have no widgets; the rest of the
+    # optimisations still work, so keep the package importable.
+    GUI_OPTIMIZER_AVAILABLE = False
+    UIThreadManager = AsyncTextUpdate = UIRefreshManager = None
+    OptimizedCanvas = EventBatcher = GUIOptimizer = None
+
+    def initialize_gui_optimizer(*_args, **_kwargs):
+        return None
+
+    def get_gui_stats():
+        return {}
 
 __all__ = [
     # Performance optimizer
@@ -69,7 +83,8 @@ __all__ = [
     'EventBatcher',
     'GUIOptimizer',
     'initialize_gui_optimizer',
-    'get_gui_stats'
+    'get_gui_stats',
+    'GUI_OPTIMIZER_AVAILABLE',
 ]
 
 __version__ = '1.4.0'

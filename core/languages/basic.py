@@ -1148,7 +1148,7 @@ class TwBasicExecutor:
             if not self.interpreter.turtle_graphics:
                 self.interpreter.init_turtle_graphics()
             self.interpreter.turtle_forward(distance)
-            self.interpreter.log_output(f"Turtle moved forward {distance} units")
+            self.interpreter.turtle_log(f"Turtle moved forward {distance} units")
         except Exception as e:
             self.interpreter.debug_output(f"FORWARD error: {e}")
         return "continue"
@@ -1166,7 +1166,7 @@ class TwBasicExecutor:
             if not self.interpreter.turtle_graphics:
                 self.interpreter.init_turtle_graphics()
             self.interpreter.turtle_forward(-distance)
-            self.interpreter.log_output(f"Turtle moved backward {distance} units")
+            self.interpreter.turtle_log(f"Turtle moved backward {distance} units")
         except Exception as e:
             self.interpreter.debug_output(f"BACKWARD error: {e}")
         return "continue"
@@ -1184,7 +1184,7 @@ class TwBasicExecutor:
             if not self.interpreter.turtle_graphics:
                 self.interpreter.init_turtle_graphics()
             self.interpreter.turtle_turn(-angle)  # Negative for left turn
-            self.interpreter.log_output(f"Turtle turned left {angle} degrees")
+            self.interpreter.turtle_log(f"Turtle turned left {angle} degrees")
         except Exception as e:
             self.interpreter.debug_output(f"LEFT error: {e}")
         return "continue"
@@ -1202,7 +1202,7 @@ class TwBasicExecutor:
             if not self.interpreter.turtle_graphics:
                 self.interpreter.init_turtle_graphics()
             self.interpreter.turtle_turn(angle)  # Positive for right turn
-            self.interpreter.log_output(f"Turtle turned right {angle} degrees")
+            self.interpreter.turtle_log(f"Turtle turned right {angle} degrees")
         except Exception as e:
             self.interpreter.debug_output(f"RIGHT error: {e}")
         return "continue"

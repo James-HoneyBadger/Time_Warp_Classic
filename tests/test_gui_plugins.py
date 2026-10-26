@@ -180,3 +180,24 @@ def test_reload_drops_a_removed_plugin(app):
         app.reload_plugins()
 
     assert "TinyPython" in app.languages
+
+
+def test_program_menu_opens_the_web_ide(app):
+    """Program -> Open Web IDE serves the page and reports the URL."""
+    import json
+    import urllib.request
+
+    with mock.patch("gui.app.webbrowser.open") as opener:
+        url = app.open_web_ide()
+
+    try:
+        assert url and url.startswith("http://127.0.0.1:")
+        assert opener.called
+        assert "Web IDE running at" in _output(app)
+
+        with urllib.request.urlopen(url + "api/languages", timeout=20) as response:
+            data = json.loads(response.read())
+        assert any(entry["name"] == "BASIC" for entry in data["languages"])
+        assert any(entry["name"] == "TinyPython" for entry in data["languages"])
+    finally:
+        app.stop_web_ide()

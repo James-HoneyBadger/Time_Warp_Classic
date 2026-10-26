@@ -4,6 +4,11 @@ Theme definitions and application logic for Time Warp Classic.
 Each theme is a dictionary mapping widget roles to color values.
 """
 
+# Language metadata lives in core so headless hosts (the web UI, exported
+# runners) can use it too; these names stay importable from here for the code
+# that already relies on them.
+from core.languages.catalog import EXT_TO_LANG, SUPPORTED_LANGUAGES  # noqa: F401
+
 THEMES = {
     "light": {
         "name": "Light",
@@ -154,27 +159,3 @@ FONT_SIZES = {
 #   Perl  .pl    | Pascal .pas  | Forth .fth | Prolog .pro
 #
 # Additional accepted extensions are listed after the canonical one.
-EXT_TO_LANG = {
-    # Canonical first, then alternates
-    ".pilot": "PILOT",
-    ".pil": "PILOT",
-    ".bas": "BASIC",
-    ".logo": "Logo",
-    ".lgo": "Logo",
-    ".py": "Python",
-    ".js": "JavaScript",
-    ".pl": "Perl",
-    ".pm": "Perl",
-    ".pas": "Pascal",
-    ".pp": "Pascal",
-    ".fth": "Forth",
-    ".4th": "Forth",
-    ".fs": "Forth",
-    ".pro": "Prolog",
-    ".prolog": "Prolog",
-}
-
-SUPPORTED_LANGUAGES = [
-    "PILOT", "BASIC", "Logo", "Pascal", "Prolog",
-    "Forth", "Perl", "Python", "JavaScript",
-]

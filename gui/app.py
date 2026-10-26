@@ -11,8 +11,10 @@ import json
 import os
 import re
 import sys
+import threading
 import time
 import subprocess
+import webbrowser
 from pathlib import Path
 
 import tkinter as tk
@@ -20,6 +22,7 @@ from tkinter import scrolledtext, messagebox, filedialog
 
 from core.interpreter import Time_WarpInterpreter
 from core.features.completion import CompletionEngine, is_word_char
+from core.languages.catalog import LANGUAGE_EXTENSIONS
 from core.export import (
     RUNNER_SUFFIX, RunBundle, build_standalone_runner, export_language_available,
 )
@@ -70,17 +73,7 @@ class TimeWarpApp:
     _ALT_MASK = 0x0008
 
     # Default file extension per language (Save As follows the language).
-    LANGUAGE_EXTENSIONS = {
-        "pilot": ".pilot",
-        "basic": ".bas",
-        "logo": ".logo",
-        "pascal": ".pas",
-        "prolog": ".pro",
-        "forth": ".fth",
-        "perl": ".pl",
-        "python": ".py",
-        "javascript": ".js",
-    }
+    LANGUAGE_EXTENSIONS = dict(LANGUAGE_EXTENSIONS)
 
     # ------------------------------------------------------------------
     # Construction
@@ -121,6 +114,10 @@ class TimeWarpApp:
         # Document state
         self.current_file = None
         self.modified = False
+
+        # Web IDE (started on demand from the Program menu)
+        self.web_server = None
+        self._web_thread = None
 
         # References for theme updates
         self._layout_widgets = {}
@@ -1056,6 +1053,40 @@ class TimeWarpApp:
         self.reload_plugins()
 
     # ------------------------------------------------------------------
+    # Web IDE
+    # ------------------------------------------------------------------
+
+    def open_web_ide(self):
+        """Serve the web IDE on a free local port and open it in a browser."""
+        if self.web_server is None:
+            from web.server import create_server
+
+            try:
+                self.web_server = create_server(port=0, plugins=self.plugins)
+            except OSError as exc:
+                messagebox.showerror("Web IDE", f"Could not start the server:\n{exc}")
+                return None
+            self._web_thread = threading.Thread(
+                target=self.web_server.serve_forever, daemon=True, name="web-ide"
+            )
+            self._web_thread.start()
+
+        url = f"http://127.0.0.1:{self.web_server.server_port}/"
+        self.output_text.insert(tk.END, f"Web IDE running at {url}\n")
+        self.output_text.see(tk.END)
+        webbrowser.open(url)
+        return url
+
+    def stop_web_ide(self):
+        """Shut the local web server down if it is running."""
+        server, self.web_server = self.web_server, None
+        self._web_thread = None
+        if server is None:
+            return
+        server.shutdown()
+        server.server_close()
+
+    # ------------------------------------------------------------------
     # Code completion
     # ------------------------------------------------------------------
 
@@ -1584,6 +1615,7 @@ class TimeWarpApp:
         if self._has_unsaved_changes():
             prompt = "Exit Time Warp Classic?\nUnsaved changes will be lost."
         if messagebox.askyesno("Exit", prompt):
+            self.stop_web_ide()
             self.root.destroy()
 
     def run(self):

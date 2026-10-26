@@ -29,7 +29,16 @@ program lines, execution position, and turtle graphics state.
 """
 # pylint: disable=C0302,C0301,C0103,C0115,C0116,W0613,R0903,C0413,W0718,R0902,R0915,C0415,W0404,W0621,R0913,R0917,R0914,W0612,W0108,W0123,R0911,R0912,R1705,W0611,W0718,R0902,R0915,C0415,W0404,W0621,R0913,R0917,R0914,W0612,W0108,W0123,R0911,R0912,R1705,W0611
 
-import tkinter as tk
+try:  # Tk is optional: the web UI and exported runners run without it
+    import tkinter as tk
+
+    TclError = tk.TclError
+except ImportError:  # pragma: no cover - headless installs without Tk
+    tk = None
+
+    class TclError(Exception):
+        """Stand-in so exception handlers stay valid without Tk."""
+
 import re
 import random
 import math
@@ -195,6 +204,9 @@ class Time_WarpInterpreter:  # pylint: disable=too-many-public-methods
         self.plugins = None  # PluginRegistry supplied by the host, if any
         # IDE chrome ("Interpreter ready.", "READY.") is noise in a script.
         self.console_banner = True
+        # Hosts without a turtle canvas (web UI, exported runners) do not need
+        # "Turtle moved" and "Drawing line ..." chatter either.
+        self.turtle_console = True
         # Safety cap for unattended runs (None = run until stopped, as the
         # original machines did).  Hosts that offer a Stop control disable it.
         self.max_iterations = 10000
@@ -408,7 +420,7 @@ class Time_WarpInterpreter:  # pylint: disable=too-many-public-methods
                 self.debug_output(
                     f"📐 Canvas size: {canvas_width}x{canvas_height}, center: ({self.turtle_graphics['center_x']}, {self.turtle_graphics['center_y']})"
                 )
-            except (tk.TclError, ValueError, TypeError) as e:
+            except (TclError, ValueError, TypeError) as e:
                 # Fallback to configured canvas size
                 canvas_width = int(self.ide_turtle_canvas.cget("width") or 600)
                 canvas_height = int(self.ide_turtle_canvas.cget("height") or 400)
@@ -424,7 +436,7 @@ class Time_WarpInterpreter:  # pylint: disable=too-many-public-methods
 
             try:
                 self.ide_turtle_canvas.bind("<Configure>", _on_canvas_resize)
-            except (tk.TclError, AttributeError):
+            except (TclError, AttributeError):
                 pass
 
             self.update_turtle_display()
@@ -497,7 +509,7 @@ class Time_WarpInterpreter:  # pylint: disable=too-many-public-methods
                     pass
 
             self.turtle_graphics["canvas"] = _HeadlessCanvas()
-            self.log_output("Turtle graphics initialized (headless stub mode)")
+            self.turtle_log("Turtle graphics initialized (headless stub mode)")
 
     def turtle_forward(self, distance):
         """Move turtle forward by distance units
@@ -547,7 +559,7 @@ class Time_WarpInterpreter:  # pylint: disable=too-many-public-methods
                 canvas_new_x = new_x + self.turtle_graphics["center_x"]
                 canvas_new_y = self.turtle_graphics["center_y"] - new_y  # Flip Y for canvas
 
-                self.log_output(
+                self.turtle_log(
                     f"🎨 Drawing line from ({canvas_old_x:.1f}, {canvas_old_y:.1f}) to ({canvas_new_x:.1f}, {canvas_new_y:.1f})"
                 )
 
@@ -577,7 +589,7 @@ class Time_WarpInterpreter:  # pylint: disable=too-many-public-methods
                     pass
 
         self.update_turtle_display()
-        self.log_output("Turtle moved")
+        self.turtle_log("Turtle moved")
 
     def turtle_turn(self, angle):
         """Turn turtle by angle degrees"""
@@ -747,12 +759,17 @@ class Time_WarpInterpreter:  # pylint: disable=too-many-public-methods
         self.sprites = {}
         self.last_ms = None
 
+    def turtle_log(self, text):
+        """Report a turtle action, unless the host has no canvas to show it."""
+        if self.turtle_console:
+            self.log_output(text)
+
     def log_output(self, text):
         """Log output to widget or console"""
         if self.output_widget:
             try:
-                self.output_widget.insert(tk.END, str(text) + "\n")
-                self.output_widget.see(tk.END)
+                self.output_widget.insert("end", str(text) + "\n")
+                self.output_widget.see("end")
             except Exception:
                 print(text)
         else:

@@ -30,6 +30,7 @@ def run_source(program, language, stream=None):
         interpreter = Time_WarpInterpreter()
     interpreter.max_iterations = None
     interpreter.console_banner = False
+    interpreter.turtle_console = False
 
     if stream is not None:
         _redirect_stdout(interpreter, stream)

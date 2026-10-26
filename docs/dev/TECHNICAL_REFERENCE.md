@@ -76,6 +76,7 @@ Time_Warp_Classic/
 │   ├── stubs.py              # Placeholder classes for optional features
 │   ├── export.py             # .twrun bundles and standalone .pyz runners
 │   ├── plugins.py            # Manifest parsing and plugin registry
+│   ├── languages/catalog.py  # Language names and extension maps
 │   ├── runner.py             # Headless execution used by exports and --run
 │   ├── features/             # IDE features
 │   │   ├── completion.py     # Word-completion vocabulary and matching
@@ -167,6 +168,13 @@ Syntax highlighting and styling.
 
 **Key Classes:**
 - `SyntaxHighlighter` — Text coloring based on language-specific patterns
+
+#### web/server.py
+Browser front-end: a `ThreadingHTTPServer` serving `web/static/index.html` plus
+a JSON/SSE API. `RunnerService` owns language metadata, examples and program
+execution, and is usable without HTTP in tests. Every run gets a fresh
+interpreter with `console_banner` and `turtle_console` off, a wall-clock
+deadline and a concurrency cap. See [WEB.md](WEB.md).
 
 #### export.py and runner.py
 Headless execution and packaging. `Time_Warp.py --run` and every exported

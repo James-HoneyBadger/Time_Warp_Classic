@@ -588,7 +588,7 @@ class TwLogoExecutor:
             self.interpreter.init_turtle_graphics()
         self.interpreter.turtle_forward(distance)
         self.interpreter.debug_output(f"Turtle moved forward {distance} units")
-        self.interpreter.log_output("Turtle moved")
+        self.interpreter.turtle_log("Turtle moved")
 
         if self.interpreter.turtle_trace:
             self.interpreter.log_output(
@@ -633,7 +633,7 @@ class TwLogoExecutor:
         except Exception:
             angle = 90
         self.interpreter.turtle_turn(-angle)  # Negative angle for LEFT (counter-clockwise)
-        self.interpreter.log_output(
+        self.interpreter.turtle_log(
             f"Turtle turned left {angle} degrees (heading={self.interpreter.turtle_graphics['heading']})"
         )
         if self.interpreter.turtle_trace:
@@ -660,7 +660,7 @@ class TwLogoExecutor:
             self.interpreter.init_turtle_graphics()
         # Use positive angle for RIGHT to match test expectations
         self.interpreter.turtle_turn(angle)
-        self.interpreter.log_output(
+        self.interpreter.turtle_log(
             f"Turtle turned right {angle} degrees (heading={self.interpreter.turtle_graphics['heading']})"
         )
         if self.interpreter.turtle_trace:
@@ -743,7 +743,7 @@ class TwLogoExecutor:
             x = float(parts[1])
             y = float(parts[2])
             self.interpreter.turtle_setxy(x, y)
-            self.interpreter.log_output(f"SETXY -> Turtle moved to position ({x}, {y})")
+            self.interpreter.turtle_log(f"SETXY -> Turtle moved to position ({x}, {y})")
         else:
             self.interpreter.log_output("SETXY requires X and Y coordinates")
         # Set turtle position variables for testing
@@ -2447,7 +2447,7 @@ class TwLogoExecutor:
 
                 self.interpreter.turtle_graphics["heading"] = angle % 360
                 self.interpreter.update_turtle_display()
-                self.interpreter.log_output(
+                self.interpreter.turtle_log(
                     f"Turtle turned towards ({x}, {y}) - heading {angle:.1f}°"
                 )
             else:

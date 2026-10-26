@@ -181,6 +181,7 @@ def _build_program_menu(menubar, app):
 
     menu.add_command(label="Run Program", command=app.run_code, accelerator="F5")
     menu.add_separator()
+    menu.add_command(label="Open Web IDE", command=app.open_web_ide)
 
     examples_menu = tk.Menu(menu, tearoff=0)
     menu.add_cascade(label="Load Example", menu=examples_menu)
