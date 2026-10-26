@@ -5,6 +5,11 @@ on:
     tags:
       - "v*"
   workflow_dispatch:
+    inputs:
+      tag:
+        description: "Additional image tag to publish (for example v1.5.0)"
+        required: false
+        default: ""
 
 jobs:
   publish:
@@ -41,6 +46,7 @@ jobs:
             type=semver,pattern={{major}}.{{minor}}
             type=ref,event=branch
             type=raw,value=latest,enable=${{ !contains(github.ref_name, '-') }}
+            type=raw,value=${{ inputs.tag }},enable=${{ inputs.tag != '' }}
 
       - name: Build and push
         uses: docker/build-push-action@v6

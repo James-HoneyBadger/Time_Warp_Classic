@@ -1,215 +1,149 @@
-# Time Warp Classic - PyPI Release Preparation Summary
+# Time Warp Classic - Release Runbook
 
-## ✅ Preparation Complete
-
-Your project has been successfully prepared for PyPI release. All necessary configurations are in place and validated.
+How a release actually ships today, plus the status of the 1.5.0 release.
 
 ---
 
-## 📦 What Was Done
+## How a release ships
 
-### 1. **Enhanced pyproject.toml**
-   - ✅ Added complete package metadata
-   - ✅ Set proper entry point: `timewarp` command
-   - ✅ Configured all dependencies
-   - ✅ Added project URLs (homepage, docs, repository, issues)
-   - ✅ Added comprehensive classifiers
-   - ✅ Added author and license information
+Releases are tag-driven. Pushing a tag is the only manual step.
 
-### 2. **Created Standard License File**
-   - ✅ Created `LICENSE` file (standard PyPI format)
-   - ✅ MIT License text with proper copyright
-   - ✅ Removed deprecated `License.md`
+| Tag | Effect |
+|-----|--------|
+| `vX.Y.Z` | PyPI publish workflow + both container workflows |
+| `vX.Y.Z-rcN`, `-betaN`, `-alphaN` | TestPyPI publish workflow only |
 
-### 3. **Created MANIFEST.in**
-   - ✅ Includes documentation files
-   - ✅ Includes example code
-   - ✅ Includes core modules and scripts
-   - ✅ Ensures all necessary files are packaged
+Workflows involved:
 
-### 4. **Built & Validated Distributions**
-   - ✅ Source distribution: `timewarp_classic-1.5.0.tar.gz` (427 KB)
-   - ✅ Wheel distribution: `timewarp_classic-1.5.0-py3-none-any.whl` (368 KB)
-   - ✅ Both distributions passed twine validation
-
----
-
-## 🧪 Before Releasing
+- `.github/workflows/publish-pypi.yml` - build, `twine check --strict`, publish
+  to PyPI through OIDC Trusted Publishing (no API token stored).
+- `.github/workflows/publish-testpypi.yml` - the same, for prerelease tags.
+- `.github/workflows/publish-ghcr.yml` - desktop IDE image.
+- `.github/workflows/publish-ghcr-web.yml` - web IDE image.
 
 ```bash
-python -m pytest                 # full suite, no coverage plugin required
-python -m pytest --cov           # optional coverage report (pytest-cov)
-git status --short               # everything committed
+git tag -a vX.Y.Z -m "Time Warp Classic X.Y.Z"
+git push origin vX.Y.Z
 ```
 
-## 🚀 Ready to Release
+Both container workflows also accept a manual `workflow_dispatch` run with a
+`tag` input, so an already published release can be rebuilt without a new
+version:
 
-Your package is now ready for PyPI publication. Two files are available in the `dist/` folder:
-
-```
-dist/
-├── timewarp_classic-1.5.0.tar.gz
-└── timewarp_classic-1.5.0-py3-none-any.whl
-```
-
----
-
-## 📋 Quick Start: Uploading to PyPI
-
-### Option 1: Using the Release Script (Easiest)
 ```bash
-# Test upload first (recommended)
-bash release_to_pypi.sh testpypi
-
-# Production release
-bash release_to_pypi.sh pypi
+gh workflow run publish-ghcr-web.yml --ref main -f tag=v1.5.0
 ```
 
-### Option 2: Manual Upload
+---
+
+## What the 1.5.0 release published
+
+| Artefact | Location | Notes |
+|----------|----------|-------|
+| Wheel | `timewarp_classic-1.5.0-py3-none-any.whl` | ~250 KB, 67 files |
+| Source distribution | `timewarp_classic-1.5.0.tar.gz` | ~339 KB |
+| PyPI project | https://pypi.org/project/timewarp-classic/ | versions 1.3.0, 1.3.4, 1.5.0 |
+| GitHub release | `v1.5.0` | marked Latest, body from `CHANGELOG.md` |
+| Desktop image | `ghcr.io/james-honeybadger/time-warp-classic` | linux/amd64 + linux/arm64 |
+| Web image | `ghcr.io/james-honeybadger/time-warp-classic-web` | linux/amd64 + linux/arm64 |
+
+Image tags per release: `latest`, `X.Y`, `X.Y.Z` and `vX.Y.Z`. `latest` is
+skipped for prerelease tags.
+
+The 1.5.0 desktop image was first published amd64-only by the previous
+workflow and was rebuilt for both architectures afterwards, so `v1.5.0` and
+`latest` are pullable on arm64 hosts too.
+
+---
+
+## Verifying a published release
+
 ```bash
-# Requires PyPI account and API token
-twine upload dist/*
+# PyPI metadata (the JSON endpoint is CDN cached, /simple/ is not)
+curl -s https://pypi.org/simple/timewarp-classic/ | grep -o 'timewarp_classic-[0-9.]*tar.gz' | tail -3
 
-# For TestPyPI (recommended first)
-twine upload --repository testpypi dist/*
+# Install the released package in a throwaway environment
+python3 -m venv /tmp/pypicheck
+/tmp/pypicheck/bin/pip install -q --upgrade pip
+/tmp/pypicheck/bin/pip install -q timewarp-classic==1.5.0
+/tmp/pypicheck/bin/timewarp --version
+
+# Containers
+docker pull ghcr.io/james-honeybadger/time-warp-classic:1.5.0
+docker pull ghcr.io/james-honeybadger/time-warp-classic-web:1.5.0
+docker run -d --rm -p 8000:8000 ghcr.io/james-honeybadger/time-warp-classic-web:1.5.0
+curl -s http://localhost:8000/healthz
+
+# Workflow results
+gh run list --limit 6
 ```
 
 ---
 
-## 📚 Documentation Files
+## Checklist for the next release
 
-Three new reference files have been created:
-
-1. **PyPI_RELEASE_GUIDE.md** - Comprehensive guide with all details
-2. **release_to_pypi.sh** - Automated release script
-3. **PyPI_RELEASE_CHECKLIST.txt** - This summary
-
----
-
-## 🔧 Key Configuration Details
-
-### Package Name & Version
-```toml
-name = "timewarp-classic"
-version = "1.5.0"
-```
-
-### Entry Point
-```toml
-[project.scripts]
-timewarp = "Time_Warp:main"
-```
-Users will be able to run: `timewarp` from command line
-
-### Dependencies (runtime)
-- pygame-ce>=2.0.0
-- Pillow>=8.0.0
-- pygments>=2.15.0
-
-Development tooling lives in `requirements-dev.txt` (pytest, pytest-cov,
-pytest-mock, pytest-xdist, black, flake8).
-
-### Python Support
-- Python 3.9+
-- Classifiers cover 3.9 – 3.14
-
----
-
-## ✨ Installation After PyPI Release
-
-Once published, users can install with:
-```bash
-pip install timewarp-classic
-```
-
-Then run with:
-```bash
-timewarp
-```
-
----
-
-## 🎯 Before You Upload
-
-### 1. Update Version (if needed)
-   - Edit `pyproject.toml`
-   - Change version field (e.g., 1.3.0 → 1.4.0)
-   - Rebuild: `python -m build`
-
-### 2. Test Package First
+1. `./venv/bin/python -m pytest tests -q -p no:cacheprovider` - full suite green.
+2. Bump the version everywhere it appears:
+   - `pyproject.toml`
+   - `core/__init__.py` (`__version__`)
+   - `core/optimizations/__init__.py` (`__version__`)
+   - `gui/dialogs.py` (About dialog)
+   - `README.md` (version badge)
+   - `docs/INDEX.md`
+3. Add a `CHANGELOG.md` section; its text becomes the GitHub release body.
+4. Rebuild and validate:
    ```bash
-   # Test on TestPyPI
-   bash release_to_pypi.sh testpypi
-   
-   # Verify installation
-   pip install --index-url https://test.pypi.org/simple/ timewarp-classic
-   
-   # Test the command
-   timewarp
+   rm -rf dist build
+   ./venv/bin/python -m build
+   ./venv/bin/twine check --strict dist/*
    ```
-
-### 3. Fix Any Issues
-   - Make corrections to code
-   - Update version in pyproject.toml
-   - Rebuild: `python -m build`
-
-### 4. Production Release
+5. Confirm the wheel ships what users need and no bytecode:
    ```bash
-   bash release_to_pypi.sh pypi
+   ./venv/bin/python -c "import zipfile,glob; \
+     names=zipfile.ZipFile(glob.glob('dist/*.whl')[0]).namelist(); \
+     print(len(names),'files'); \
+     print(sum('__pycache__' in n or n.endswith('.pyc') for n in names),'bytecode entries')"
    ```
+6. Commit and push `main`, then tag and push the tag.
+7. Watch the workflows and verify with the commands above.
+8. Create or update the GitHub release with the changelog section.
 
 ---
 
-## 📊 Build Status
+## Manual fallback (no CI)
 
-| Component | Status | Details |
-|-----------|--------|---------|
-| pyproject.toml | ✅ | Fully configured |
-| LICENSE | ✅ | MIT License present |
-| MANIFEST.in | ✅ | All files included |
-| Source Distribution | ✅ | timewarp_classic-1.5.0.tar.gz |
-| Wheel Distribution | ✅ | timewarp_classic-1.5.0-py3-none-any.whl |
-| Metadata Validation | ✅ | Twine check passed |
-| Deprecation Warnings | ✅ | None (fixed) |
+`release_to_pypi.sh` still works when the workflows are unavailable:
 
----
+```bash
+bash release_to_pypi.sh testpypi   # upload to test.pypi.org first
+bash release_to_pypi.sh pypi       # production upload
+```
 
-## 📞 Troubleshooting
-
-### If upload fails:
-1. Verify PyPI token is correct
-2. Check PyPI account security settings
-3. Try TestPyPI first
-4. Ensure twine is up to date: `pip install --upgrade twine`
-
-### If validation fails:
-1. Run: `twine check dist/* --verbose`
-2. Check README.md formatting
-3. Verify classifiers are correct
-4. Ensure version is valid (semantic versioning)
+It cleans `dist/`, builds, validates and uploads with `twine`. It needs a PyPI
+API token in `~/.pypirc` or `TWINE_PASSWORD`, so trusted publishing stays the
+preferred path.
 
 ---
 
-## 🎓 Next Steps
+## One-time setup (already done)
 
-1. ✅ Your project is prepared
-2. ⏭️ Create PyPI account if you haven't
-3. ⏭️ Generate API token
-4. ⏭️ Test on TestPyPI
-5. ⏭️ Publish to production PyPI
-6. ⏭️ Share with community
+- `pypi` and `testpypi` GitHub environments exist.
+- Trusted Publishers configured on PyPI and TestPyPI for this repository.
+- The container workflows use the workflow `GITHUB_TOKEN` with `packages: write`.
 
 ---
 
-## 📝 Additional Resources
+## Troubleshooting
 
-- **PyPI Documentation**: https://packaging.python.org/
-- **Setuptools**: https://setuptools.pypa.io/
-- **Twine**: https://twine.readthedocs.io/
-- **Semantic Versioning**: https://semver.org/
+- **`twine check` fails** - rerun with `--verbose`; usually a `README.md`
+  rendering problem or an invalid classifier.
+- **PyPI rejects the version** - published versions are immutable; bump the
+  version instead of re-uploading.
+- **`pip install` still shows the old version** - wait for the CDN, or query
+  `https://pypi.org/simple/timewarp-classic/`.
+- **Image pull fails with 403** - that tag has not been pushed yet, or the
+  workflow failed; check `gh run list --workflow publish-ghcr-web.yml`.
+- **Container exits immediately** - the web image needs no environment; the
+  desktop image needs `DISPLAY` and an X11 socket.
 
----
-
-**Prepared**: December 31, 2025
-**Status**: ✅ Ready for Release
-**Next Action**: Run upload script or manual twine command
+Last updated for the 1.5.0 release.

@@ -134,28 +134,31 @@ git push origin v1.3.2
 
 - Stable publish workflow: `.github/workflows/publish-pypi.yml`
 - Prerelease publish workflow: `.github/workflows/publish-testpypi.yml`
-- GitHub Packages (GHCR) workflow: `.github/workflows/publish-ghcr.yml`
+- Container workflows: `.github/workflows/publish-ghcr.yml`, `.github/workflows/publish-ghcr-web.yml`
 
 ### GitHub Packages (GHCR)
 
-GitHub Packages will show a published package after pushing a version tag (`vX.Y.Z`).
+Version tags publish two images, built for both `linux/amd64` and `linux/arm64`, tagged `latest`, `X.Y`, `X.Y.Z` and `vX.Y.Z`:
 
-- Package registry: `ghcr.io`
-- Package name: `ghcr.io/james-honeybadger/time-warp-classic`
+| Image | Purpose | Needs a display |
+|-------|---------|-----------------|
+| `ghcr.io/james-honeybadger/time-warp-classic` | Desktop IDE (Tkinter) | Yes (X11) |
+| `ghcr.io/james-honeybadger/time-warp-classic-web` | Web IDE server | No |
 
 ```bash
-# Pull latest stable image
-docker pull ghcr.io/james-honeybadger/time-warp-classic:latest
-
-# Run on Linux with X11 forwarding (GUI)
+# Desktop IDE with X11 forwarding
 xhost +local:docker
 docker run --rm \
   -e DISPLAY=$DISPLAY \
   -v /tmp/.X11-unix:/tmp/.X11-unix \
   ghcr.io/james-honeybadger/time-warp-classic:latest
+
+# Web IDE on http://localhost:8000
+docker run --rm -p 8000:8000 \
+  ghcr.io/james-honeybadger/time-warp-classic-web:latest
 ```
 
-Use a specific release image tag (for example `v1.3.2`) instead of `latest` when needed.
+Pin a release tag (for example `1.5.0`) instead of `latest` when you need a reproducible image. Both workflows also accept a manual run with an extra `tag` input, so an existing release can be rebuilt without pushing a new version.
 
 > One-time setup: configure Trusted Publishers for this repository on both PyPI and TestPyPI, and ensure GitHub environments `pypi` and `testpypi` exist.
 

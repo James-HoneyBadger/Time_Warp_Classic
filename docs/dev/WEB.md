@@ -164,6 +164,15 @@ use.
 
 ## Container
 
+Every `vX.Y.Z` tag publishes a prebuilt image for `linux/amd64` and
+`linux/arm64`:
+
+```bash
+docker run --rm -p 8000:8000 ghcr.io/james-honeybadger/time-warp-classic-web:latest
+```
+
+Or build it yourself:
+
 ```bash
 docker build -f Dockerfile.web -t timewarp-web .
 docker run --rm -p 8000:8000 timewarp-web
