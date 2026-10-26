@@ -249,7 +249,14 @@ Select **BASIC**, then use the **Console** bar at the bottom like an old machine
 Go, ...), then **Preferences → Plugins → Reload Plugins** and pick it in the
 language selector. Details: [dev/PLUGINS.md](dev/PLUGINS.md).
 
-### Tip 4: Use Keyboard Shortcuts
+### Tip 4: Share a Program That Just Runs
+
+**File → Export Runner...** writes a single `.pyz` file containing your program
+and the interpreter. Anyone with Python 3.9+ runs it with
+`python myprog.pyz` — no install, no IDE. Built-in languages are fully
+self-contained. Details: [dev/EXPORTING.md](dev/EXPORTING.md).
+
+### Tip 5: Use Keyboard Shortcuts
 - F5: Run program
 - F9: Set or clear a breakpoint on the current line
 - Ctrl+.: Stop a running program

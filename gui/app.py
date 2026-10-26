@@ -20,6 +20,9 @@ from tkinter import scrolledtext, messagebox, filedialog
 
 from core.interpreter import Time_WarpInterpreter
 from core.features.completion import CompletionEngine, is_word_char
+from core.export import (
+    RUNNER_SUFFIX, RunBundle, build_standalone_runner, export_language_available,
+)
 from core.plugins import DEFAULT_PLUGIN_DIR, PluginRegistry
 from core.languages.basic_console import BasicConsole
 from core.features.syntax_highlighting import SyntaxHighlightingText, LineNumberedText
@@ -548,6 +551,51 @@ class TimeWarpApp:
     def save_file_as(self):
         """Save the buffer under a new name."""
         return self.save_file(save_as=True)
+
+    def export_runner(self, target=None):
+        """Write a standalone runner for the program in the editor."""
+        program = self._editor_program()
+        if not program.strip():
+            messagebox.showinfo("Export Runner", "The editor is empty.")
+            return None
+
+        language = self.language_var.get()
+        if target is None:
+            stem = Path(self.current_file).stem if self.current_file else "runner"
+            target = filedialog.asksaveasfilename(
+                title="Export Standalone Runner",
+                defaultextension=RUNNER_SUFFIX,
+                initialfile=stem + RUNNER_SUFFIX,
+                filetypes=[
+                    ("Time Warp Runner", f"*{RUNNER_SUFFIX}"),
+                    ("All Files", "*.*"),
+                ],
+            )
+        if not target:
+            return None
+
+        bundle = RunBundle(
+            language=language.lower(), program=program, name=Path(target).stem
+        )
+        try:
+            runner = build_standalone_runner(bundle, target)
+        except Exception as exc:  # noqa: BLE001 - report, never crash the IDE
+            messagebox.showerror(
+                "Export Runner", f"Could not build the runner:\n{exc}"
+            )
+            return None
+
+        self.output_text.insert(tk.END, f"Runner written to {runner}\n")
+        self.output_text.insert(
+            tk.END, f"Run it with: python {Path(runner).name}\n"
+        )
+        if not export_language_available(language):
+            self.output_text.insert(
+                tk.END,
+                f"Note: {language} programs need that runtime installed to run.\n",
+            )
+        self.output_text.see(tk.END)
+        return runner
 
     def load_example(self, filepath):
         """Load an example program from *filepath* into the editor."""

@@ -193,6 +193,8 @@ class Time_WarpInterpreter:  # pylint: disable=too-many-public-methods
         self.stop_requested = False
         self.interrupted = False
         self.plugins = None  # PluginRegistry supplied by the host, if any
+        # IDE chrome ("Interpreter ready.", "READY.") is noise in a script.
+        self.console_banner = True
         # Safety cap for unattended runs (None = run until stopped, as the
         # original machines did).  Hosts that offer a Stop control disable it.
         self.max_iterations = 10000
@@ -332,10 +334,12 @@ class Time_WarpInterpreter:  # pylint: disable=too-many-public-methods
             self.get_performance_stats = self.optimizations.get_performance_stats
             self.optimize_for_production = self.optimizations.optimize_for_production
             self.cleanup_resources = self.optimizations.cleanup_resources
-            self.log_output("Interpreter ready.")
+            if self.console_banner:
+                self.log_output("Interpreter ready.")
         else:
             self.optimizations = None
-            self.log_output("Interpreter ready (compatibility mode).")
+            if self.console_banner:
+                self.log_output("Interpreter ready (compatibility mode).")
 
     def set_language_mode(self, mode):
         """Set the current language mode for script execution"""
@@ -1827,7 +1831,7 @@ class Time_WarpInterpreter:  # pylint: disable=too-many-public-methods
                 self.interrupted = True
             if self.interrupted:
                 self.log_output(self._break_message())
-            else:
+            elif self.console_banner:
                 self.log_output("READY.")
 
         return True
@@ -1864,7 +1868,7 @@ class Time_WarpInterpreter:  # pylint: disable=too-many-public-methods
             if result == "stopped":
                 self.interrupted = True
                 self.log_output("BREAK")
-            else:
+            elif self.console_banner:
                 self.log_output("READY.")
         except Exception as e:  # noqa: BLE001
             self.log_output(f"?ERROR: {e}")

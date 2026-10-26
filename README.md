@@ -42,6 +42,7 @@ Execute code in 9 different programming languages — six with full built-in int
 - **Syntax Highlighting** — Real-time syntax coloring via Pygments (with plain-text fallback)
 - **Word Completion** — Language-aware suggestions as you type (Ctrl+Space lists every word)
 - **Language Plugins** — Add a runtime you already have (Ruby, Lua, Go, ...) with a small JSON manifest
+- **Export Runner** — Turn a program into a standalone `.pyz` that runs with nothing but Python
 - **Line Numbers** — Always-visible line numbering for easy navigation
 - **Integrated Editor** — Code editing with undo/redo, find & replace (regex support)
 - **Output Panel** — Immediate program execution feedback
@@ -604,7 +605,7 @@ Compare implementations across all 9 languages, study the [Technical Reference](
 - [x] Performance optimization system
 - [x] Code completion and IntelliSense
 - [x] Plugin system for custom languages
-- [ ] Export programs to standalone executables
+- [x] Export programs to standalone executables
 - [ ] Web-based version
 
 ---

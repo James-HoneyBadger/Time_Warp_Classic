@@ -74,7 +74,9 @@ Time_Warp_Classic/
 │   ├── __init__.py
 │   ├── interpreter.py        # Time_WarpInterpreter class
 │   ├── stubs.py              # Placeholder classes for optional features
+│   ├── export.py             # .twrun bundles and standalone .pyz runners
 │   ├── plugins.py            # Manifest parsing and plugin registry
+│   ├── runner.py             # Headless execution used by exports and --run
 │   ├── features/             # IDE features
 │   │   ├── completion.py     # Word-completion vocabulary and matching
 │   │   └── syntax_highlighting.py
@@ -165,6 +167,13 @@ Syntax highlighting and styling.
 
 **Key Classes:**
 - `SyntaxHighlighter` — Text coloring based on language-specific patterns
+
+#### export.py and runner.py
+Headless execution and packaging. `Time_Warp.py --run` and every exported
+runner go through `core.runner.run_source()`, which shares the full
+interpreter but writes to stdout and turns reported errors into exit code 1.
+`core.export` writes `.twrun` bundles and builds `.pyz` zipapps from a copy of
+`core/` plus the embedded program. See [EXPORTING.md](EXPORTING.md).
 
 #### plugins.py
 Language plugins: JSON manifests that add an external-runtime language.

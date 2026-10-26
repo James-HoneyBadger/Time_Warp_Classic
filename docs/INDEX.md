@@ -17,6 +17,7 @@ Welcome to the Time Warp Classic comprehensive documentation. This is your compl
 
 - **[TECHNICAL_REFERENCE.md](dev/TECHNICAL_REFERENCE.md)** - Architecture, API, and implementation details
 - **[PLUGINS.md](dev/PLUGINS.md)** - Add a language with a JSON manifest
+- **[EXPORTING.md](dev/EXPORTING.md)** - Turn a program into a standalone runner
 
 ### Language Guides
 
@@ -63,6 +64,9 @@ Welcome to the Time Warp Classic comprehensive documentation. This is your compl
 
 **Add a language without changing the code**
 → [PLUGINS.md](dev/PLUGINS.md)
+
+**Hand someone a program that just runs**
+→ [EXPORTING.md](dev/EXPORTING.md)
 
 **Troubleshoot a problem**
 → [TROUBLESHOOTING.md](TROUBLESHOOTING.md)

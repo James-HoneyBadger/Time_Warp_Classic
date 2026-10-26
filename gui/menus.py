@@ -103,6 +103,7 @@ def _build_file_menu(menubar, app):
     menu.add_command(label="Save", command=app.save_file, accelerator="Ctrl+S")
     menu.add_command(label="Save As...", command=app.save_file_as, accelerator="Ctrl+Shift+S")
     menu.add_separator()
+    menu.add_command(label="Export Runner...", command=app.export_runner)
     menu.add_command(label="Exit", command=app.exit_app, accelerator="Ctrl+Q")
 
 
