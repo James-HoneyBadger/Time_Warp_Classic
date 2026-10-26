@@ -28,6 +28,10 @@ port, prints the URL in the console and opens the page.
 - Console that streams output line by line while the program runs, with error
   lines in red and the elapsed time in the status bar.
 - Example picker that loads the programs from `examples/`.
+- **Graphics pane** showing turtle output (Logo, BASIC turtle commands) as
+  run-length encoded pixel frames, with a *Save PNG* button.
+- **REPL bar** under the console: type a statement, press Enter, see the
+  result immediately. `Up`/`Down` recall earlier lines.
 
 `READY.`, `Interpreter ready.` and turtle chatter are IDE chrome and are not
 shown; program output and `?ERROR IN n` lines are.
@@ -45,6 +49,7 @@ script.
 | `GET` | `/api/examples` | `{"examples": [{"name", "language", "path"}]}` |
 | `GET` | `/api/examples/<path>` | `{"path", "source"}` |
 | `POST` | `/api/run` | Result object, or an event stream (see below) |
+| `POST` | `/api/repl` | Runs one statement in a persistent session |
 
 `POST /api/run` takes `{"language": "BASIC", "program": "10 PRINT 1"}`.
 Language names are case-insensitive. With `Accept: application/json` (the
@@ -68,6 +73,63 @@ Invalid input is answered with `400` (`unknown language`, malformed JSON), `413`
 (program over 256 KB) or `429` (more than four runs at once). A run that
 exceeds the time limit stops itself and reports `timed_out: true`.
 
+## REPL
+
+`POST /api/repl` takes `{"session": "...", "language": "BASIC", "line": "PRINT 2+2"}`.
+The server keeps one interpreter per *session* id, so variables survive between
+lines:
+
+```
+> LET A = 6
+> PRINT A * 7
+42
+```
+
+- The page generates a session id per tab; send your own to script it.
+- Changing the language starts a fresh interpreter for that session.
+- Turtle commands (`FD 60`, `DRAW`) draw on the session's canvas, and every
+  reply carries a full canvas frame when something was drawn.
+- Replies are `{"session", "language", "output": [...], "status", "exit", "canvas"}`.
+  `exit` is 1 when the statement reported an error.
+- Requests are answered with `400` (blank line, unknown language), `413`
+  (statement over 8 KB) or `429` (busy).
+- A session is capped at 16 per server, expires after 10 idle minutes, and each
+  line may run for 2 seconds before it is stopped.
+
+Languages that delegate to another runtime (Python, JavaScript, Perl, plugins)
+evaluate each line in a fresh process, so variables do not persist for them.
+
+## Graphics canvas and RLE frames
+
+Turtle output is rasterised on the server into a palette-indexed pixel buffer
+and sent as **run-length encoded** frames, so a 600×400 drawing costs a few
+hundred bytes per update instead of 240 000 pixels.
+
+With a plain request the final frame is in `result.canvas`. While streaming,
+each update arrives as an SSE event:
+
+```
+event: canvas
+data: {"type": "canvas", "width": 600, "height": 400,
+       "x": 296, "y": 196, "w": 12, "h": 10,
+       "palette": ["#ffffff", "black"],
+       "rle": "CgAAAAoAAAA...", "overlay": [...]}
+```
+
+| Field | Meaning |
+|-------|---------|
+| `width`, `height` | Full canvas size |
+| `x`, `y`, `w`, `h` | Rectangle this frame updates (only what changed) |
+| `palette` | CSS colours; index 0 is the background |
+| `rle` | base64 of repeated *(uint16 little-endian run, uint8 palette index)* |
+| `overlay` | Small vector list (turtle marker, tagged shapes, text) drawn on top |
+
+The browser keeps a full-size `ImageData`, paints only the rectangle it is
+given, then draws the overlay. The turtle marker and text stay vector so they
+remain crisp and can move without repainting the pixels. Decoding is
+implemented in `web/canvas.py` (`decode_rle`) as well, which is what the tests
+use.
+
 ## Limits
 
 - Programs are capped at 256 KB.
@@ -76,7 +138,8 @@ exceeds the time limit stops itself and reports `timed_out: true`.
 - Each run is stopped by the wall clock (default 10 s). A 50-million-iteration
   cap is a backstop in case a loop somehow outruns the clock check.
 - Every run gets a fresh interpreter, so programs cannot see each other's
-  variables.
+  variables; REPL sessions deliberately keep theirs.
+- REPL statements are capped at 8 KB, 2 seconds and 16 concurrent sessions.
 
 ## Container
 

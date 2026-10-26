@@ -260,8 +260,9 @@ self-contained. Details: [dev/EXPORTING.md](dev/EXPORTING.md).
 
 `python Time_Warp.py --web` serves the same editor at
 <http://127.0.0.1:8000/>; **Program → Open Web IDE** does the same from the
-desktop app. Output streams as the program runs. Details and the HTTP API:
-[dev/WEB.md](dev/WEB.md).
+desktop app. Output streams as the program runs, turtle drawings appear in the
+Graphics pane, and the `>` bar under the console evaluates a line immediately.
+Details and the HTTP API: [dev/WEB.md](dev/WEB.md).
 
 ### Tip 6: Use Keyboard Shortcuts
 - F5: Run program

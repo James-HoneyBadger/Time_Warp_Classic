@@ -41,12 +41,12 @@ def _json_get(base, path):
     return status, json.loads(body)
 
 
-def _post(base, payload, accept=None, raw=None):
+def _post(base, payload, accept=None, raw=None, path="/api/run"):
     headers = {"Content-Type": "application/json"}
     if accept:
         headers["Accept"] = accept
     data = raw if raw is not None else json.dumps(payload).encode()
-    request = urllib.request.Request(f"{base}/api/run", data=data, headers=headers)
+    request = urllib.request.Request(f"{base}{path}", data=data, headers=headers)
     with urllib.request.urlopen(request, timeout=40) as response:
         return response.status, response.read(), response.headers
 
@@ -187,6 +187,27 @@ def test_streaming_run_uses_server_sent_events(base):
     assert "event: done" in text
 
 
+def test_streaming_draws_send_rle_canvas_frames(base):
+    """A turtle program streams canvas frames next to its output."""
+    _status, body, _headers = _post(
+        base,
+        {"language": "Logo", "program": "FD 50\nRT 90\nFD 50"},
+        accept="text/event-stream",
+    )
+    blocks = [block for block in body.decode().split("\n\n") if block.strip()]
+    canvas_frames = [
+        json.loads(block.split("data: ", 1)[1])
+        for block in blocks
+        if "event: canvas" in block
+    ]
+
+    assert canvas_frames, "no canvas frames were streamed"
+    assert canvas_frames[-1]["width"] == 600
+    assert all(frame["palette"] for frame in canvas_frames)
+    assert any(frame["w"] > 0 for frame in canvas_frames)
+    assert any('"has_canvas": true' in block for block in blocks)
+
+
 def test_streaming_reports_bad_requests_as_events(base):
     _status, body, _headers = _post(
         base, {"language": "cobol", "program": "x"}, accept="text/event-stream"
@@ -262,3 +283,95 @@ def test_service_runs_a_plugin_language(tmp_path):
 
     assert "plugin in the browser" in result["output"]
     assert result["exit"] == 0
+
+
+# ------------------------------------------------------------------- REPL
+
+def _repl(base, session, language, line):
+    """POST one REPL line and return the decoded result."""
+    status, body, _headers = _post(
+        base,
+        {"session": session, "language": language, "line": line},
+        path="/api/repl",
+    )
+    return status, json.loads(body)
+
+
+def test_repl_evaluates_a_statement(base):
+    status, result = _repl(base, "a", "BASIC", "PRINT 2+2")
+
+    assert status == 200
+    assert result["output"] == ["4"]
+    assert result["exit"] == 0
+
+
+def test_repl_keeps_variables_between_lines(base):
+    _repl(base, "keep", "BASIC", "LET A = 6")
+    _status, result = _repl(base, "keep", "BASIC", "PRINT A * 7")
+
+    assert result["output"] == ["42"]
+
+
+def test_repl_sessions_are_isolated(base):
+    _repl(base, "one", "BASIC", "LET A = 99")
+    _status, result = _repl(base, "two", "BASIC", "PRINT A")
+
+    # A fresh session has no A, so BASIC prints the name itself.
+    assert result["output"] == ["A"]
+
+
+def test_repl_reports_errors(base):
+    _status, result = _repl(base, "errors", "BASIC", "PRINT 1/0")
+
+    assert result["exit"] == 1
+    assert any("Division by zero" in line for line in result["output"])
+
+
+def test_repl_rejects_a_blank_line(base):
+    with pytest.raises(urllib.error.HTTPError) as error:
+        _repl(base, "a", "BASIC", "   ")
+
+    assert error.value.code == 400
+
+
+def test_repl_rejects_an_unknown_language(base):
+    with pytest.raises(urllib.error.HTTPError) as error:
+        _repl(base, "a", "cobol", "x")
+
+    assert error.value.code == 400
+
+
+def test_repl_turtle_line_returns_a_canvas(base):
+    _status, result = _repl(base, "draw", "Logo", "FD 60")
+
+    assert result["canvas"] is not None
+    assert result["canvas"]["w"] > 0
+
+
+def test_repl_switches_language_and_starts_over(server):
+    service = server.service
+    service.repl("switch", "BASIC", "LET A = 5")
+    result = service.repl("switch", "Logo", "PRINT 1")
+
+    assert result["language"] == "Logo"
+    assert result["session"] == "switch"
+
+
+def test_repl_sessions_are_capped():
+    service = RunnerService(max_sessions=2)
+    service.repl("one", "BASIC", "LET A = 1")
+    service.repl("two", "BASIC", "LET A = 2")
+    service.repl("three", "BASIC", "LET A = 3")
+
+    assert len(service._sessions) == 2
+    assert "one" not in service._sessions
+
+
+def test_repl_stops_a_runaway_statement():
+    service = RunnerService(repl_timeout=0.5)
+    started = time.monotonic()
+    result = service.repl("loop", "BASIC", "10 GOTO 10")
+    elapsed = time.monotonic() - started
+
+    assert elapsed < 10
+    assert result["status"] in ("continue", "end", "error")

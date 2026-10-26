@@ -23,7 +23,7 @@
   }
   header h1 { font-size: 15px; margin: 0 12px 0 0; font-weight: bold; white-space: nowrap; }
   #language { flex: 0 0 auto; max-width: 140px; }
-  #examples { flex: 1 1 160px; min-width: 110px; }
+  #examples { flex: 1 1 160px; min-width: 90px; }
   select, button {
     background: #3e3e3e; color: var(--fg); border: 1px solid var(--border);
     padding: 4px 8px; font: inherit; border-radius: 3px;
@@ -32,7 +32,7 @@
   button:disabled { opacity: 0.5; }
   #status {
     margin-left: auto; color: var(--muted); font-size: 12px;
-    white-space: nowrap;
+    white-space: nowrap; flex: 0 0 auto;
   }
   main { flex: 1; display: flex; min-height: 0; overflow: hidden; }
   .pane { flex: 1; display: flex; flex-direction: column; min-width: 0; }
@@ -57,8 +57,35 @@
     line-height: 1.5; tab-size: 4; white-space: pre; overflow: auto;
   }
   #output {
-    flex: 1; margin: 0; padding: 10px; overflow: auto; white-space: pre-wrap;
+    flex: 1 1 55%; margin: 0; padding: 10px; overflow: auto; white-space: pre-wrap;
     font-size: 13px; line-height: 1.5;
+  }
+  #right-pane { display: flex; flex-direction: column; min-height: 0; }
+  #repl {
+    display: flex; align-items: center; gap: 6px; padding: 6px 10px;
+    background: var(--panel); border-top: 1px solid var(--border);
+  }
+  #repl .prompt { color: var(--accent); font-weight: bold; }
+  #repl-input {
+    flex: 1; background: var(--bg); color: var(--fg);
+    border: 1px solid var(--border); border-radius: 3px; padding: 4px 6px;
+    font: inherit; font-size: 13px; outline: none;
+  }
+  #repl-input:focus { border-color: #0a84ff; }
+  #graphics {
+    flex: 0 0 45%; display: flex; flex-direction: column; min-height: 0;
+    border-top: 1px solid var(--border);
+  }
+  #graphics h2 { display: flex; align-items: center; gap: 8px; }
+  #save-png { padding: 1px 6px; font-size: 11px; }
+  #screen-wrap {
+    flex: 1; min-height: 0; display: flex; align-items: center;
+    justify-content: center; background: #0d0d0d; overflow: hidden;
+  }
+  #screen {
+    width: 100%; height: 100%; object-fit: contain;
+    image-rendering: pixelated;
+    background: #ffffff; box-shadow: 0 0 0 1px var(--border);
   }
   #output .err { color: var(--error); }
   .hint { padding: 2px 10px; color: var(--muted); font-size: 11px;
@@ -90,9 +117,18 @@
     <div class="hint">Ctrl+Enter runs the program. Time limit applies to every run.</div>
   </section>
   <div id="divider" title="Drag to resize"></div>
-  <section class="pane">
+  <section class="pane" id="right-pane">
     <h2>Console</h2>
     <pre id="output"></pre>
+    <div id="repl">
+      <span class="prompt" id="repl-prompt">&gt;</span>
+      <input id="repl-input" autocomplete="off" spellcheck="false"
+             placeholder="Type a statement and press Enter (BASIC: PRINT 2+2)">
+    </div>
+    <div id="graphics">
+      <h2>Graphics <button id="save-png" title="Save the drawing as a PNG">Save PNG</button></h2>
+      <div id="screen-wrap"><canvas id="screen" width="600" height="400"></canvas></div>
+    </div>
   </section>
 </main>
 <script>
@@ -106,6 +142,11 @@
   const output = document.getElementById("output");
   const runButton = document.getElementById("run");
   const status = document.getElementById("status");
+  const screen = document.getElementById("screen");
+  const screenCtx = screen.getContext("2d");
+  const saveButton = document.getElementById("save-png");
+  const replInput = document.getElementById("repl-input");
+  const replPrompt = document.getElementById("repl-prompt");
 
   function setStatus(text) { status.textContent = text; }
 
@@ -115,6 +156,125 @@
     if (isError) line.className = "err";
     output.appendChild(line);
     output.scrollTop = output.scrollHeight;
+  }
+
+  // ---- graphics canvas -------------------------------------------------
+  // The server sends run-length encoded palette indices for the rectangle
+  // that changed, plus a small vector overlay for the turtle marker and text.
+  const colourProbe = document.createElement("canvas").getContext("2d");
+  const colourCache = new Map();
+  let canvasImage = null;
+  let canvasSize = { width: 0, height: 0 };
+
+  function resolveColour(css) {
+    if (!css) return null;
+    if (colourCache.has(css)) return colourCache.get(css);
+    colourProbe.fillStyle = "#000000";
+    colourProbe.fillStyle = css;
+    const hex = colourProbe.fillStyle;
+    let rgb = null;
+    if (typeof hex === "string" && hex.slice(0, 1) === "#") {
+      rgb = [
+        parseInt(hex.slice(1, 3), 16),
+        parseInt(hex.slice(3, 5), 16),
+        parseInt(hex.slice(5, 7), 16)
+      ];
+    }
+    colourCache.set(css, rgb);
+    return rgb;
+  }
+
+  function resetCanvas() {
+    canvasImage = null;
+    screenCtx.fillStyle = "#ffffff";
+    screenCtx.fillRect(0, 0, screen.width, screen.height);
+  }
+
+  function ensureCanvasImage(frame) {
+    if (canvasImage && canvasSize.width === frame.width &&
+        canvasSize.height === frame.height) {
+      return;
+    }
+    canvasSize = { width: frame.width, height: frame.height };
+    screen.width = frame.width;
+    screen.height = frame.height;
+    canvasImage = screenCtx.createImageData(frame.width, frame.height);
+    const background = resolveColour(frame.palette[0]) || [255, 255, 255];
+    const data = canvasImage.data;
+    for (let offset = 0; offset < data.length; offset += 4) {
+      data[offset] = background[0];
+      data[offset + 1] = background[1];
+      data[offset + 2] = background[2];
+      data[offset + 3] = 255;
+    }
+  }
+
+  function applyRle(frame) {
+    if (!frame.rle || frame.w <= 0 || frame.h <= 0) return;
+    const bytes = Uint8Array.from(atob(frame.rle), function (char) {
+      return char.charCodeAt(0);
+    });
+    const palette = frame.palette.map(resolveColour);
+    const data = canvasImage.data;
+    const right = frame.x + frame.w;
+    let cursor = 0;
+    let column = frame.x;
+    let row = frame.y;
+    while (cursor + 2 < bytes.length) {
+      const run = bytes[cursor] | (bytes[cursor + 1] << 8);
+      const rgb = palette[bytes[cursor + 2]] || [0, 0, 0];
+      cursor += 3;
+      for (let step = 0; step < run; step += 1) {
+        if (row < canvasSize.height && column < right) {
+          const offset = (row * canvasSize.width + column) * 4;
+          data[offset] = rgb[0];
+          data[offset + 1] = rgb[1];
+          data[offset + 2] = rgb[2];
+          data[offset + 3] = 255;
+        }
+        column += 1;
+        if (column >= right) {
+          column = frame.x;
+          row += 1;
+        }
+      }
+    }
+  }
+
+  function drawOverlay(items) {
+    (items || []).forEach(function (item) {
+      if (item.kind === "text") {
+        screenCtx.fillStyle = item.fill || "#000000";
+        screenCtx.font = (item.size || 12) + "px 'Courier New', monospace";
+        screenCtx.textBaseline = "top";
+        screenCtx.fillText(item.text, item.x, item.y);
+        return;
+      }
+      const points = item.points || [];
+      if (points.length < 2) return;
+      screenCtx.beginPath();
+      screenCtx.moveTo(points[0][0], points[0][1]);
+      for (let index = 1; index < points.length; index += 1) {
+        screenCtx.lineTo(points[index][0], points[index][1]);
+      }
+      if (points.length > 2) screenCtx.closePath();
+      if (item.fill) {
+        screenCtx.fillStyle = item.fill;
+        screenCtx.fill();
+      }
+      if (item.outline) {
+        screenCtx.strokeStyle = item.outline;
+        screenCtx.lineWidth = item.width || 1;
+        screenCtx.stroke();
+      }
+    });
+  }
+
+  function applyCanvasFrame(frame) {
+    ensureCanvasImage(frame);
+    applyRle(frame);
+    screenCtx.putImageData(canvasImage, 0, 0);
+    drawOverlay(frame.overlay);
   }
 
   function syncGutter() {
@@ -136,6 +296,7 @@
       if (entry.name === "BASIC") option.selected = true;
       languageSelect.appendChild(option);
     });
+    updatePrompt();
   }
 
   async function loadExamples() {
@@ -186,6 +347,10 @@
       setStatus("error");
       return;
     }
+    if (event === "canvas") {
+      applyCanvasFrame(data);
+      return;
+    }
     if (typeof data.line === "string") {
       appendLine(data.line, data.line.startsWith("?ERROR") || data.line.startsWith("?"));
     }
@@ -194,6 +359,7 @@
   async function run() {
     runButton.disabled = true;
     output.textContent = "";
+    resetCanvas();
     setStatus("running\u2026");
     try {
       const response = await fetch("/api/run", {
@@ -245,6 +411,86 @@
     }
   });
   runButton.addEventListener("click", run);
+  saveButton.addEventListener("click", function () {
+    const link = document.createElement("a");
+    link.download = "timewarp-drawing.png";
+    link.href = screen.toDataURL("image/png");
+    link.click();
+  });
+
+  // ---- REPL ------------------------------------------------------------
+  // One session id per tab; the server keeps the interpreter (and its
+  // variables) alive between lines.
+  const replSession = (window.crypto && crypto.randomUUID)
+    ? crypto.randomUUID()
+    : "tab-" + Math.random().toString(36).slice(2);
+  const replHistory = [];
+  let replHistoryIndex = 0;
+
+  function replEcho(text, isError) {
+    appendLine(text, isError);
+  }
+
+  async function submitRepl() {
+    const line = replInput.value;
+    if (!line.trim()) return;
+    replInput.value = "";
+    replHistory.push(line);
+    replHistoryIndex = replHistory.length;
+    replEcho("> " + line, false);
+    setStatus("evaluating\u2026");
+
+    try {
+      const response = await fetch("/api/repl", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          session: replSession,
+          language: languageSelect.value,
+          line: line
+        })
+      });
+      const result = await response.json();
+      if (!response.ok) {
+        replEcho(result.error || ("HTTP " + response.status), true);
+        setStatus("error");
+        return;
+      }
+      (result.output || []).forEach(function (text) {
+        replEcho(text, String(text).startsWith("?"));
+      });
+      if (result.canvas) applyCanvasFrame(result.canvas);
+      setStatus(result.exit === 0 ? "ok" : "statement failed");
+    } catch (err) {
+      replEcho("?ERROR: " + err.message, true);
+      setStatus("error");
+    }
+  }
+
+  replInput.addEventListener("keydown", function (event) {
+    if (event.key === "Enter") {
+      event.preventDefault();
+      submitRepl();
+      return;
+    }
+    if (event.key === "ArrowUp" && replHistory.length) {
+      event.preventDefault();
+      replHistoryIndex = Math.max(0, replHistoryIndex - 1);
+      replInput.value = replHistory[replHistoryIndex];
+      return;
+    }
+    if (event.key === "ArrowDown" && replHistory.length) {
+      event.preventDefault();
+      replHistoryIndex = Math.min(replHistory.length, replHistoryIndex + 1);
+      replInput.value = replHistory[replHistoryIndex] || "";
+    }
+  });
+
+  function updatePrompt() {
+    replPrompt.textContent = ">";
+    replInput.placeholder = "Type a statement and press Enter (" +
+      languageSelect.value + ")";
+  }
 
   (function enableSplitDrag() {
     const divider = document.getElementById("divider");
@@ -273,8 +519,10 @@
   examplesSelect.addEventListener("change", function () {
     openExample(examplesSelect.value);
   });
+  languageSelect.addEventListener("change", updatePrompt);
 
   syncGutter();
+  resetCanvas();
   loadLanguages().catch(function (err) { setStatus("offline: " + err.message); });
   loadExamples().catch(function () {});
 }());

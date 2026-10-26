@@ -368,7 +368,8 @@ class Time_WarpInterpreter:  # pylint: disable=too-many-public-methods
         ]
         if mode in valid_modes:
             self.current_language_mode = mode
-            self.log_output(f"Language mode set to: {mode}")
+            if self.console_banner:
+                self.log_output(f"Language mode set to: {mode}")
         else:
             self.log_output(f"Invalid language mode: {mode}")
 
