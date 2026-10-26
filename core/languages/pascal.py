@@ -477,16 +477,23 @@ class TwPascalExecutor:
             idx += 1
         return None
 
+    # BEGIN/END count wherever they appear on a line: ``while x do begin``
+    # opens a block just as ``begin`` alone on its line does.  END. is the
+    # program terminator, not a block close.
+    _BLOCK_TOKEN = re.compile(r"\bBEGIN\b|\bEND\b(?!\s*\.)", re.IGNORECASE)
+    _STRING_LITERAL = re.compile(r"'[^']*'")
+
     def _matching_block_end(self, opener_index):
         """Index of the END; closing the BEGIN on *opener_index*."""
         lines = self._lines()
         depth = 1
         idx = opener_index + 1
         while idx < len(lines):
-            cmd = (lines[idx][1] or "").strip().upper()
-            if re.match(r"^BEGIN\b", cmd):
-                depth += 1
-            elif re.match(r"^END\b(?!\.)", cmd):
+            text = self._STRING_LITERAL.sub("", lines[idx][1] or "")
+            for token in self._BLOCK_TOKEN.finditer(text):
+                if token.group(0).upper() == "BEGIN":
+                    depth += 1
+                    continue
                 depth -= 1
                 if depth == 0:
                     return idx
@@ -527,6 +534,10 @@ class TwPascalExecutor:
                     self.interpreter.log_output(
                         "Block terminated: maximum steps reached"
                     )
+                    break
+                if self.interpreter.pump():
+                    # Stop pressed: unwind the enclosing construct too.
+                    outcome = "end"
                     break
                 self.interpreter.current_line = idx
                 cmd = (lines[idx][1] or "").strip()
@@ -651,8 +662,6 @@ class TwPascalExecutor:
                 result = self._execute_block(body_start, block_end)
                 if result == "end":
                     return result
-                if isinstance(result, str) and result.startswith("jump:"):
-                    return result
                 return f"jump:{branch['after'] if branch else block_end + 1}"
             if branch:
                 return self._run_branch(branch)
@@ -677,27 +686,32 @@ class TwPascalExecutor:
 
             body_start = None
             block_end = None
-            if not statement or re.match(r"^BEGIN\b", statement, re.IGNORECASE):
-                opener = (
-                    self.interpreter.current_line
-                    if statement
-                    else self._next_code_line(self.interpreter.current_line + 1)
-                )
-                if opener is not None:
-                    text = (self._lines()[opener][1] or "").strip().upper()
-                    if text.startswith("BEGIN"):
-                        block_end = self._matching_block_end(opener)
-                        body_start = opener + 1
-                if block_end is None and not statement:
+            if re.match(r"^BEGIN\b", statement, re.IGNORECASE):
+                # WHILE cond DO BEGIN ... END continues on the following lines.
+                opener = self.interpreter.current_line
+                block_end = self._matching_block_end(opener)
+                if block_end is None:
+                    self.interpreter.log_output("WHILE block without matching END")
                     return "continue"
+                body_start = opener + 1
+            elif not statement:
+                opener = self._next_code_line(self.interpreter.current_line + 1)
+                if opener is None:
+                    return "continue"
+                text = (self._lines()[opener][1] or "").strip().upper()
+                if not text.startswith("BEGIN"):
+                    return "continue"
+                block_end = self._matching_block_end(opener)
+                if block_end is None:
+                    self.interpreter.log_output("WHILE block without matching END")
+                    return "continue"
+                body_start = opener + 1
 
             if block_end is not None:
                 iterations = 0
                 while self._evaluate_expression(condition):
                     result = self._execute_block(body_start, block_end)
                     if result == "end":
-                        return result
-                    if isinstance(result, str) and result.startswith("jump:"):
                         return result
                     iterations += 1
                     if iterations >= 10000:
@@ -709,6 +723,8 @@ class TwPascalExecutor:
 
             iterations = 0
             while iterations < 10000:
+                if self.interpreter.pump():
+                    return "end"
                 if not self._evaluate_expression(condition):
                     break
                 result = self.execute_command(statement)
@@ -769,12 +785,18 @@ class TwPascalExecutor:
             current = start_val
             iterations = 0
 
-            while current <= end_val if step > 0 else current >= end_val:
+            def in_range():
+                """True while the counter has not passed its bound."""
+                return current <= end_val if step > 0 else current >= end_val
+
+            while in_range():
                 if iterations >= 10000:
                     self.interpreter.log_output(
                         "FOR loop terminated: maximum iterations reached"
                     )
                     break
+                if self.interpreter.pump():
+                    return "end"
                 self.variables[var_name] = current
                 self.interpreter.variables[var_name] = current
 
@@ -793,8 +815,6 @@ class TwPascalExecutor:
                     result = self.execute_command(statement)
 
                 if result == "end":
-                    return result
-                if isinstance(result, str) and result.startswith("jump:"):
                     return result
 
                 current += step
@@ -821,6 +841,8 @@ class TwPascalExecutor:
                 condition = inline.group(2).strip()
                 iterations = 0
                 while iterations < 10000:
+                    if self.interpreter.pump():
+                        return "end"
                     result = self.execute_command(statement)
                     if result != "continue":
                         return result
@@ -844,12 +866,16 @@ class TwPascalExecutor:
 
             iterations = 0
             while iterations < 10000:
+                if rest:
+                    # ``REPEAT writeln(n);`` keeps a statement on the REPEAT
+                    # line itself; it belongs to the body, not the loop header.
+                    result = self.execute_command(rest)
+                    if result != "continue":
+                        return result
                 result = self._execute_block(
                     self.interpreter.current_line + 1, until_index
                 )
                 if result == "end":
-                    return result
-                if isinstance(result, str) and result.startswith("jump:"):
                     return result
                 if self._evaluate_expression(condition):
                     break

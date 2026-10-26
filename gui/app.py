@@ -566,9 +566,19 @@ class TimeWarpApp:
             self._update_title()
             self._update_status()
 
+    def _has_unsaved_changes(self):
+        """True when the buffer holds changes that have not been written."""
+        if self.modified:
+            return True
+        try:
+            # Authoritative flag, even before <<Modified>> has been dispatched.
+            return bool(self._text_widget().edit_modified())
+        except (AttributeError, tk.TclError):
+            return False
+
     def _confirm_discard(self):
         """Offer to save unsaved work before the buffer is replaced."""
-        if not self.modified:
+        if not self._has_unsaved_changes():
             return True
         answer = messagebox.askyesnocancel(
             "Unsaved Changes", "Save changes before continuing?"
@@ -932,11 +942,17 @@ class TimeWarpApp:
 
     def _execute_basic_direct(self, statement):
         """Run a BASIC direct-mode statement with the normal input controls."""
+        # A stop latched by an earlier run (or by a cancelled INPUT) must not
+        # abort this statement: direct mode starts each one with a clean state.
+        self.interpreter.stop_requested = False
+        self.interpreter.interrupted = False
         self._program_running = True
         self._set_running_state(True)
         try:
             return self.interpreter.execute_line(statement)
         finally:
+            self.interpreter.stop_requested = False
+            self.interpreter.interrupted = False
             self._program_running = False
             self._set_running_state(False)
 
@@ -1237,8 +1253,8 @@ class TimeWarpApp:
         if self._program_running:
             self.stop_program()
         prompt = "Exit Time Warp Classic?"
-        if self._editor_program().strip():
-            prompt = "Exit Time Warp Classic?\nUnsaved editor contents will be lost."
+        if self._has_unsaved_changes():
+            prompt = "Exit Time Warp Classic?\nUnsaved changes will be lost."
         if messagebox.askyesno("Exit", prompt):
             self.root.destroy()
 

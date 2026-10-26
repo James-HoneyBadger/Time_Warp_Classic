@@ -149,6 +149,19 @@ def run_install(cmd, privileged=True):
     return bool(result) and result.returncode == 0
 
 
+def confirm_system_install(command_text):
+    """Ask before changing the system: installation is never silent"""
+    if not sys.stdin.isatty():
+        print("  Re-run this script in a terminal to be prompted,")
+        print(f"  or install it yourself: {command_text}")
+        return False
+    try:
+        answer = input(f"Install the missing package now ({command_text})? [y/N] ")
+    except (EOFError, KeyboardInterrupt):
+        return False
+    return answer.strip().lower() in ('y', 'yes')
+
+
 def ensure_pip(venv_path):
     """Make sure the virtual environment has a working pip"""
     python_exe = get_python_exe(venv_path)
@@ -188,7 +201,7 @@ def ensure_tkinter(venv_path):
         print_success("tkinter available")
         return True
 
-    print_warning("tkinter (GUI toolkit) is missing — attempting to install it")
+    print_warning("tkinter (GUI toolkit) is missing")
     installed = False
     system = platform.system()
 
@@ -203,19 +216,28 @@ def ensure_tkinter(venv_path):
         )
         for binary, cmd in managers:
             if shutil.which(binary):
-                print(f"📦 Running: {' '.join(cmd)}")
-                installed = run_install(cmd, privileged=True)
+                if confirm_system_install(' '.join(cmd)):
+                    installed = run_install(cmd, privileged=True)
                 break
     elif system == 'Darwin' and shutil.which('brew'):
         tag = f"python-tk@{sys.version_info.major}.{sys.version_info.minor}"
-        print(f"📦 Running: brew install {tag}")
-        installed = run_install(['brew', 'install', tag], privileged=False)
+        if confirm_system_install(f'brew install {tag}'):
+            installed = run_install(['brew', 'install', tag], privileged=False)
 
     if installed and has_module(python_exe, 'tkinter'):
         print_success("tkinter installed")
         return True
 
     print_error("tkinter is still unavailable — the GUI cannot start")
+    print("  Install it with your system package manager, then re-run:")
+    if system == 'Linux':
+        print("    Debian/Ubuntu: sudo apt-get install python3-tk")
+        print("    Fedora:        sudo dnf install python3-tkinter")
+        print("    Arch:          sudo pacman -S tk")
+    elif system == 'Darwin':
+        print("    macOS: brew install python-tk")
+    else:
+        print("    Windows: reinstall Python with tkinter selected")
     return False
 
 

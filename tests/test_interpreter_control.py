@@ -136,6 +136,42 @@ def test_breakpoint_uses_the_line_number_shown_in_the_ide(interp):
     printed = out.getvalue()
     assert "BREAK IN 1" in printed
     assert "FIRST" not in printed
+    # A stopped run reports BREAK, not a completed one.
+    assert "READY." not in printed
+
+
+def test_error_line_numbers_follow_the_editor_lines(interp):
+    """Leading blank lines shift the program, not the reported line."""
+    out = io.StringIO()
+    with redirect_stdout(out):
+        interp.run_program('\n10 PRINT "A"\n20 PRINT 1/0', language="basic")
+
+    assert "?ERROR IN 3" in out.getvalue()
+
+
+def test_stop_reaches_pascal_loop_bodies(interp):
+    """Stop must end a Pascal loop instead of waiting for the iteration cap."""
+    interp.max_iterations = None
+    ticks = {"n": 0}
+
+    def pump():
+        ticks["n"] += 1
+        if ticks["n"] >= 3:
+            interp.stop_program()
+
+    interp.pump_callback = pump
+    out = io.StringIO()
+    with redirect_stdout(out):
+        interp.run_program(
+            "begin\n  while 1 = 1 do begin\n    writeln('X');\n  end;\nend.",
+            language="pascal",
+        )
+
+    printed = out.getvalue()
+    assert interp.interrupted is True
+    assert printed.count("X") == 0
+    assert "BREAK IN" in printed
+    assert not any("maximum iterations" in line for line in printed.splitlines())
 
 
 def test_breakpoints_toggle_and_clear(interp):
@@ -149,3 +185,24 @@ def test_breakpoints_toggle_and_clear(interp):
     interp.toggle_breakpoint(5)
     interp.clear_breakpoints()
     assert interp.breakpoints == set()
+
+
+def test_stop_reaches_logo_repeat(interp):
+    """Logo REPEAT bodies are interruptible as well."""
+    interp.max_iterations = None
+    ticks = {"n": 0}
+
+    def pump():
+        ticks["n"] += 1
+        if ticks["n"] >= 3:
+            interp.stop_program()
+
+    interp.pump_callback = pump
+    out = io.StringIO()
+    with redirect_stdout(out):
+        interp.run_program("REPEAT 100000 [PRINT 1]", language="logo")
+
+    printed = out.getvalue()
+    assert interp.interrupted is True
+    assert len([line for line in printed.splitlines() if line.strip() == "1"]) < 100000
+    assert "BREAK IN" in printed

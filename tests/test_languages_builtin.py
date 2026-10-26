@@ -253,6 +253,58 @@ def test_pascal_for_block_and_downto(run):
     assert numbers == ["1", "2", "3", "3", "2", "1"]
 
 
+def test_pascal_while_inline_begin_loops(run):
+    """``while c do begin`` is a block form, so the body repeats."""
+    lines = run(
+        "pascal",
+        "begin\n  n := 0;\n  while n < 3 do begin\n    n := n + 1;\n"
+        "    writeln(n);\n  end;\n  writeln('DONE');\nend.",
+    )
+
+    assert [line for line in lines if line in {"1", "2", "3"}] == ["1", "2", "3"]
+    assert "DONE" in lines
+    assert not has_error(lines)
+    assert not any("maximum iterations" in line for line in lines)
+
+
+def test_pascal_nested_inline_begin_stays_inside_its_parent(run):
+    """A nested ``if ... then begin`` must not close the enclosing WHILE."""
+    lines = run(
+        "pascal",
+        "begin\n  n := 0;\n  while n < 2 do\n  begin\n    n := n + 1;\n"
+        "    if n = 1 then begin\n      writeln('ONE');\n    end;\n"
+        "    writeln(n);\n  end;\n  writeln('DONE');\nend.",
+    )
+
+    assert "ONE" in lines
+    assert [line for line in lines if line in {"1", "2"}] == ["1", "2"]
+    assert "DONE" in lines
+
+
+def test_pascal_if_body_ends_at_its_own_end(run):
+    """Code after a nested loop is part of the IF body, not the program."""
+    lines = run(
+        "pascal",
+        "begin\n  x := 2;\n  if x > 5 then begin\n    writeln('A');\n"
+        "    while x > 0 do begin\n      writeln('W');\n      x := 0;\n    end;\n"
+        "    writeln('B');\n  end;\n  writeln('AFTER');\nend.",
+    )
+
+    assert "A" not in lines and "B" not in lines and "W" not in lines
+    assert "AFTER" in lines
+
+
+def test_pascal_repeat_keeps_a_statement_on_the_repeat_line(run):
+    lines = run(
+        "pascal",
+        "begin\n  n := 0;\n  repeat writeln(n);\n    n := n + 1;\n"
+        "  until n >= 3;\n  writeln('DONE');\nend.",
+    )
+
+    assert [line for line in lines if line in {"0", "1", "2"}] == ["0", "1", "2"]
+    assert "DONE" in lines
+
+
 # -------------------------------------------------------------------- Prolog
 
 def test_prolog_fact_query_prints_bound_value(run):

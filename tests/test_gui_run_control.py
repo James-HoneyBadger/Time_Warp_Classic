@@ -157,6 +157,23 @@ def test_direct_mode_input_is_read_from_the_console_bar(app):
     assert app._program_running is False
 
 
+def test_direct_mode_input_survives_an_earlier_stop(app):
+    """A latched Stop must not make the next console INPUT cancel itself."""
+    app.language_var.set("BASIC")
+    app.interpreter.stop_requested = True  # left behind by a stopped run
+
+    def answer():
+        app.input_entry.insert(0, "7")
+        app._submit_input()
+
+    app.root.after(100, answer)
+    app.input_entry.insert(0, "INPUT A")
+    app._submit_input()
+    app.basic_console.submit("PRINT A")
+
+    assert "7" in app.output_text.get("1.0", "end")
+
+
 def test_console_stores_numbered_lines(app):
     """A numbered line typed at the console lands in the editor."""
     app.language_var.set("BASIC")

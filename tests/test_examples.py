@@ -5,7 +5,6 @@ They also give the built-in interpreters broad end-to-end coverage.
 """
 
 import io
-import os
 import shutil
 from contextlib import redirect_stdout
 from pathlib import Path

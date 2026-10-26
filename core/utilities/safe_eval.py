@@ -92,7 +92,6 @@ class _SafeEvaluator:
         if isinstance(node, ast.Constant):
             return node.value
 
-
         # --- containers ---
         if isinstance(node, ast.List):
             return [self.evaluate(e) for e in node.elts]

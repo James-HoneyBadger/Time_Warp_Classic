@@ -11,7 +11,8 @@ python3 run.py
 
 This will:
 1. Create a Python virtual environment (if needed) and bootstrap `pip` inside it
-2. Install missing system packages (for example `tkinter`) and Python dependencies
+2. Offer to install a missing system package (for example `tkinter`), then
+   install the Python dependencies
 3. Verify the installation
 4. Launch the GUI
 
@@ -68,9 +69,9 @@ python3 run.py --help
 - Automatic Python 3.9+ checking
 - Clear colored output with progress indicators
 - Bootstraps `pip` when a virtual environment was created without it
-- Installs the OS `tkinter` package when it is missing (`apt-get`, `dnf`,
-  `yum`, `zypper`, `pacman`, `apk`, or Homebrew — prompting for `sudo`
-  credentials only when required)
+- Offers to install the OS `tkinter` package when it is missing (`apt-get`,
+  `dnf`, `yum`, `zypper`, `pacman`, `apk`, or Homebrew) — it always asks
+  first, and prompts for `sudo` credentials only when required
 - Warns early when no graphical display is available
 - Handles both tkinter checks and optional dependencies
 - Self-contained - no external shell required
@@ -79,7 +80,7 @@ python3 run.py --help
 1. Verifies Python 3.9+ is installed
 2. Creates `venv/` directory with isolated Python environment
 3. Bootstraps `pip` inside the venv if it is missing
-4. Installs the system `tkinter` package when the interpreter lacks it
+4. Offers to install the system `tkinter` package when the interpreter lacks it
 5. Upgrades pip, setuptools, and wheel
 6. Installs all dependencies from `requirements.txt`
 7. Verifies tkinter (required) and optional packages

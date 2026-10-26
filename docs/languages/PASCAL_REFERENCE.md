@@ -121,7 +121,15 @@ WHILE condition DO
 BEGIN
     statements;
 END;
+
+WHILE condition DO BEGIN
+    statements;
+END;
 ```
+
+`BEGIN` may open on the same line as the loop header; nested
+`BEGIN ... END` blocks (including `IF ... THEN BEGIN`) are matched
+correctly.
 
 ### Repeat Until
 

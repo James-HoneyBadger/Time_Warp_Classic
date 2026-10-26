@@ -171,6 +171,7 @@ class Time_WarpInterpreter:  # pylint: disable=too-many-public-methods
         self.variables = {}  # Global variable storage
         self.labels = {}  # PILOT label definitions
         self.program_lines = []  # Parsed program lines
+        self.source_lines = []  # Editor line number for each parsed line
         self.current_line = 0  # Current execution position
         self.stack = []  # General purpose stack
         self.for_stack = []  # FOR loop stack for BASIC
@@ -724,6 +725,7 @@ class Time_WarpInterpreter:  # pylint: disable=too-many-public-methods
         self.variables = {}
         self.labels = {}
         self.program_lines = []
+        self.source_lines = []
         self.current_line = 0
         self.stack = []
         self.for_stack = []
@@ -757,12 +759,18 @@ class Time_WarpInterpreter:  # pylint: disable=too-many-public-methods
         from datetime import datetime
         return datetime.now().isoformat()
 
+    def source_line(self, index):
+        """Editor line number for the parsed program line at *index*."""
+        if 0 <= index < len(self.source_lines):
+            return self.source_lines[index]
+        return index + 1
+
     def log_error(self, error_msg, line_num=None):
         """Log an error, naming the executing line when one is not supplied."""
         if line_num is None and self.running and self.program_lines:
             # Attribute mid-run errors to the line being executed so the IDE
             # can offer "click the message to jump there".
-            line_num = self.current_line + 1
+            line_num = self.source_line(self.current_line)
         if line_num is not None:
             formatted_error = f"?ERROR IN {line_num}: {error_msg}"
         else:
@@ -1651,7 +1659,10 @@ class Time_WarpInterpreter:  # pylint: disable=too-many-public-methods
         self.sprites = {}
         self.last_ms = None
 
-        lines = program_text.strip().split("\n")
+        # Keep leading blank lines: program index + 1 is then the editor line,
+        # so "?ERROR IN n" and "BREAK IN n" point where the user can click.
+        lines = program_text.split("\n")
+        self.source_lines = list(range(1, len(lines) + 1))
 
         # Parse lines and collect labels
         self.program_lines = []
@@ -1729,7 +1740,7 @@ class Time_WarpInterpreter:  # pylint: disable=too-many-public-methods
                 if self.max_iterations is not None and iterations > self.max_iterations:
                     self.log_error(
                         "Program stopped: Maximum iterations reached (possible infinite loop)",
-                        self.current_line + 1,
+                        self.source_line(self.current_line),
                     )
                     break
 
@@ -1739,7 +1750,8 @@ class Time_WarpInterpreter:  # pylint: disable=too-many-public-methods
                     break
 
                 if self.debug_mode and self.current_line in self.breakpoints:
-                    self.log_output(f"BREAK IN {self.current_line + 1}")
+                    # Reported once, by the run loop's finally block.
+                    self.interrupted = True
                     break
 
                 _line_num, command = self.program_lines[self.current_line]
@@ -1751,13 +1763,17 @@ class Time_WarpInterpreter:  # pylint: disable=too-many-public-methods
 
                 # Log current execution line in debug mode
                 if self.debug_mode:
-                    self.debug_output(f"[{self.current_line + 1}] {command[:50]}{'...' if len(command) > 50 else ''}")
+                    self.debug_output(
+                        f"[{self.source_line(self.current_line)}] "
+                        f"{command[:50]}{'...' if len(command) > 50 else ''}"
+                    )
 
                 try:
                     result = self.execute_line(command)
                 except Exception as e:
-                    error_msg = f"Unexpected error executing line {self.current_line + 1}: {str(e)}"
-                    self.log_error(error_msg, self.current_line + 1)
+                    line = self.source_line(self.current_line)
+                    error_msg = f"Unexpected error executing line {line}: {str(e)}"
+                    self.log_error(error_msg, line)
                     if not self.debug_mode:
                         break
                     # In debug mode, continue to next line
@@ -1773,12 +1789,18 @@ class Time_WarpInterpreter:  # pylint: disable=too-many-public-methods
                         # last line": loop exits normally (e.g. WHILE whose
                         # WEND is the final statement).
                         if jump_target < 0 or jump_target > len(self.program_lines):
-                            self.log_error(f"Invalid jump target: {jump_target}", self.current_line + 1)
+                            self.log_error(
+                                f"Invalid jump target: {jump_target}",
+                                self.source_line(self.current_line),
+                            )
                             break
                         self.current_line = jump_target
                         continue
                     except (ValueError, IndexError) as e:
-                        self.log_error(f"Jump command error: {str(e)}", self.current_line + 1)
+                        self.log_error(
+                            f"Jump command error: {str(e)}",
+                            self.source_line(self.current_line),
+                        )
                         break
                 elif result == "error":
                     if not self.debug_mode:
@@ -1789,8 +1811,9 @@ class Time_WarpInterpreter:  # pylint: disable=too-many-public-methods
                 self.current_line += 1
 
         except Exception as e:
-            error_msg = f"Critical runtime error at line {self.current_line + 1}: {str(e)}"
-            self.log_error(error_msg, self.current_line + 1)
+            line = self.source_line(self.current_line)
+            error_msg = f"Critical runtime error at line {line}: {str(e)}"
+            self.log_error(error_msg, line)
         finally:
             self.running = False
             if self.stop_requested:
@@ -1846,13 +1869,13 @@ class Time_WarpInterpreter:  # pylint: disable=too-many-public-methods
         if command.strip():
             if self.debug_mode:
                 self.debug_output(
-                    f"Step line {self.current_line + 1}: {command[:50]}"
-                    f"{'...' if len(command) > 50 else ''}"
+                    f"Step line {self.source_line(self.current_line)}: "
+                    f"{command[:50]}{'...' if len(command) > 50 else ''}"
                 )
             try:
                 result = self.execute_line(command)
             except Exception as e:
-                self.log_error(str(e), self.current_line + 1)
+                self.log_error(str(e), self.source_line(self.current_line))
                 result = None
 
             if result == "end":
@@ -1874,9 +1897,8 @@ class Time_WarpInterpreter:  # pylint: disable=too-many-public-methods
 
     def _break_message(self):
         """Classic BREAK report, naming the line that was executing."""
-        line = self.current_line + 1
-        if 0 < line <= len(self.program_lines):
-            return f"BREAK IN {line}"
+        if 0 <= self.current_line < len(self.program_lines):
+            return f"BREAK IN {self.source_line(self.current_line)}"
         return "BREAK"
 
     def set_debug_mode(self, enabled):
