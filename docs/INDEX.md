@@ -16,6 +16,7 @@ Welcome to the Time Warp Classic comprehensive documentation. This is your compl
 ### Developer Documentation
 
 - **[TECHNICAL_REFERENCE.md](dev/TECHNICAL_REFERENCE.md)** - Architecture, API, and implementation details
+- **[PLUGINS.md](dev/PLUGINS.md)** - Add a language with a JSON manifest
 
 ### Language Guides
 
@@ -59,6 +60,9 @@ Welcome to the Time Warp Classic comprehensive documentation. This is your compl
 
 **Extend or modify the IDE**
 → [TECHNICAL_REFERENCE.md](dev/TECHNICAL_REFERENCE.md)
+
+**Add a language without changing the code**
+→ [PLUGINS.md](dev/PLUGINS.md)
 
 **Troubleshoot a problem**
 → [TROUBLESHOOTING.md](TROUBLESHOOTING.md)

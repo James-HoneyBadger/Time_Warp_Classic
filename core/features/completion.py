@@ -163,6 +163,17 @@ def language_key(language):
     return str(language or "").strip().lower()
 
 
+def comment_pattern(marker):
+    """Regex matching a line whose comment starts with *marker*.
+
+    Plugin manifests only carry the marker ("#", "--", ";"), so the pattern is
+    built from it.  Returns None for an empty marker.
+    """
+    if not marker:
+        return None
+    return re.compile(r"^\s*" + re.escape(marker))
+
+
 def is_word_char(char):
     """True when *char* can be part of a completable word."""
     return bool(char) and bool(WORD_CHARS.match(char))
@@ -200,16 +211,17 @@ def _unmatched(text, delimiter):
     return count % 2 == 1
 
 
-def is_suppressed(language, text, cursor):
+def is_suppressed(language, text, cursor, comment=None):
     """True when suggesting a word at *cursor* would only be noise.
 
     Covers the two cases that annoyed users of other editors: typing inside a
-    comment, and typing inside a string literal.
+    comment, and typing inside a string literal.  *comment* overrides the
+    built-in comment table, which is how plugin languages declare theirs.
     """
     key = language_key(language)
     line = line_before(text, cursor)
 
-    pattern = _COMMENT_PATTERNS.get(key)
+    pattern = comment or _COMMENT_PATTERNS.get(key)
     if pattern is not None and pattern.match(line):
         return True
 
@@ -230,10 +242,21 @@ class CompletionEngine:
         self.vocabularies = {
             language_key(key): tuple(words) for key, words in source.items()
         }
+        self.comments = {}
 
     def vocabulary(self, language):
         """The words known for *language* (empty when it has none)."""
         return self.vocabularies.get(language_key(language), ())
+
+    def register(self, language, words, comment=""):
+        """Add or replace the words for *language* (used by plugins)."""
+        key = language_key(language)
+        unique = tuple(dict.fromkeys(word for word in words if word))
+        if unique:
+            self.vocabularies[key] = unique
+        pattern = comment_pattern(comment)
+        if pattern is not None:
+            self.comments[key] = pattern
 
     def suggestions(self, language, prefix, limit=_MAX_SUGGESTIONS):
         """Words starting with *prefix*, best match first.
@@ -259,7 +282,9 @@ class CompletionEngine:
         and accepts a single character, but still never returns a list whose
         only entry is exactly what is already typed.
         """
-        if not forced and is_suppressed(language, text, cursor):
+        if not forced and is_suppressed(
+            language, text, cursor, comment=self.comments.get(language_key(language))
+        ):
             return None
 
         start, prefix = word_prefix(text, cursor)

@@ -63,6 +63,11 @@ def _open_path(path):
         pass
 
 
+def open_path(path):
+    """Open *path* with the platform's default handler."""
+    _open_path(path)
+
+
 def build_menu_bar(app):
     """Build the complete menu bar and attach it to *app*.
 
@@ -292,6 +297,17 @@ def _build_preferences_menu(menubar, app):
         label="Auto-complete Words",
         variable=app.completion_enabled,
         command=app.toggle_completion,
+    )
+
+    # Plugin languages
+    plugins_menu = tk.Menu(menu, tearoff=0)
+    menu.add_cascade(label="Plugins", menu=plugins_menu)
+    plugins_menu.add_command(label="Reload Plugins", command=app.reload_plugins)
+    plugins_menu.add_command(
+        label="Create Example Plugin", command=app.create_example_plugin
+    )
+    plugins_menu.add_command(
+        label="Open Plugins Folder", command=app.open_plugins_folder
     )
 
 

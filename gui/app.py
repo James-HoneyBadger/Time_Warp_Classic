@@ -20,13 +20,14 @@ from tkinter import scrolledtext, messagebox, filedialog
 
 from core.interpreter import Time_WarpInterpreter
 from core.features.completion import CompletionEngine, is_word_char
+from core.plugins import DEFAULT_PLUGIN_DIR, PluginRegistry
 from core.languages.basic_console import BasicConsole
 from core.features.syntax_highlighting import SyntaxHighlightingText, LineNumberedText
 from gui.completion_popup import CompletionPopup
 from gui.themes import (
     THEMES, FONT_SIZES, LINE_NUMBER_BG, SUPPORTED_LANGUAGES,
 )
-from gui.menus import build_menu_bar, detect_language_from_extension
+from gui.menus import build_menu_bar, detect_language_from_extension, open_path
 
 # Optional imports
 try:
@@ -121,6 +122,16 @@ class TimeWarpApp:
         # References for theme updates
         self._layout_widgets = {}
 
+        # Plugin languages extend the selector, the file types and the
+        # completion vocabulary; they must be known before the layout.
+        self.plugin_dir = DEFAULT_PLUGIN_DIR
+        self.plugins = PluginRegistry.load()
+        self.languages = list(SUPPORTED_LANGUAGES) + self.plugins.names()
+        self.language_extensions = dict(self.LANGUAGE_EXTENSIONS)
+        for spec in self.plugins:
+            if spec.extension:
+                self.language_extensions.setdefault(spec.name.lower(), spec.extension)
+
         self._build_layout()
         self._init_interpreter()
         self._init_completion()
@@ -132,6 +143,7 @@ class TimeWarpApp:
         self.apply_font_size(self.current_font)
 
         self._show_welcome()
+        self._report_plugins()
         self._update_graphics_visibility()
 
         # The window-manager close button must not discard work silently.
@@ -202,9 +214,11 @@ class TimeWarpApp:
         ).pack(side=tk.LEFT, padx=(5, 5))
 
         self.language_var = tk.StringVar(value="PILOT")
-        language_selector = tk.OptionMenu(editor_header, self.language_var, *SUPPORTED_LANGUAGES)
-        language_selector.config(width=10)
-        language_selector.pack(side=tk.LEFT)
+        self.language_selector = tk.OptionMenu(
+            editor_header, self.language_var, *self.languages
+        )
+        self.language_selector.config(width=10)
+        self.language_selector.pack(side=tk.LEFT)
 
         # Wire language change to syntax highlighting
         self.language_var.trace_add("write", self._on_language_change)
@@ -368,6 +382,7 @@ class TimeWarpApp:
         self.interpreter.pump_callback = self._pump_events
         self.interpreter.input_provider = self._request_input
         self.interpreter.max_iterations = None
+        self.interpreter.plugins = self.plugins
         # Direct-mode statements must run in the language shown in the menu.
         self.interpreter.set_language_mode(self.language_var.get().lower())
 
@@ -412,8 +427,12 @@ class TimeWarpApp:
             "Pascal": "pascal", "Prolog": "prolog", "Forth": "forth",
             "Perl": "perl", "Python": "python", "JavaScript": "javascript",
         }
+        syntax = lang_to_syntax.get(lang)
+        if syntax is None:
+            spec = self.plugins.get(lang)
+            syntax = (spec.syntax if spec and spec.syntax else "text")
         if hasattr(self.editor_text, "set_language"):
-            self.editor_text.set_language(lang_to_syntax.get(lang, "text"))
+            self.editor_text.set_language(syntax)
         popup = getattr(self, "completion_popup", None)
         if popup is not None:
             popup.hide()
@@ -491,7 +510,7 @@ class TimeWarpApp:
         self._text_widget().edit_modified(False)
         self.current_file = filename
         self.modified = False
-        lang = detect_language_from_extension(filename, content)
+        lang = self._detect_language(filename, content)
         if lang:
             self.language_var.set(lang)
         self._update_title()
@@ -547,7 +566,7 @@ class TimeWarpApp:
         # Examples are samples: Save prompts for a name instead of overwriting.
         self.current_file = None
         self.modified = False
-        lang = detect_language_from_extension(filepath, content)
+        lang = self._detect_language(filepath, content)
         if lang:
             self.language_var.set(lang)
         self._update_title()
@@ -563,15 +582,23 @@ class TimeWarpApp:
         """Return the real tk.Text widget behind the editor wrapper."""
         return getattr(self.editor_text, "text", self.editor_text)
 
+    def _detect_language(self, filepath, content=None):
+        """Detect the language for *filepath*, including plugin languages."""
+        detected = detect_language_from_extension(filepath, content)
+        if detected:
+            return detected
+        suffix = Path(filepath).suffix.lower()
+        return self.plugins.extension_map().get(suffix)
+
     def _default_extension(self):
         """Return the file extension matching the selected language."""
-        return self.LANGUAGE_EXTENSIONS.get(self.language_var.get().lower(), ".txt")
+        return self.language_extensions.get(self.language_var.get().lower(), ".txt")
 
     def _save_filetypes(self):
         """File-type filters, with the current language first."""
         ext = self._default_extension()
         filters = [(f"{self.language_var.get()} Files", f"*{ext}")]
-        for language, suffix in self.LANGUAGE_EXTENSIONS.items():
+        for language, suffix in self.language_extensions.items():
             if suffix != ext:
                 filters.append((f"{language.capitalize()} Files", f"*{suffix}"))
         filters.append(("All Files", "*.*"))
@@ -914,6 +941,73 @@ class TimeWarpApp:
         self._refresh_breakpoint_marks()
 
     # ------------------------------------------------------------------
+    # Plugins
+    # ------------------------------------------------------------------
+
+    def _refresh_plugin_state(self):
+        """Rebuild everything that depends on the loaded plugin languages."""
+        self.languages = list(SUPPORTED_LANGUAGES) + self.plugins.names()
+        self.language_extensions = dict(self.LANGUAGE_EXTENSIONS)
+        for spec in self.plugins:
+            if spec.extension:
+                self.language_extensions.setdefault(spec.name.lower(), spec.extension)
+        if self.interpreter is not None:
+            self.interpreter.plugins = self.plugins
+        for spec in self.plugins:
+            if spec.keywords or spec.comment:
+                self.completion.register(spec.name, spec.keywords, spec.comment)
+
+        menu = self.language_selector["menu"]
+        current = self.language_var.get()
+        menu.delete(0, "end")
+        for language in self.languages:
+            menu.add_command(
+                label=language,
+                command=lambda value=language: self.language_var.set(value),
+            )
+        if current in self.languages:
+            self.language_var.set(current)
+
+    def reload_plugins(self):
+        """Re-read the plugin folder and follow any changes."""
+        self.plugins = PluginRegistry.load()
+        self._refresh_plugin_state()
+        self._report_plugins()
+
+    def _report_plugins(self):
+        """Show which plugin languages loaded, and which manifests failed."""
+        if len(self.plugins):
+            names = ", ".join(self.plugins.names())
+            self.output_text.insert(tk.END, f"Plugins loaded: {names}\n")
+        for problem in self.plugins.problems:
+            self.output_text.insert(tk.END, f"?PLUGIN: {problem}\n")
+        try:
+            self.output_text.see(tk.END)
+        except tk.TclError:
+            pass
+
+    def open_plugins_folder(self):
+        """Create the plugin folder and show it in the file manager."""
+        folder = Path(self.plugin_dir)
+        try:
+            folder.mkdir(parents=True, exist_ok=True)
+        except OSError as exc:
+            self.output_text.insert(tk.END, f"?PLUGIN: {exc}\n")
+            return
+        self.output_text.insert(tk.END, f"Plugin folder: {folder}\n")
+        open_path(folder)
+
+    def create_example_plugin(self):
+        """Write an example manifest, then pick it up immediately."""
+        try:
+            target = PluginRegistry.write_example(self.plugin_dir)
+        except OSError as exc:
+            self.output_text.insert(tk.END, f"?PLUGIN: {exc}\n")
+            return
+        self.output_text.insert(tk.END, f"Example plugin written to {target}\n")
+        self.reload_plugins()
+
+    # ------------------------------------------------------------------
     # Code completion
     # ------------------------------------------------------------------
 
@@ -933,6 +1027,10 @@ class TimeWarpApp:
             editor.bind(sequence, self._on_completion_key_navigation, add="+")
         editor.bind("<FocusOut>", lambda _e: self.completion_popup.hide(), add="+")
         editor.bind("<Button-1>", lambda _e: self.completion_popup.hide(), add="+")
+
+        for spec in self.plugins:
+            if spec.keywords or spec.comment:
+                self.completion.register(spec.name, spec.keywords, spec.comment)
 
         self.completion_popup.set_font(
             (self.current_font_family, FONT_SIZES[self.current_font]["editor"])

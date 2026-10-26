@@ -192,6 +192,7 @@ class Time_WarpInterpreter:  # pylint: disable=too-many-public-methods
         self.input_provider = None  # callable(prompt) -> str | None
         self.stop_requested = False
         self.interrupted = False
+        self.plugins = None  # PluginRegistry supplied by the host, if any
         # Safety cap for unattended runs (None = run until stopped, as the
         # original machines did).  Hosts that offer a Stop control disable it.
         self.max_iterations = 10000
@@ -1721,6 +1722,10 @@ class Time_WarpInterpreter:  # pylint: disable=too-many-public-methods
         if lang_lower in self._SUBPROCESS_LANGUAGES:
             return self._run_subprocess_program(program_text, lang_lower)
 
+        plugin = self._plugin_executor(lang_lower)
+        if plugin is not None:
+            return self._run_executor_program(program_text, plugin)
+
         # Preprocess Logo programs to handle multi-line REPEAT blocks
         if language and language.lower() == "logo":
             program_text = self._preprocess_logo_program(program_text)
@@ -1843,7 +1848,17 @@ class Time_WarpInterpreter:  # pylint: disable=too-many-public-methods
         if executor is None:
             self.log_output(f"?NO EXECUTOR for language: {lang}")
             return False
+        return self._run_executor_program(program_text, executor)
 
+    def _plugin_executor(self, lang):
+        """The executor for a plugin language, or None when it is built in."""
+        registry = self.plugins
+        if registry is None or not lang:
+            return None
+        return registry.executor(self, lang)
+
+    def _run_executor_program(self, program_text, executor):
+        """Run a whole program through a subprocess-backed executor."""
         try:
             result = executor.execute_command(program_text)
             if result == "stopped":

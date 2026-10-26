@@ -74,6 +74,7 @@ Time_Warp_Classic/
 │   ├── __init__.py
 │   ├── interpreter.py        # Time_WarpInterpreter class
 │   ├── stubs.py              # Placeholder classes for optional features
+│   ├── plugins.py            # Manifest parsing and plugin registry
 │   ├── features/             # IDE features
 │   │   ├── completion.py     # Word-completion vocabulary and matching
 │   │   └── syntax_highlighting.py
@@ -164,6 +165,23 @@ Syntax highlighting and styling.
 
 **Key Classes:**
 - `SyntaxHighlighter` — Text coloring based on language-specific patterns
+
+#### plugins.py
+Language plugins: JSON manifests that add an external-runtime language.
+
+**Key API:**
+- `parse_manifest(data)` — Validate a decoded manifest, raising `PluginError`
+- `discover_plugins(directories)` — `(specs, problems)` from
+  `~/.timewarp/plugins` plus `TIMEWARP_PLUGIN_PATH`
+- `PluginRegistry.load()` / `.get(name)` / `.executor(interpreter, name)` —
+  lookups and cached executors
+- `PluginSpec` — the normalised manifest (name, executable, extension, args,
+  syntax, comment, keywords, timeout)
+
+Each plugin runs through `core/languages/plugin_executor.py`, a
+`SubprocessExecutor` configured from its spec, so it gets streaming output,
+stdin routing, the Stop control and clickable error lines for free. See
+[PLUGINS.md](PLUGINS.md) for the manifest format.
 
 #### features/completion.py
 Word completion for the editor, kept free of Tk so it runs headless.

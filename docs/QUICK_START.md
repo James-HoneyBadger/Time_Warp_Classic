@@ -242,7 +242,14 @@ examples/logo/mandala_art.logo            # Mandala art generator
 Select **BASIC**, then use the **Console** bar at the bottom like an old machine:
 `PRINT 2+2`, `10 PRINT "HELLO"`, `LIST`, `RUN`, `RENUMBER`, `NEW`, `HELP`.
 
-### Tip 3: Use Keyboard Shortcuts
+### Tip 3: Add a Language You Already Have
+
+**Preferences → Plugins → Create Example Plugin** writes a manifest to
+`~/.timewarp/plugins/`. Edit it to name any runtime on your `PATH` (Ruby, Lua,
+Go, ...), then **Preferences → Plugins → Reload Plugins** and pick it in the
+language selector. Details: [dev/PLUGINS.md](dev/PLUGINS.md).
+
+### Tip 4: Use Keyboard Shortcuts
 - F5: Run program
 - F9: Set or clear a breakpoint on the current line
 - Ctrl+.: Stop a running program

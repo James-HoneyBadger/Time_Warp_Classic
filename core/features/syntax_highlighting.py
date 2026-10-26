@@ -158,9 +158,19 @@ class SyntaxHighlightingText(tk.Frame):
             'prolog': PrologLexer,
             'forth': ForthLexer,
         }
-        lexer_class = lexer_map.get(language, TextLexer)
+        lexer_class = lexer_map.get(language)
         if language == 'basic' and BasicLexer is not None:
             lexer_class = BasicLexer
+        if lexer_class is None:
+            # Plugin languages name a Pygments alias ("ruby", "lua"); anything
+            # unknown falls back to plain text.
+            try:
+                from pygments.lexers import get_lexer_by_name
+
+                self.lexer = get_lexer_by_name(language)
+            except Exception:
+                self.lexer = TextLexer()
+            return
         try:
             self.lexer = lexer_class()
         except Exception:
