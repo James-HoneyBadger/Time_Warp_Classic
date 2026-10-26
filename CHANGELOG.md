@@ -31,9 +31,12 @@ never published to PyPI (the published versions were 1.3.0 and 1.3.4).
   persistent REPL bar, Pygments syntax highlighting, an examples picker and a
   `/healthz` endpoint. `Dockerfile.web` builds a container image. Documented in
   `docs/dev/WEB.md`.
-- **Console REPL** in the desktop IDE: for every non-BASIC language the console
-  bar evaluates a statement in a persistent interpreter, so variables and the
-  turtle position carry across lines. `Program → Reset Console REPL` clears it.
+- **Console REPL** in the desktop IDE: for the built-in interpreters (BASIC
+  direct mode, Logo, Pascal, Pilot, Forth) the console bar evaluates statements
+  in a persistent interpreter, so variables, the Forth stack and the turtle
+  position carry across lines. Python, JavaScript, Perl and plugin languages
+  run each line in a fresh process, so their state does not persist.
+  `Program → Reset Console REPL` clears the session.
 - **Pascal**: block forms of `WHILE`, `IF/ELSE`, `FOR` and `REPEAT` now nest
   correctly, including `BEGIN` written on the statement's own line, and
   statements on the `REPEAT` line belong to the loop body.
