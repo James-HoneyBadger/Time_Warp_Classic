@@ -8,6 +8,7 @@ Welcome to the Time Warp Classic comprehensive documentation. This is your compl
 
 - **[QUICK_START.md](QUICK_START.md)** - Launch and run your first program in 5 minutes
 - **[../SETUP.md](../SETUP.md)** - Installation, setup, and troubleshooting guide
+- **[../CHANGELOG.md](../CHANGELOG.md)** - What changed in each release
 
 ### User Documentation
 
@@ -205,6 +206,6 @@ See [../License.md](../License.md) for full license information.
 ---
 
 **Last Updated:** February 2026  
-**Version:** 1.4.0 Stable
+**Version:** 1.5.0 Stable
 
 **Start with [QUICK_START.md](QUICK_START.md) →**

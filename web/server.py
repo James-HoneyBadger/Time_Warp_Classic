@@ -29,7 +29,10 @@ from core.plugins import PluginRegistry
 
 PACKAGE_ROOT = Path(__file__).resolve().parent.parent
 STATIC_DIR = Path(__file__).resolve().parent / "static"
-EXAMPLES_DIR = PACKAGE_ROOT / "examples"
+try:  # the examples ship inside the wheel
+    from examples import EXAMPLES_ROOT as EXAMPLES_DIR
+except ImportError:  # pragma: no cover - source tree without the package
+    EXAMPLES_DIR = PACKAGE_ROOT / "examples"
 
 DEFAULT_HOST = "127.0.0.1"
 DEFAULT_PORT = 8000
@@ -132,8 +135,15 @@ class RunnerService:
         if not self.examples_dir.is_dir():
             return found
         for path in sorted(self.examples_dir.rglob("*")):
-            if path.suffix.lower() in EXT_TO_LANG and path.is_file():
-                language = EXT_TO_LANG[path.suffix.lower()]
+            # Only programs inside a language folder; the package files and
+            # README at the root are not examples.
+            if not path.is_file() or path.parent == self.examples_dir:
+                continue
+            if path.name.startswith("_"):
+                continue
+            suffix = path.suffix.lower()
+            if suffix in EXT_TO_LANG:
+                language = EXT_TO_LANG[suffix]
                 found.append(
                     {
                         "name": f"{language}: {path.stem.replace('_', ' ')}",

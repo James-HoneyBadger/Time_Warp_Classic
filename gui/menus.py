@@ -10,6 +10,7 @@ import subprocess
 import tkinter as tk
 import tkinter.font as tkfont
 
+from examples import example_path
 from gui.themes import THEMES, FONT_SIZES, EXT_TO_LANG
 from gui.dialogs import FindDialog, ReplaceDialog, show_error_history, show_about
 
@@ -193,7 +194,7 @@ def _build_program_menu(menubar, app):
         for label, filepath in examples:
             sub.add_command(
                 label=label,
-                command=lambda fp=filepath: app.load_example(fp),
+                command=lambda fp=filepath: app.load_example(example_path(fp)),
             )
 
 

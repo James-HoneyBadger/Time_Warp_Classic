@@ -4,7 +4,7 @@
 
 Time Warp Classic is an educational multi-language IDE that bridges the past and present of programming, supporting 9 programming languages through an elegant graphical interface with integrated turtle graphics, inspired by the golden age of computing.
 
-[![Version](https://img.shields.io/badge/version-1.4.0-blue.svg)](https://github.com/James-HoneyBadger/Time_Warp_Classic)
+[![Version](https://img.shields.io/badge/version-1.5.0-blue.svg)](https://github.com/James-HoneyBadger/Time_Warp_Classic)
 [![Python](https://img.shields.io/badge/python-3.9+-green.svg)](https://www.python.org/)
 [![License](https://img.shields.io/badge/license-MIT-orange.svg)](LICENSE)
 [![education](https://img.shields.io/badge/topic-education-lightgrey)](https://github.com/topics/education)

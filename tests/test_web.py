@@ -443,3 +443,13 @@ def test_highlight_endpoint_rejects_huge_programs(base):
         _highlight(base, "Python", "x" * (300 * 1024))
 
     assert error.value.code == 413
+
+
+def test_examples_exclude_package_files(base):
+    """Only programs in a language folder are offered as examples."""
+    _status, data = _json_get(base, "/api/examples")
+    paths = [entry["path"] for entry in data["examples"]]
+
+    assert paths
+    assert all("/" in path for path in paths)
+    assert not any(path.endswith("__init__.py") for path in paths)

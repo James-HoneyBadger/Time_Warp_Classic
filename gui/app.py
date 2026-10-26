@@ -27,6 +27,7 @@ from core.export import (
     RUNNER_SUFFIX, RunBundle, build_standalone_runner, export_language_available,
 )
 from core.plugins import DEFAULT_PLUGIN_DIR, PluginRegistry
+from examples import example_path
 from core.languages.basic_console import BasicConsole
 from core.features.syntax_highlighting import SyntaxHighlightingText, LineNumberedText
 from gui.completion_popup import CompletionPopup
@@ -616,8 +617,12 @@ class TimeWarpApp:
         """Load an example program from *filepath* into the editor."""
         if not self._confirm_discard():
             return
+        target = Path(filepath)
+        if not target.is_file():
+            # Installed copies keep the examples inside the package.
+            target = example_path(filepath)
         try:
-            content = Path(filepath).read_text(encoding="utf-8")
+            content = target.read_text(encoding="utf-8")
         except OSError as e:
             messagebox.showerror("Error", f"Failed to load example:\n{e}")
             return

@@ -28,8 +28,8 @@ Your project has been successfully prepared for PyPI release. All necessary conf
    - ✅ Ensures all necessary files are packaged
 
 ### 4. **Built & Validated Distributions**
-   - ✅ Source distribution: `timewarp_classic-1.4.0.tar.gz` (427 KB)
-   - ✅ Wheel distribution: `timewarp_classic-1.4.0-py3-none-any.whl` (368 KB)
+   - ✅ Source distribution: `timewarp_classic-1.5.0.tar.gz` (427 KB)
+   - ✅ Wheel distribution: `timewarp_classic-1.5.0-py3-none-any.whl` (368 KB)
    - ✅ Both distributions passed twine validation
 
 ---
@@ -48,8 +48,8 @@ Your package is now ready for PyPI publication. Two files are available in the `
 
 ```
 dist/
-├── timewarp_classic-1.4.0.tar.gz
-└── timewarp_classic-1.4.0-py3-none-any.whl
+├── timewarp_classic-1.5.0.tar.gz
+└── timewarp_classic-1.5.0-py3-none-any.whl
 ```
 
 ---
@@ -91,7 +91,7 @@ Three new reference files have been created:
 ### Package Name & Version
 ```toml
 name = "timewarp-classic"
-version = "1.4.0"
+version = "1.5.0"
 ```
 
 ### Entry Point
@@ -167,8 +167,8 @@ timewarp
 | pyproject.toml | ✅ | Fully configured |
 | LICENSE | ✅ | MIT License present |
 | MANIFEST.in | ✅ | All files included |
-| Source Distribution | ✅ | timewarp_classic-1.4.0.tar.gz |
-| Wheel Distribution | ✅ | timewarp_classic-1.4.0-py3-none-any.whl |
+| Source Distribution | ✅ | timewarp_classic-1.5.0.tar.gz |
+| Wheel Distribution | ✅ | timewarp_classic-1.5.0-py3-none-any.whl |
 | Metadata Validation | ✅ | Twine check passed |
 | Deprecation Warnings | ✅ | None (fixed) |
 
