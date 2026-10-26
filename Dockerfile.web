@@ -16,6 +16,10 @@ ENV PYTHONDONTWRITEBYTECODE=1 \
 
 WORKDIR /app
 
+# Pygments gives the browser editor syntax highlighting; without it the editor
+# falls back to plain text, so this layer is optional but small.
+RUN python -m pip install --no-cache-dir "pygments>=2.15.0"
+
 COPY . .
 
 # Optional: make the Node.js executor usable.

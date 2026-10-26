@@ -46,14 +46,23 @@
     border-bottom: 1px solid var(--border);
   }
   .editor { flex: 1; display: flex; min-height: 0; }
+  #code-area { position: relative; display: flex; flex: 1; min-width: 0; }
+  #highlight {
+    position: absolute; inset: 0; margin: 0; padding: 10px;
+    overflow: hidden; white-space: pre; pointer-events: none;
+    font: inherit; font-size: 13px; line-height: 1.5; tab-size: 4;
+    color: var(--fg);
+  }
+  #code::selection { background: #264f78; }
   #gutter {
     margin: 0; padding: 10px 6px 10px 10px; text-align: right;
     color: #6a6a6a; background: #1a1a1a; user-select: none; overflow: hidden;
     line-height: 1.5; font-size: 13px;
   }
   #code {
-    flex: 1; resize: none; border: 0; outline: none; padding: 10px;
-    background: var(--bg); color: var(--fg); font: inherit; font-size: 13px;
+    position: relative; flex: 1; resize: none; border: 0; outline: none;
+    padding: 10px; background: transparent; color: transparent;
+    caret-color: var(--fg); font: inherit; font-size: 13px;
     line-height: 1.5; tab-size: 4; white-space: pre; overflow: auto;
   }
   #output {
@@ -107,12 +116,15 @@
     <h2>Program</h2>
     <div class="editor">
       <pre id="gutter">1</pre>
-      <textarea id="code" spellcheck="false"
-        aria-label="Program source">10 PRINT "HELLO FROM THE BROWSER"
+      <div id="code-area">
+        <pre id="highlight" aria-hidden="true"></pre>
+        <textarea id="code" spellcheck="false"
+          aria-label="Program source">10 PRINT "HELLO FROM THE BROWSER"
 20 FOR I = 1 TO 3
 30 PRINT "COUNT "; I
 40 NEXT I
 </textarea>
+      </div>
     </div>
     <div class="hint">Ctrl+Enter runs the program. Time limit applies to every run.</div>
   </section>
@@ -142,6 +154,7 @@
   const output = document.getElementById("output");
   const runButton = document.getElementById("run");
   const status = document.getElementById("status");
+  const highlightLayer = document.getElementById("highlight");
   const screen = document.getElementById("screen");
   const screenCtx = screen.getContext("2d");
   const saveButton = document.getElementById("save-png");
@@ -277,6 +290,46 @@
     drawOverlay(frame.overlay);
   }
 
+  // ---- syntax highlighting ---------------------------------------------
+  // The server renders Pygments tokens to HTML; the textarea on top is
+  // transparent, so it only shows the caret and the selection.
+  let highlightTimer = null;
+  let highlightState = { language: null, program: null };
+
+  function syncHighlightScroll() {
+    highlightLayer.scrollTop = code.scrollTop;
+    highlightLayer.scrollLeft = code.scrollLeft;
+  }
+
+  async function refreshHighlight() {
+    const language = languageSelect.value;
+    const program = code.value;
+    if (highlightState.language === language && highlightState.program === program) {
+      return;
+    }
+    try {
+      const response = await fetch("/api/highlight", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ language: language, program: program })
+      });
+      if (!response.ok) return;
+      const data = await response.json();
+      // A newer keystroke may have arrived while this was in flight.
+      if (code.value !== program || languageSelect.value !== language) return;
+      highlightLayer.innerHTML = data.html + "\n";
+      highlightState = { language: language, program: program };
+      syncHighlightScroll();
+    } catch (err) {
+      // Keep the previous colours if highlighting is unavailable.
+    }
+  }
+
+  function scheduleHighlight() {
+    if (highlightTimer) clearTimeout(highlightTimer);
+    highlightTimer = setTimeout(refreshHighlight, 180);
+  }
+
   function syncGutter() {
     const count = code.value.split("\n").length;
     const numbers = [];
@@ -397,7 +450,11 @@
   }
 
   code.addEventListener("input", syncGutter);
-  code.addEventListener("scroll", function () { gutter.scrollTop = code.scrollTop; });
+  code.addEventListener("scroll", function () {
+    gutter.scrollTop = code.scrollTop;
+    syncHighlightScroll();
+  });
+  code.addEventListener("input", scheduleHighlight);
   code.addEventListener("keydown", function (event) {
     if (event.key === "Tab") {
       event.preventDefault();
@@ -519,10 +576,14 @@
   examplesSelect.addEventListener("change", function () {
     openExample(examplesSelect.value);
   });
-  languageSelect.addEventListener("change", updatePrompt);
+  languageSelect.addEventListener("change", function () {
+    updatePrompt();
+    scheduleHighlight();
+  });
 
   syncGutter();
   resetCanvas();
+  scheduleHighlight();
   loadLanguages().catch(function (err) { setStatus("offline: " + err.message); });
   loadExamples().catch(function () {});
 }());

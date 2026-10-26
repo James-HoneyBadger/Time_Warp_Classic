@@ -28,6 +28,8 @@ port, prints the URL in the console and opens the page.
 - Console that streams output line by line while the program runs, with error
   lines in red and the elapsed time in the status bar.
 - Example picker that loads the programs from `examples/`.
+- **Syntax highlighting** driven by the same Pygments lexers as the desktop
+  editor (see below).
 - **Graphics pane** showing turtle output (Logo, BASIC turtle commands) as
   run-length encoded pixel frames, with a *Save PNG* button.
 - **REPL bar** under the console: type a statement, press Enter, see the
@@ -50,6 +52,7 @@ script.
 | `GET` | `/api/examples/<path>` | `{"path", "source"}` |
 | `POST` | `/api/run` | Result object, or an event stream (see below) |
 | `POST` | `/api/repl` | Runs one statement in a persistent session |
+| `POST` | `/api/highlight` | Returns coloured HTML for the editor |
 
 `POST /api/run` takes `{"language": "BASIC", "program": "10 PRINT 1"}`.
 Language names are case-insensitive. With `Accept: application/json` (the
@@ -98,6 +101,24 @@ lines:
 
 Languages that delegate to another runtime (Python, JavaScript, Perl, plugins)
 evaluate each line in a fresh process, so variables do not persist for them.
+
+## Syntax highlighting
+
+`POST /api/highlight` takes `{"language": "Python", "program": "..."}` and
+returns `{"html": "<span style=\"color: …\">def</span>…"}`.
+
+- The server renders tokens with Pygments (`web/highlight.py`), emitting inline
+  colours and no wrapper element, so the page needs no stylesheet for it.
+- The page paints that HTML in a `<pre>` behind the **transparent textarea**,
+  which keeps the caret, selection, undo and scrolling native.
+- Requests are debounced (180 ms) and stale replies are discarded, so typing
+  stays responsive.
+- Language labels map to lexers (`basic` uses the Commodore BASIC lexer,
+  `pascal`, `prolog`, `forth`, `perl`, `python` and `javascript` have their
+  own). PILOT and Logo stay plain; a plugin's `syntax` alias is used.
+- Source text is escaped, so a program containing `<script>` can never inject
+  markup. Unknown languages, and installs without Pygments, fall back to
+  escaped plain text.
 
 ## Graphics canvas and RLE frames
 
@@ -148,7 +169,8 @@ docker build -f Dockerfile.web -t timewarp-web .
 docker run --rm -p 8000:8000 timewarp-web
 ```
 
-The image contains the built-in interpreters. JavaScript needs Node.js, Perl
+The image contains the built-in interpreters plus Pygments for syntax
+highlighting. JavaScript needs Node.js, Perl
 needs Perl, and plugin languages need their runtime — uncomment the `apt-get`
 line in the Dockerfile or extend the image. `HEALTHCHECK` uses `/healthz`.
 

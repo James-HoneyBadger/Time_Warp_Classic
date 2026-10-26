@@ -5,6 +5,7 @@ and need no browser.
 """
 
 import json
+import os
 import threading
 import time
 import urllib.error
@@ -375,3 +376,70 @@ def test_repl_stops_a_runaway_statement():
 
     assert elapsed < 10
     assert result["status"] in ("continue", "end", "error")
+
+
+def test_server_stops_on_sigterm(tmp_path):
+    """``docker stop`` sends SIGTERM; the server must exit cleanly."""
+    import subprocess
+    import sys
+    from pathlib import Path
+
+    entry = Path(__file__).resolve().parent.parent / "Time_Warp.py"
+    environment = dict(os.environ, PYTHONUNBUFFERED="1")
+    process = subprocess.Popen(
+        [sys.executable, str(entry), "--web", "--port", "0"],
+        cwd=str(entry.parent),
+        stdout=subprocess.PIPE,
+        stderr=subprocess.STDOUT,
+        text=True,
+        env=environment,
+    )
+    try:
+        banner = process.stdout.readline()
+        assert "web IDE" in banner, banner
+        started = time.monotonic()
+        process.terminate()  # SIGTERM
+        assert process.wait(timeout=10) == 0
+        assert time.monotonic() - started < 8
+    finally:
+        if process.poll() is None:
+            process.kill()
+
+
+# -------------------------------------------------------------- highlight
+
+def _highlight(base, language, program):
+    status, body, _headers = _post(
+        base,
+        {"language": language, "program": program},
+        path="/api/highlight",
+    )
+    return status, json.loads(body)
+
+
+def test_highlight_endpoint_returns_coloured_html(base):
+    status, result = _highlight(base, "Python", "def f():\n    return 1\n")
+
+    assert status == 200
+    assert "<span" in result["html"]
+
+
+def test_highlight_endpoint_escapes_markup(base):
+    _status, result = _highlight(base, "Python", "x = '<script>'")
+
+    assert "<script>" not in result["html"]
+    assert "&lt;script&gt;" in result["html"]
+
+
+def test_highlight_endpoint_accepts_unknown_languages(base):
+    status, result = _highlight(base, "Cobol", 'DISPLAY "HI".')
+
+    assert status == 200
+    assert "DISPLAY" in result["html"]
+
+
+def test_highlight_endpoint_rejects_huge_programs(base):
+    with pytest.raises(urllib.error.HTTPError) as error:
+        _highlight(base, "Python", "x" * (300 * 1024))
+
+    assert error.value.code == 413

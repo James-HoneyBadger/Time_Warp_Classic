@@ -51,6 +51,16 @@ except ImportError:
 SETTINGS_FILE = Path.home() / ".timewarp_settings.json"
 
 
+class _SilentConsole:
+    """Absorbs the interpreter's start-up banner when a REPL session begins."""
+
+    def insert(self, *_args, **_kwargs):
+        """Ignore output."""
+
+    def see(self, *_args, **_kwargs):
+        """Ignore scrolling."""
+
+
 class TimeWarpApp:
     """Main GUI application for Time Warp Classic."""
 
@@ -61,6 +71,9 @@ class TimeWarpApp:
     # Characters typed before the completion list appears by itself;
     # Ctrl+Space always opens it.
     COMPLETION_MIN_PREFIX = 2
+
+    # Seconds one REPL statement may run before it is stopped.
+    REPL_LINE_TIMEOUT = 2.0
 
     # Keys whose release says nothing about the text: ignore them so the list
     # does not flicker away while a modifier is held.
@@ -118,6 +131,10 @@ class TimeWarpApp:
         # Web IDE (started on demand from the Program menu)
         self.web_server = None
         self._web_thread = None
+
+        # Console REPL: one interpreter per language, kept across lines
+        self.repl_interpreter = None
+        self.repl_language = None
 
         # References for theme updates
         self._layout_widgets = {}
@@ -460,8 +477,9 @@ class TimeWarpApp:
             "\u2022 Python  - Modern programming\n"
             "\u2022 JavaScript - Web scripting\n\n"
             "Enter your code in the left panel and click Run to execute.\n"
-            "BASIC direct mode: type a statement in the Console bar and press\n"
-            "Enter (LIST, RUN, NEW, RENUMBER, HELP).\n"
+            "Console bar: type a statement and press Enter.  BASIC uses direct\n"
+            "mode (LIST, RUN, NEW, RENUMBER, HELP); every other language runs\n"
+            "the line as a REPL statement with its variables kept.\n"
         ))
 
     # ------------------------------------------------------------------
@@ -1255,11 +1273,7 @@ class TimeWarpApp:
 
         self.output_text.insert(tk.END, f">{value}\n")
         if self.language_var.get().lower() != "basic":
-            self.output_text.insert(
-                tk.END,
-                "Nothing is running. Press F5 (or Run) to execute the program.\n",
-            )
-            self.output_text.see(tk.END)
+            self._run_repl_line(value)
             return
 
         try:
@@ -1271,6 +1285,49 @@ class TimeWarpApp:
             self.debug_enabled.set(self.interpreter.debug_mode)
         for line in response:
             self.output_text.insert(tk.END, f"{line}\n")
+        self.output_text.see(tk.END)
+
+    def _repl_session(self):
+        """Interpreter for the console REPL, restarted when the language changes."""
+        language = self.language_var.get().lower()
+        if self.repl_interpreter is None or self.repl_language != language:
+            # Construct against a sink so the start-up banner stays out of
+            # the console, then send real output to it.
+            interpreter = Time_WarpInterpreter(_SilentConsole())
+            interpreter.output_widget = self.output_text
+            # Statements, not runs: no "READY." chatter between lines.
+            interpreter.console_banner = False
+            interpreter.max_iterations = None
+            interpreter.plugins = self.plugins
+            interpreter.ide_turtle_canvas = self.turtle_canvas
+            interpreter.set_language_mode(language)
+            self.repl_interpreter = interpreter
+            self.repl_language = language
+        return self.repl_interpreter
+
+    def _run_repl_line(self, line):
+        """Evaluate one statement in the console, keeping variables alive."""
+        interpreter = self._repl_session()
+        started = time.monotonic()
+
+        def pump():
+            if time.monotonic() - started > self.REPL_LINE_TIMEOUT:
+                interpreter.stop_program()
+
+        interpreter.pump_callback = pump
+        try:
+            status = interpreter.execute_line(line)
+            if status == "end":
+                interpreter.running = False
+        except Exception as exc:  # noqa: BLE001 — never lose the console to a bug
+            self.output_text.insert(tk.END, f"?ERROR: {exc}\n")
+        self.output_text.see(tk.END)
+
+    def reset_repl(self):
+        """Forget the REPL interpreter (variables and turtle position)."""
+        self.repl_interpreter = None
+        self.repl_language = None
+        self.output_text.insert(tk.END, "REPL reset.\n")
         self.output_text.see(tk.END)
 
     def _editor_program(self):

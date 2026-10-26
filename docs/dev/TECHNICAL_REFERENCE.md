@@ -169,6 +169,14 @@ Syntax highlighting and styling.
 **Key Classes:**
 - `SyntaxHighlighter` — Text coloring based on language-specific patterns
 
+#### web/canvas.py and web/highlight.py
+The browser front-end's two rendering helpers. `RasterCanvas` accepts the
+Tk-like drawing calls the turtle code makes, rasterises them into a
+palette-indexed buffer and emits run-length encoded *delta* frames with a small
+vector overlay; `decode_rle` is the reference decoder. `web/highlight.py` turns
+source into coloured HTML with Pygments (inline colours, no wrapper) and falls
+back to escaped plain text when Pygments is absent.
+
 #### web/server.py
 Browser front-end: a `ThreadingHTTPServer` serving `web/static/index.html` plus
 a JSON/SSE API. `RunnerService` owns language metadata, examples and program

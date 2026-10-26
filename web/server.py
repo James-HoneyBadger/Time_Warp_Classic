@@ -14,6 +14,7 @@ from __future__ import annotations
 import contextlib
 import io
 import json
+import signal
 import threading
 import time
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
@@ -22,6 +23,7 @@ from urllib.parse import unquote, urlparse
 
 from core.interpreter import Time_WarpInterpreter
 from web.canvas import DEFAULT_HEIGHT, DEFAULT_WIDTH, RasterCanvas
+from web.highlight import highlight as highlight_source
 from core.languages.catalog import EXT_TO_LANG, SUPPORTED_LANGUAGES, language_extension
 from core.plugins import PluginRegistry
 
@@ -353,12 +355,24 @@ class _Handler(BaseHTTPRequestHandler):
 
     def do_POST(self):  # noqa: N802 - BaseHTTPRequestHandler API
         path = urlparse(self.path).path
-        if path not in ("/api/run", "/api/repl"):
+        if path not in ("/api/run", "/api/repl", "/api/highlight"):
             return self._error(404, f"no route for {path}")
 
         try:
             request = self._read_request()
             language = request.get("language")
+
+            if path == "/api/highlight":
+                program = request.get("program", "")
+                if not isinstance(program, str):
+                    raise BadRequest("'program' must be text")
+                if len(program.encode("utf-8", "replace")) > MAX_PROGRAM_BYTES:
+                    raise BadRequest("program is too large", status=413)
+                spec = self.service.plugins.get(language)
+                html_text = highlight_source(
+                    language, program, alias=spec.syntax if spec else None
+                )
+                return self._json(200, {"html": html_text})
 
             if path == "/api/repl":
                 result = self.service.repl(
@@ -463,6 +477,18 @@ def serve(host=DEFAULT_HOST, port=DEFAULT_PORT, timeout=DEFAULT_TIMEOUT,
     browser_host = "127.0.0.1" if host in ("0.0.0.0", "::") else host
     print(f"Time Warp Classic web IDE: http://{browser_host}:{server.server_port}/")
     print("Press Ctrl+C to stop.")
+
+    def _terminate(_signum, _frame):
+        # Docker stops a container with SIGTERM.  A process running as PID 1
+        # has no default signal dispositions, so the handler is required for
+        # a clean shutdown instead of a ten-second SIGKILL.
+        raise KeyboardInterrupt
+
+    try:
+        signal.signal(signal.SIGTERM, _terminate)
+    except (ValueError, OSError):  # pragma: no cover - not the main thread
+        pass
+
     try:
         server.serve_forever()
     except KeyboardInterrupt:
