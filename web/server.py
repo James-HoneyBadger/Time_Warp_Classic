@@ -11,6 +11,8 @@ the IDE's *Program -> Open Web IDE* menu entry.
 
 from __future__ import annotations
 
+import contextlib
+import io
 import json
 import threading
 import time
@@ -135,7 +137,10 @@ class RunnerService:
         started = time.monotonic()
         timed_out = {"value": False}
         try:
-            interpreter = Time_WarpInterpreter()
+            with contextlib.redirect_stdout(io.StringIO()):
+                # The constructor announces itself; that belongs to the IDE,
+                # not to a long-running server's log.
+                interpreter = Time_WarpInterpreter()
             interpreter.console_banner = False
             interpreter.turtle_console = False
             interpreter.max_iterations = DEFAULT_ITERATIONS

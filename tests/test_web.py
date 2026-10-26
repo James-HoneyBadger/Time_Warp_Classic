@@ -199,6 +199,13 @@ def test_streaming_reports_bad_requests_as_events(base):
 
 # --------------------------------------------------------- runner service
 
+def test_service_run_does_not_write_to_stdout(capsys):
+    """A run's output belongs to the response, not the server log."""
+    RunnerService().run("BASIC", '10 PRINT "quiet"')
+
+    assert capsys.readouterr().out == ""
+
+
 def test_service_rejects_blank_language():
     service = RunnerService()
 
