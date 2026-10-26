@@ -75,6 +75,7 @@ Time_Warp_Classic/
 │   ├── interpreter.py        # Time_WarpInterpreter class
 │   ├── stubs.py              # Placeholder classes for optional features
 │   ├── features/             # IDE features
+│   │   ├── completion.py     # Word-completion vocabulary and matching
 │   │   └── syntax_highlighting.py
 │   ├── languages/            # Language executor modules
 │   │   ├── __init__.py       # Exports all executors
@@ -163,6 +164,20 @@ Syntax highlighting and styling.
 
 **Key Classes:**
 - `SyntaxHighlighter` — Text coloring based on language-specific patterns
+
+#### features/completion.py
+Word completion for the editor, kept free of Tk so it runs headless.
+
+**Key API:**
+- `CompletionEngine.suggestions(language, prefix)` — Words starting with
+  *prefix*, exact-case matches first
+- `CompletionEngine.completion_at(language, text, cursor, forced=False)` —
+  `(start, items)` for the caret, or `None` in comments/strings
+- `VOCABULARIES` — Per-language words taken from what each interpreter accepts
+
+The popup itself lives in `gui/completion_popup.py`; the editor binding is
+`TimeWarpApp._init_completion()`. Typing two or more word characters opens the
+list, Ctrl+Space opens it anywhere, Enter/Tab accept and Escape dismisses it.
 
 #### optimizations/
 Performance optimization modules.

@@ -120,6 +120,8 @@ def _build_edit_menu(menubar, app):
     menu.add_separator()
     menu.add_command(label="Find...", command=lambda: FindDialog(app.root, app.editor_text, app.output_text), accelerator="Ctrl+F")
     menu.add_command(label="Replace...", command=lambda: ReplaceDialog(app.root, app.editor_text, app.output_text), accelerator="Ctrl+H")
+    menu.add_separator()
+    menu.add_command(label="Complete Word", command=app.complete_word, accelerator="Ctrl+Space")
 
 
 # ------------------------------------------------------------------
@@ -284,6 +286,13 @@ def _build_preferences_menu(menubar, app):
     menu.add_cascade(label="Font Size", menu=font_menu)
     for key, data in FONT_SIZES.items():
         font_menu.add_command(label=data["name"], command=lambda k=key: app.apply_font_size(k))
+
+    menu.add_separator()
+    menu.add_checkbutton(
+        label="Auto-complete Words",
+        variable=app.completion_enabled,
+        command=app.toggle_completion,
+    )
 
 
 def _get_available_fonts():

@@ -19,8 +19,10 @@ import tkinter as tk
 from tkinter import scrolledtext, messagebox, filedialog
 
 from core.interpreter import Time_WarpInterpreter
+from core.features.completion import CompletionEngine, is_word_char
 from core.languages.basic_console import BasicConsole
 from core.features.syntax_highlighting import SyntaxHighlightingText, LineNumberedText
+from gui.completion_popup import CompletionPopup
 from gui.themes import (
     THEMES, FONT_SIZES, LINE_NUMBER_BG, SUPPORTED_LANGUAGES,
 )
@@ -49,6 +51,20 @@ class TimeWarpApp:
     # commands, Logo is turtle-first).
     _GRAPHICS_LANGUAGES = {"logo", "basic"}
 
+    # Characters typed before the completion list appears by itself;
+    # Ctrl+Space always opens it.
+    COMPLETION_MIN_PREFIX = 2
+
+    # Keys whose release says nothing about the text: ignore them so the list
+    # does not flicker away while a modifier is held.
+    _MODIFIER_KEYS = frozenset({
+        "Shift_L", "Shift_R", "Control_L", "Control_R", "Alt_L", "Alt_R",
+        "Super_L", "Super_R", "Caps_Lock", "Num_Lock", "ISO_Level3_Shift",
+    })
+    # Event state bits for Control and Alt (X11/Tk values).
+    _CONTROL_MASK = 0x0004
+    _ALT_MASK = 0x0008
+
     # Default file extension per language (Save As follows the language).
     LANGUAGE_EXTENSIONS = {
         "pilot": ".pilot",
@@ -71,6 +87,7 @@ class TimeWarpApp:
         self.current_theme = "dark"
         self.current_font = "medium"
         self.current_font_family = "Courier"
+        self.current_completion = True
         self._load_settings()
 
         self.root = tk.Tk()
@@ -106,6 +123,7 @@ class TimeWarpApp:
 
         self._build_layout()
         self._init_interpreter()
+        self._init_completion()
 
         build_menu_bar(self)
         self._bind_keys()
@@ -138,12 +156,14 @@ class TimeWarpApp:
                 self.current_theme = s.get("theme", "dark")
                 self.current_font = s.get("font_size", "medium")
                 self.current_font_family = s.get("font_family", "Courier")
+                self.current_completion = s.get("completion", True)
                 return
         except Exception:
             pass
         self.current_theme = "dark"
         self.current_font = "medium"
         self.current_font_family = "Courier"
+        self.current_completion = True
 
     def _save_settings(self):
         try:
@@ -153,6 +173,7 @@ class TimeWarpApp:
                         "theme": self.current_theme,
                         "font_size": self.current_font,
                         "font_family": self.current_font_family,
+                        "completion": bool(self.current_completion),
                     },
                     f,
                 )
@@ -393,6 +414,9 @@ class TimeWarpApp:
         }
         if hasattr(self.editor_text, "set_language"):
             self.editor_text.set_language(lang_to_syntax.get(lang, "text"))
+        popup = getattr(self, "completion_popup", None)
+        if popup is not None:
+            popup.hide()
         self._update_graphics_visibility()
         self.interpreter.set_language_mode(lang.lower())
         self._update_status()
@@ -738,6 +762,7 @@ class TimeWarpApp:
 
         self._program_running = True
         self._set_running_state(True)
+        self.completion_popup.hide()
         try:
             self.interpreter.ide_turtle_canvas = self.turtle_canvas
             if lang == "logo":
@@ -889,6 +914,150 @@ class TimeWarpApp:
         self._refresh_breakpoint_marks()
 
     # ------------------------------------------------------------------
+    # Code completion
+    # ------------------------------------------------------------------
+
+    def _init_completion(self):
+        """Create the completion engine and popup, and bind the editor keys."""
+        self.completion = CompletionEngine()
+        self.completion_popup = CompletionPopup(self.root)
+        self.completion_enabled = tk.BooleanVar(value=bool(self.current_completion))
+        self._completion_span = (0, 0)  # (start offset, prefix length)
+
+        editor = self._text_widget()
+        editor.bind("<Control-space>", self.show_completions, add="+")
+        editor.bind("<KeyRelease>", self._on_completion_key, add="+")
+        # Navigation only acts while the list is open; otherwise these keys
+        # keep their normal editing behaviour.
+        for sequence in ("<Up>", "<Down>", "<Return>", "<KP_Enter>", "<Tab>", "<Escape>"):
+            editor.bind(sequence, self._on_completion_key_navigation, add="+")
+        editor.bind("<FocusOut>", lambda _e: self.completion_popup.hide(), add="+")
+        editor.bind("<Button-1>", lambda _e: self.completion_popup.hide(), add="+")
+
+        self.completion_popup.set_font(
+            (self.current_font_family, FONT_SIZES[self.current_font]["editor"])
+        )
+
+    def _completion_language(self):
+        """Vocabulary key for the language selected in the toolbar."""
+        return self.language_var.get().lower() if self.language_var else ""
+
+    def _caret_screen_position(self):
+        """Screen coordinates just below the caret."""
+        editor = self._text_widget()
+        try:
+            box = editor.bbox(tk.INSERT)
+            if not box:
+                # Caret scrolled out of view (or the window is not mapped yet):
+                # anchor the list inside the editor rather than not at all.
+                return editor.winfo_rootx() + 40, editor.winfo_rooty() + 40
+            x, y, _width, height = box
+            return editor.winfo_rootx() + x, editor.winfo_rooty() + y + height
+        except tk.TclError:
+            return None
+
+    def show_completions(self, _event=None, forced=True):
+        """Offer the words for the current prefix (Ctrl+Space and auto-type)."""
+        if self._program_running or not self.completion_enabled.get():
+            self.completion_popup.hide()
+            return "break"
+        if not self._completion_enabled_for_language():
+            self.completion_popup.hide()
+            return "break"
+
+        editor = self._text_widget()
+        text = editor.get("1.0", "end-1c")
+        cursor = len(editor.get("1.0", tk.INSERT))
+        found = self.completion.completion_at(
+            self._completion_language(), text, cursor, forced=forced
+        )
+        if found is None:
+            self.completion_popup.hide()
+            return "break" if forced else None
+
+        start, items = found
+        if not forced and cursor - start < self.COMPLETION_MIN_PREFIX:
+            self.completion_popup.hide()
+            return None
+
+        position = self._caret_screen_position()
+        if position is None:
+            self.completion_popup.hide()
+            return None
+
+        self._completion_span = (start, cursor - start)
+        self.completion_popup.show(items, *position)
+        return "break" if forced else None
+
+    def _completion_enabled_for_language(self):
+        """False when the selected language has no vocabulary yet."""
+        return bool(self.completion.vocabulary(self._completion_language()))
+
+    def _on_completion_key(self, event):
+        """Refresh the list as the user types, and close it otherwise."""
+        if event.keysym in self._MODIFIER_KEYS:
+            return None
+        if event.state & (self._CONTROL_MASK | self._ALT_MASK):
+            # Shortcuts (undo, save, ...) do not add text.
+            return None
+        if self.completion_popup.visible and event.keysym in (
+            "Up", "Down", "Return", "KP_Enter", "Tab", "Escape",
+        ):
+            return None
+        # Tk leaves event.char empty on key *release*, so fall back to the
+        # keysym for printable single characters.
+        typed = event.char or (
+            event.keysym if len(event.keysym) == 1 else ""
+        )
+        if event.keysym == "BackSpace" or is_word_char(typed):
+            self.show_completions(forced=False)
+        else:
+            self.completion_popup.hide()
+        return None
+
+    def _on_completion_key_navigation(self, event):
+        """Drive the open list; leave the key alone when it is closed."""
+        popup = self.completion_popup
+        if not popup.visible:
+            return None
+        if event.keysym in ("Up", "Down"):
+            popup.move(1 if event.keysym == "Down" else -1)
+            return "break"
+        if event.keysym in ("Return", "KP_Enter", "Tab"):
+            self._complete_with(popup.take())
+            return "break"
+        if event.keysym == "Escape":
+            popup.hide()
+            return "break"
+        return None
+
+    def _complete_with(self, word):
+        """Replace the typed prefix with *word*."""
+        if not word:
+            return
+        start, length = self._completion_span
+        editor = self._text_widget()
+        try:
+            editor.delete(f"1.0+{start}c", f"1.0+{start + length}c")
+            editor.insert(f"1.0+{start}c", word)
+        except tk.TclError:
+            return
+        self.completion_popup.hide()
+        self._update_cursor_status()
+
+    def complete_word(self):
+        """Menu entry point: open the list at the caret."""
+        self._text_widget().focus_set()
+        self.show_completions(forced=True)
+
+    def toggle_completion(self):
+        """Turn auto-completion on or off, remembering the choice."""
+        self.current_completion = bool(self.completion_enabled.get())
+        if not self.current_completion:
+            self.completion_popup.hide()
+        self._save_settings()
+
+    # ------------------------------------------------------------------
     # Input
     # ------------------------------------------------------------------
 
@@ -993,6 +1162,13 @@ class TimeWarpApp:
             highlightbackground=theme["canvas_border"],
         )
 
+        # Completion popup follows the editor colours
+        popup = getattr(self, "completion_popup", None)
+        if popup is not None:
+            popup.set_colors(
+                theme["text_bg"], theme["text_fg"], theme.get("select_bg", "#094771")
+            )
+
         # Frames
         w = self._layout_widgets
         self.root.config(bg=theme["root_bg"])
@@ -1034,6 +1210,9 @@ class TimeWarpApp:
         else:
             self.editor_text.config(font=(family, size["editor"]))
         self.output_text.config(font=(family, size["output"]))
+        popup = getattr(self, "completion_popup", None)
+        if popup is not None:
+            popup.set_font((family, size["editor"]))
         self._save_settings()
 
     def apply_font_size(self, size_key):
@@ -1045,6 +1224,9 @@ class TimeWarpApp:
         else:
             self.editor_text.config(font=(self.current_font_family, size["editor"]))
         self.output_text.config(font=(self.current_font_family, size["output"]))
+        popup = getattr(self, "completion_popup", None)
+        if popup is not None:
+            popup.set_font((self.current_font_family, size["editor"]))
         self._save_settings()
 
     # ------------------------------------------------------------------

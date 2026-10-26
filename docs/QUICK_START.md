@@ -246,6 +246,7 @@ Select **BASIC**, then use the **Console** bar at the bottom like an old machine
 - F5: Run program
 - F9: Set or clear a breakpoint on the current line
 - Ctrl+.: Stop a running program
+- Ctrl+Space: Show word completions (Down/Up to move, Enter/Tab to accept, Esc to close)
 - Ctrl+F: Find
 - Ctrl+H: Find & Replace
 - Ctrl+S: Save file

@@ -40,6 +40,7 @@ Execute code in 9 different programming languages — six with full built-in int
 
 - **Menu System** — File, Edit, Program, Debug, Test, Performance, Preferences, About
 - **Syntax Highlighting** — Real-time syntax coloring via Pygments (with plain-text fallback)
+- **Word Completion** — Language-aware suggestions as you type (Ctrl+Space lists every word)
 - **Line Numbers** — Always-visible line numbering for easy navigation
 - **Integrated Editor** — Code editing with undo/redo, find & replace (regex support)
 - **Output Panel** — Immediate program execution feedback
@@ -600,7 +601,7 @@ Compare implementations across all 9 languages, study the [Technical Reference](
 - [x] Language tutorials and reference documentation
 - [x] 9 color themes with persistence
 - [x] Performance optimization system
-- [ ] Code completion and IntelliSense
+- [x] Code completion and IntelliSense
 - [ ] Plugin system for custom languages
 - [ ] Export programs to standalone executables
 - [ ] Web-based version
