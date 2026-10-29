@@ -24,7 +24,9 @@ from urllib.parse import unquote, urlparse
 from core.interpreter import Time_WarpInterpreter
 from web.canvas import DEFAULT_HEIGHT, DEFAULT_WIDTH, RasterCanvas
 from web.highlight import highlight as highlight_source
-from core.languages.catalog import EXT_TO_LANG, SUPPORTED_LANGUAGES, language_extension
+from core.languages.catalog import (
+    EXT_TO_LANG, SUPPORTED_LANGUAGES, language_extension, runtime_available,
+)
 from core.plugins import PluginRegistry
 
 PACKAGE_ROOT = Path(__file__).resolve().parent.parent
@@ -100,12 +102,13 @@ class RunnerService:
     # ---- metadata -----------------------------------------------------
 
     def languages(self):
-        """Selectable languages with their default extension."""
+        """Selectable languages with their extension and run-time readiness."""
         entries = [
             {
                 "name": language,
                 "key": language.lower(),
                 "extension": language_extension(language),
+                "available": runtime_available(language),
             }
             for language in SUPPORTED_LANGUAGES
         ]
@@ -114,6 +117,7 @@ class RunnerService:
                 "name": spec.name,
                 "key": spec.name.lower(),
                 "extension": spec.extension or ".txt",
+                "available": runtime_available(spec.name, spec.executable),
             }
             for spec in self.plugins
         )

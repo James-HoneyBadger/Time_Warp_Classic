@@ -4,6 +4,28 @@ All notable changes to Time Warp Classic are recorded here. The format follows
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and the project uses
 [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.6.0] - 2026-10-29
+
+### Changed
+
+- **Errors now carry a suggestion.** A short `?HINT:` line is printed under
+  errors the interpreter recognises (division by zero, undefined names,
+  syntax errors, missing modules, endless loops, timeouts, …) and points at the
+  language reference. The hint is stored with the error in `error_history`
+  and shown in the Debug → Error History dialog, which now also lists the time
+  of each error. Hosts can disable the lines with `error_hints = False`.
+- **Runtime readiness is visible.** Languages that need an external runtime
+  (`perl`, `node`) are marked *(runtime missing)* in the language menu, the
+  status bar and the web IDE's language picker, and a one-line note is
+  printed the first time such a language is selected. Running one now explains
+  how to install the runtime; plugin languages name the manifest `executable`
+  that could not be found, and are listed with that reason in the plugin report.
+- **Debug state is visible while it matters.** The status bar shows how many
+  breakpoints are set whenever Debug Mode is on, refreshed from the Debug menu,
+  F9, Clear All Breakpoints and the BASIC `TRON`/`TROFF` console commands.
+  In the web IDE, `?HINT:` lines are styled as suggestions rather than errors
+  and the language picker, status line and console have accessible labels.
+
 ## [1.5.0] - 2026-10-26
 
 This release also contains everything that was prepared for 1.4.0, which was

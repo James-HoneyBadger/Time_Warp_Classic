@@ -80,7 +80,10 @@ def test_languages_endpoint_lists_every_language(base):
         "Forth", "Perl", "Python", "JavaScript",
     ]
     basic = next(entry for entry in data["languages"] if entry["name"] == "BASIC")
-    assert basic == {"name": "BASIC", "key": "basic", "extension": ".bas"}
+    assert basic == {
+        "name": "BASIC", "key": "basic", "extension": ".bas", "available": True,
+    }
+    assert all(isinstance(entry["available"], bool) for entry in data["languages"])
 
 
 def test_examples_are_listed_and_loadable(base):

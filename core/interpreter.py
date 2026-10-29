@@ -74,6 +74,8 @@ except ImportError:
     ImageTk = _DummyImageTk  # type: ignore[assignment]
     print("ℹ️  PIL/Pillow not available - image features disabled")
 
+from .error_hints import hint_for  # noqa: E402
+
 # Import language executors
 from .languages import (  # noqa: E402
     TwPilotExecutor,
@@ -204,6 +206,8 @@ class Time_WarpInterpreter:  # pylint: disable=too-many-public-methods
         self.plugins = None  # PluginRegistry supplied by the host, if any
         # IDE chrome ("Interpreter ready.", "READY.") is noise in a script.
         self.console_banner = True
+        # Short "?HINT: ..." lines under errors a known rule explains.
+        self.error_hints = True
         # Hosts without a turtle canvas (web UI, exported runners) do not need
         # "Turtle moved" and "Drawing line ..." chatter either.
         self.turtle_console = True
@@ -799,14 +803,21 @@ class Time_WarpInterpreter:  # pylint: disable=too-many-public-methods
         else:
             formatted_error = f"?ERROR: {error_msg}"
 
+        hint = None
+        if self.error_hints:
+            hint = hint_for(error_msg, self.current_language_mode)
+
         # Add error to error history for debugging
         self.error_history.append({
             'message': error_msg,
             'line': line_num,
+            'hint': hint,
             'timestamp': self.get_current_time(),
         })
 
         self.log_output(formatted_error)
+        if hint:
+            self.log_output(f"?HINT: {hint}")
 
     def debug_output(self, text):
         """Log debug output only when debug mode is enabled"""

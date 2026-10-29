@@ -221,15 +221,33 @@ class ReplaceDialog:
         self.editor.clear_search_highlights()
 
 
+def _short_time(timestamp):
+    """``HH:MM:SS`` from an ISO timestamp, or ``""`` when it is not one."""
+    text = str(timestamp or "")
+    if len(text) >= 19 and text[10] == "T":
+        return text[11:19]
+    return ""
+
+
 def show_error_history(parent, interpreter):
     """Show the error history in a dialog."""
     if not hasattr(interpreter, "error_history") or not interpreter.error_history:
         messagebox.showinfo("Error History", "No errors recorded.")
         return
 
-    history_text = "Recent Errors:\n\n"
-    for i, error in enumerate(interpreter.error_history[-10:], 1):
-        history_text += f"{i}. Line {error.get('line', 'N/A')}: {error['message']}\n"
+    recent = interpreter.error_history[-10:]
+    history_text = (
+        f"Recent Errors: {len(interpreter.error_history)} recorded, "
+        f"showing the last {len(recent)}.\n\n"
+    )
+    for i, error in enumerate(recent, 1):
+        stamp = _short_time(error.get("timestamp"))
+        prefix = f"[{stamp}] " if stamp else ""
+        history_text += (
+            f"{i}. {prefix}Line {error.get('line', 'N/A')}: {error['message']}\n"
+        )
+        if error.get("hint"):
+            history_text += f"    \u21b3 {error['hint']}\n"
 
     history_window = tk.Toplevel(parent)
     history_window.title("Error History")
@@ -247,7 +265,7 @@ def show_about(parent):
     about_text = (
         f"{sep}\n"
         "Time Warp Classic\n"
-        "Version 1.5.0\n\n"
+        "Version 1.6.0\n\n"
         "Back-to-basics Tkinter IDE for 9 vintage\n"
         "+ modern languages with turtle graphics.\n\n"
         "FEATURES:\n"

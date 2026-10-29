@@ -47,7 +47,7 @@ script.
 |--------|------|---------|
 | `GET` | `/` | The editor page |
 | `GET` | `/healthz` | `{"status": "ok"}` |
-| `GET` | `/api/languages` | `{"languages": [{"name", "key", "extension"}]}` |
+| `GET` | `/api/languages` | `{"languages": [{"name", "key", "extension", "available"}]}` |
 | `GET` | `/api/examples` | `{"examples": [{"name", "language", "path"}]}` |
 | `GET` | `/api/examples/<path>` | `{"path", "source"}` |
 | `POST` | `/api/run` | Result object, or an event stream (see below) |
@@ -55,8 +55,10 @@ script.
 | `POST` | `/api/highlight` | Returns coloured HTML for the editor |
 
 `POST /api/run` takes `{"language": "BASIC", "program": "10 PRINT 1"}`.
-Language names are case-insensitive. With `Accept: application/json` (the
-default) the reply is:
+Language names are case-insensitive. `available` in `/api/languages` is `false`
+for a language whose external runtime (Node.js, Perl, a plugin executable) is
+not installed on the server; the page marks those options "(runtime missing)".
+With `Accept: application/json` (the default) the reply is:
 
 ```json
 {"language": "BASIC", "output": ["1"], "errors": 0,

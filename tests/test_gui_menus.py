@@ -109,6 +109,20 @@ def test_breakpoint_stops_the_run_and_menu_clears_it(app):
     assert app.interpreter.breakpoints == set()
 
 
+def test_status_bar_reports_the_breakpoint_count(app):
+    """Debug Mode puts the number of breakpoints in the status bar."""
+    app.interpreter.set_debug_mode(True)
+    app.interpreter.toggle_breakpoint(1)
+    app._refresh_breakpoint_marks()
+
+    assert "1 breakpoint" in app.status_state.cget("text")
+
+    app.interpreter.set_debug_mode(False)
+    app._refresh_breakpoint_marks()
+
+    assert app.status_state.cget("text") == "Ready"
+
+
 def test_toggle_breakpoint_at_cursor_marks_the_line(app):
     _program(app, '10 PRINT "ALPHA"\n20 PRINT "BETA"\n')
     app._text_widget().mark_set(tk.INSERT, "2.0")

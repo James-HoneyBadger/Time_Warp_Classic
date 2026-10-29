@@ -97,6 +97,7 @@
     background: #ffffff; box-shadow: 0 0 0 1px var(--border);
   }
   #output .err { color: var(--error); }
+  #output .hint-line { color: var(--muted); font-style: italic; }
   .hint { padding: 2px 10px; color: var(--muted); font-size: 11px;
           background: var(--panel); border-top: 1px solid var(--border); }
 </style>
@@ -104,12 +105,12 @@
 <body>
 <header>
   <h1>TIME WARP CLASSIC</h1>
-  <select id="language" title="Language"></select>
+  <select id="language" title="Language" aria-label="Language"></select>
   <button id="run" class="primary" title="Ctrl+Enter">&#9654; Run</button>
-  <select id="examples" title="Load an example">
+  <select id="examples" title="Load an example" aria-label="Load an example">
     <option value="">Examples&hellip;</option>
   </select>
-  <span id="status">ready</span>
+  <span id="status" role="status" aria-live="polite">ready</span>
 </header>
 <main>
   <section class="pane" id="left-pane">
@@ -131,7 +132,7 @@
   <div id="divider" title="Drag to resize"></div>
   <section class="pane" id="right-pane">
     <h2>Console</h2>
-    <pre id="output"></pre>
+    <pre id="output" aria-label="Program output"></pre>
     <div id="repl">
       <span class="prompt" id="repl-prompt">&gt;</span>
       <input id="repl-input" autocomplete="off" spellcheck="false"
@@ -167,6 +168,7 @@
     const line = document.createElement("span");
     line.textContent = text + "\n";
     if (isError) line.className = "err";
+    else if (String(text).indexOf("?HINT:") === 0) line.className = "hint-line";
     output.appendChild(line);
     output.scrollTop = output.scrollHeight;
   }
@@ -346,6 +348,10 @@
       const option = document.createElement("option");
       option.value = entry.name;
       option.textContent = entry.name;
+      if (entry.available === false) {
+        option.textContent = entry.name + " (runtime missing)";
+        option.title = entry.name + " needs its runtime installed on the server";
+      }
       if (entry.name === "BASIC") option.selected = true;
       languageSelect.appendChild(option);
     });
@@ -405,7 +411,8 @@
       return;
     }
     if (typeof data.line === "string") {
-      appendLine(data.line, data.line.startsWith("?ERROR") || data.line.startsWith("?"));
+      const isHint = data.line.startsWith("?HINT:");
+      appendLine(data.line, !isHint && data.line.startsWith("?"));
     }
   }
 
@@ -514,7 +521,8 @@
         return;
       }
       (result.output || []).forEach(function (text) {
-        replEcho(text, String(text).startsWith("?"));
+        const isHint = String(text).indexOf("?HINT:") === 0;
+        replEcho(text, !isHint && String(text).startsWith("?"));
       });
       if (result.canvas) applyCanvasFrame(result.canvas);
       setStatus(result.exit === 0 ? "ok" : "statement failed");

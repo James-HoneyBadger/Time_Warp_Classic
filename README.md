@@ -4,7 +4,7 @@
 
 Time Warp Classic is an educational multi-language IDE that bridges the past and present of programming, supporting 9 programming languages through an elegant graphical interface with integrated turtle graphics, inspired by the golden age of computing.
 
-[![Version](https://img.shields.io/badge/version-1.5.0-blue.svg)](https://github.com/James-HoneyBadger/Time_Warp_Classic)
+[![Version](https://img.shields.io/badge/version-1.6.0-blue.svg)](https://github.com/James-HoneyBadger/Time_Warp_Classic)
 [![Python](https://img.shields.io/badge/python-3.9+-green.svg)](https://www.python.org/)
 [![License](https://img.shields.io/badge/license-MIT-orange.svg)](LICENSE)
 [![education](https://img.shields.io/badge/topic-education-lightgrey)](https://github.com/topics/education)
@@ -36,6 +36,10 @@ Execute code in 9 different programming languages — six with full built-in int
 - **Python** (1991) — Modern general-purpose programming (uses host Python)
 - **JavaScript** (1995) — Web scripting with ES6+ features (requires Node.js)
 
+Languages whose runtime is not installed are marked **(runtime missing)** in the
+language menu, the status bar and the web IDE, and a run reports what to
+install instead of failing silently.
+
 ### Professional IDE Interface
 
 - **Menu System** — File, Edit, Program, Debug, Test, Performance, Preferences, About
@@ -56,7 +60,7 @@ Execute code in 9 different programming languages — six with full built-in int
 
 ### Educational Focus
 
-- **Enhanced Error Messages** — Detailed error reporting with line numbers and context
+- **Enhanced Error Messages** — Detailed error reporting with line numbers, context and a short `?HINT:` suggestion for common mistakes; click an error in the output to jump to that line
 - **Debug Tools** — Set breakpoints with F9 (marked in the editor), debug mode, error history
 - **Testing Framework** — Built-in smoke tests and full test suite via menu
 - **Example Programs** — Comprehensive demos for every language

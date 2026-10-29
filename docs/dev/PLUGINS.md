@@ -104,7 +104,7 @@ example:
 
 | Message | Cause |
 |---------|-------|
-| `?RUBY NOT FOUND - install it to run these scripts` | The runtime is not on `PATH` and `executable` is not an existing file path. |
+| `?RUBY NOT FOUND - the manifest asks for 'ruby', which is not on PATH` | The runtime is not on `PATH` and `executable` is not an existing file path. The plugin is also reported in the IDE output as `?PLUGIN: Ruby: …`. |
 | `?PLUGIN: … is a built-in language` | `name` clashes with PILOT, BASIC, Logo, Pascal, Prolog, Forth, Perl, Python or JavaScript. |
 | `?PLUGIN: … is required` | `name` or `executable` is missing or empty. |
 | `?PLUGIN: … 'timeout' must be …` | `timeout` must be a positive number of seconds. |

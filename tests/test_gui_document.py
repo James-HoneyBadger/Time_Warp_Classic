@@ -204,3 +204,16 @@ def test_replace_all_replaces_every_occurrence(app):
         dialog.dialog.destroy()
 
     assert app.editor_text.get("1.0", "end-1c") == "1 two 1"
+
+
+def test_status_bar_flags_a_missing_runtime(app, monkeypatch):
+    """A language whose runtime is absent is labelled and noted once."""
+    import gui.app as app_module
+
+    monkeypatch.setattr(app_module, "runtime_available", lambda *a, **k: False)
+    app.language_var.set("Perl")
+    app.root.update()
+
+    assert "runtime missing" in app.status_language.cget("text")
+    assert "runtime not found" in app.output_text.get("1.0", "end")
+

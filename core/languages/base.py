@@ -29,6 +29,8 @@ import threading
 import time
 from typing import TYPE_CHECKING
 
+from .catalog import missing_runtime_hint
+
 if TYPE_CHECKING:
     from core.interpreter import Time_WarpInterpreter
 
@@ -93,9 +95,7 @@ class SubprocessExecutor:
     def execute_file(self, filepath: str) -> bool:
         """Run an existing source file.  Returns ``True`` on success."""
         if not self.executable:
-            self.interpreter.log_output(
-                f"❌ {self.lang_name} runtime not found on system"
-            )
+            self.interpreter.log_output(self.missing_runtime_message())
             return False
 
         try:
@@ -129,6 +129,17 @@ class SubprocessExecutor:
             )
             return False
 
+    def missing_runtime_message(self) -> str:
+        """Explain that the runtime is missing, and how to install it.
+
+        Plugin languages override this to name the manifest's executable.
+        """
+        message = (
+            f"?{self.lang_name.upper()} NOT FOUND - install it to run these scripts"
+        )
+        hint = missing_runtime_hint(self.lang_name)
+        return f"{message} ({hint})" if hint else message
+
     def get_version(self) -> str:
         """Return a human-readable version string for the runtime."""
         if not self.executable:
@@ -158,9 +169,7 @@ class SubprocessExecutor:
         soon as the host requests a stop.
         """
         if not self.executable:
-            self.interpreter.log_output(
-                f"?{self.lang_name.upper()} NOT FOUND - install it to run these scripts"
-            )
+            self.interpreter.log_output(self.missing_runtime_message())
             return "error"
 
         try:

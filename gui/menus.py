@@ -210,7 +210,7 @@ def _build_debug_menu(menubar, app):
     menu.add_checkbutton(
         label="Enable Debug Mode",
         variable=app.debug_enabled,
-        command=lambda: app.interpreter.set_debug_mode(app.debug_enabled.get()),
+        command=app.toggle_debug_mode,
     )
     menu.add_separator()
     menu.add_command(

@@ -40,3 +40,10 @@ class PluginExecutor(SubprocessExecutor):
         if found:
             return found
         return candidate if os.path.isfile(candidate) else None
+
+    def missing_runtime_message(self):
+        """Name the executable the manifest asked for."""
+        return (
+            f"?{self.lang_name.upper()} NOT FOUND - the manifest asks for "
+            f"'{self.spec.executable}', which is not on PATH"
+        )

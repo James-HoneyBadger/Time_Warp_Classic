@@ -22,7 +22,9 @@ from tkinter import scrolledtext, messagebox, filedialog
 
 from core.interpreter import Time_WarpInterpreter
 from core.features.completion import CompletionEngine, is_word_char
-from core.languages.catalog import LANGUAGE_EXTENSIONS
+from core.languages.catalog import (
+    LANGUAGE_EXTENSIONS, missing_runtime_hint, runtime_available,
+)
 from core.export import (
     RUNNER_SUFFIX, RunBundle, build_standalone_runner, export_language_available,
 )
@@ -140,6 +142,10 @@ class TimeWarpApp:
         # References for theme updates
         self._layout_widgets = {}
 
+        # Languages already reported as missing their runtime, so the note
+        # is printed once per session instead of on every selection.
+        self._warned_runtimes = set()
+
         # Plugin languages extend the selector, the file types and the
         # completion vocabulary; they must be known before the layout.
         self.plugin_dir = DEFAULT_PLUGIN_DIR
@@ -240,6 +246,7 @@ class TimeWarpApp:
 
         # Wire language change to syntax highlighting
         self.language_var.trace_add("write", self._on_language_change)
+        self._rebuild_language_menu()
 
         editor_frame = tk.LabelFrame(
             left_panel, text="Code Editor", padx=5, pady=5,
@@ -457,6 +464,7 @@ class TimeWarpApp:
         self._update_graphics_visibility()
         self.interpreter.set_language_mode(lang.lower())
         self._update_status()
+        self._note_missing_runtime(lang)
         if lang.lower() == "basic" and not self._program_running and self.output_text is not None:
             self.output_text.insert(tk.END, "\nREADY.\n")
 
@@ -715,13 +723,59 @@ class TimeWarpApp:
         star = " *" if self.modified else ""
         self.root.title(f"{name}{star} - Time Warp Classic")
 
+    def _language_availability(self, language):
+        """``(available, reason)`` for *language* in this environment."""
+        registry = getattr(self, "plugins", None)
+        spec = registry.get(language) if registry is not None else None
+        executable = spec.executable if spec else None
+        if runtime_available(language, executable):
+            return True, ""
+        reason = (
+            missing_runtime_hint(language)
+            or f"'{executable}' was not found on PATH"
+        )
+        return False, reason
+
+    def _language_label(self, language):
+        """Language name, marked when the runtime it needs is missing."""
+        available, _reason = self._language_availability(language)
+        return language if available else f"{language} (runtime missing)"
+
+    def _note_missing_runtime(self, language):
+        """Point out once that *language* cannot run without its runtime."""
+        available, reason = self._language_availability(language)
+        if available or language in self._warned_runtimes:
+            return
+        try:
+            self.output_text.insert(
+                tk.END, f"\n\u26a0\ufe0f {language}: runtime not found - {reason}\n"
+            )
+            self.output_text.see(tk.END)
+            self._warned_runtimes.add(language)
+        except (AttributeError, tk.TclError):
+            pass
+
+    def _status_state_text(self):
+        """``Running``/``Ready``, with the breakpoint count while debugging."""
+        if self._program_running:
+            return "Running"
+        interpreter = self.interpreter
+        if interpreter is None or not interpreter.debug_mode:
+            return "Ready"
+        count = len(interpreter.breakpoints)
+        if not count:
+            return "Ready"
+        return f"Ready \u2022 {count} breakpoint{'s' if count != 1 else ''}"
+
     def _update_status(self):
         """Refresh the status bar."""
         try:
-            self.status_language.config(text=self.language_var.get())
+            self.status_language.config(
+                text=self._language_label(self.language_var.get())
+            )
             name = Path(self.current_file).name if self.current_file else "Untitled"
             self.status_file.config(text=name + (" *" if self.modified else ""))
-            self.status_state.config(text="Running" if self._program_running else "Ready")
+            self.status_state.config(text=self._status_state_text())
         except (AttributeError, tk.TclError):
             pass
         self._update_cursor_status()
@@ -969,6 +1023,11 @@ class TimeWarpApp:
 
     BREAKPOINT_TAG = "breakpoint"
 
+    def toggle_debug_mode(self):
+        """Apply the Debug menu's checkbutton and refresh the status bar."""
+        self.interpreter.set_debug_mode(self.debug_enabled.get())
+        self._update_status()
+
     def toggle_breakpoint_at_cursor(self):
         """Set or clear a breakpoint on the line holding the caret."""
         try:
@@ -991,15 +1050,16 @@ class TimeWarpApp:
         widget = self._text_widget()
         try:
             widget.tag_remove(self.BREAKPOINT_TAG, "1.0", tk.END)
-            if not self.interpreter.breakpoints:
-                return
-            widget.tag_configure(self.BREAKPOINT_TAG, background="#7a1f1f")
-            for index in sorted(self.interpreter.breakpoints):
-                line = index + 1
-                widget.tag_add(self.BREAKPOINT_TAG, f"{line}.0", f"{line}.end")
-            widget.tag_raise(self.BREAKPOINT_TAG)
+            if self.interpreter.breakpoints:
+                widget.tag_configure(self.BREAKPOINT_TAG, background="#7a1f1f")
+                for index in sorted(self.interpreter.breakpoints):
+                    line = index + 1
+                    widget.tag_add(self.BREAKPOINT_TAG, f"{line}.0", f"{line}.end")
+                widget.tag_raise(self.BREAKPOINT_TAG)
         except tk.TclError:
             pass
+        # The status bar reports how many breakpoints are set.
+        self._update_status()
 
     def _discard_breakpoints(self):
         """Drop breakpoints when the program in the editor is replaced."""
@@ -1012,10 +1072,21 @@ class TimeWarpApp:
     # Plugins
     # ------------------------------------------------------------------
 
+    def _rebuild_language_menu(self):
+        """Fill the language menu, marking languages whose runtime is absent."""
+        menu = self.language_selector["menu"]
+        menu.delete(0, "end")
+        for language in self.languages:
+            menu.add_command(
+                label=self._language_label(language),
+                command=lambda value=language: self.language_var.set(value),
+            )
+
     def _refresh_plugin_state(self):
         """Rebuild everything that depends on the loaded plugin languages."""
         self.languages = list(SUPPORTED_LANGUAGES) + self.plugins.names()
         self.language_extensions = dict(self.LANGUAGE_EXTENSIONS)
+        self._warned_runtimes = set()
         for spec in self.plugins:
             if spec.extension:
                 self.language_extensions.setdefault(spec.name.lower(), spec.extension)
@@ -1025,14 +1096,8 @@ class TimeWarpApp:
             if spec.keywords or spec.comment:
                 self.completion.register(spec.name, spec.keywords, spec.comment)
 
-        menu = self.language_selector["menu"]
         current = self.language_var.get()
-        menu.delete(0, "end")
-        for language in self.languages:
-            menu.add_command(
-                label=language,
-                command=lambda value=language: self.language_var.set(value),
-            )
+        self._rebuild_language_menu()
         if current in self.languages:
             self.language_var.set(current)
 
@@ -1047,6 +1112,12 @@ class TimeWarpApp:
         if len(self.plugins):
             names = ", ".join(self.plugins.names())
             self.output_text.insert(tk.END, f"Plugins loaded: {names}\n")
+        for spec in self.plugins:
+            available, reason = self._language_availability(spec.name)
+            if not available:
+                self.output_text.insert(
+                    tk.END, f"?PLUGIN: {spec.name}: {reason}\n"
+                )
         for problem in self.plugins.problems:
             self.output_text.insert(tk.END, f"?PLUGIN: {problem}\n")
         try:
@@ -1288,6 +1359,7 @@ class TimeWarpApp:
         # TRON/TROFF change the interpreter directly; keep the menu in step.
         if hasattr(self, "debug_enabled"):
             self.debug_enabled.set(self.interpreter.debug_mode)
+            self._update_status()
         for line in response:
             self.output_text.insert(tk.END, f"{line}\n")
         self.output_text.see(tk.END)

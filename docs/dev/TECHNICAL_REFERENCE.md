@@ -129,7 +129,8 @@ Central interpreter engine.
 - `variables` — Global variable storage shared across all languages
 - `program_lines` — Parsed program lines
 - `current_line` — Current execution position
-- `error_history` — List of logged errors with timestamps
+- `error_history` — List of logged errors with timestamps and hints
+- `error_hints` — Whether `?HINT:` lines are printed (default `True`)
 - `running` — Whether a program is currently executing
 - `debug_mode` — Whether debug output is enabled
 - `turtle_graphics` — State of the turtle graphics system
@@ -162,6 +163,13 @@ class YourExecutor(SubprocessExecutor):
 - `execute_command(command)` — Write to temp file, execute, capture output
 - `execute_file(filepath)` — Run an existing source file
 - `get_version()` — Return runtime version string
+- `missing_runtime_message()` — Explain a missing runtime and how to install it
+
+#### languages/catalog.py
+Language metadata shared by every host (desktop, web, CLI, exports):
+- `runtime_available(language, executable=None)` — Whether the language can run here
+- `required_runtime(language)` — Commands that provide the runtime (empty for built-ins)
+- `missing_runtime_hint(language)` — One-line installation suggestion
 
 #### features/syntax_highlighting.py
 Syntax highlighting and styling.
@@ -342,7 +350,10 @@ Detects language by looking for:
 
 All errors display in classic form:
 - `?ERROR IN <line>: message` (no line number when it is unknown)
-- Timestamp (stored in `error_history`)
+- `?HINT: …` under errors a known rule explains (`core/error_hints.py`), with a
+  pointer to the language reference; hosts can turn this off with
+  `interpreter.error_hints = False`
+- Timestamp (stored in `error_history`, together with the hint when one applied)
 - `READY.` when execution finishes, or `BREAK IN <line>` when the user stops it
 
 ---

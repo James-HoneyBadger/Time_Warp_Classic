@@ -134,6 +134,11 @@ pip install -r requirements.txt
 **Problem:** Program killed after 30 seconds
 - Solution: Perl runs via subprocess with a 30-second timeout. Simplify long-running operations.
 
+### Runtime Availability
+
+**Problem:** A language is labelled "(runtime missing)"
+- Solution: That language runs through an external runtime that is not on `PATH`. Perl needs `perl` (`sudo apt install perl`, `brew install perl`, or [perl.org](https://www.perl.org/)); JavaScript needs Node.js from [nodejs.org](https://nodejs.org/). Plugin languages need the `executable` named in their manifest. Install the runtime and reopen the IDE — the label disappears from the language menu, the status bar and the web IDE.
+
 ### Subprocess Languages (Python, JavaScript, Perl)
 
 **Problem:** "Execution timed out" or program killed
