@@ -1,6 +1,6 @@
 # Time Warp Classic - Release Runbook
 
-How a release actually ships today, plus the status of the 1.5.0 release.
+How a release actually ships today, plus the status of the 1.6.0 release.
 
 ---
 
@@ -31,28 +31,32 @@ Both container workflows also accept a manual `workflow_dispatch` run with a
 version:
 
 ```bash
-gh workflow run publish-ghcr-web.yml --ref main -f tag=v1.5.0
+gh workflow run publish-ghcr-web.yml --ref main -f tag=v1.6.0
 ```
 
 ---
 
-## What the 1.5.0 release published
+## What the 1.6.0 release published
 
 | Artefact | Location | Notes |
 |----------|----------|-------|
-| Wheel | `timewarp_classic-1.5.0-py3-none-any.whl` | ~250 KB, 67 files |
-| Source distribution | `timewarp_classic-1.5.0.tar.gz` | ~339 KB |
-| PyPI project | https://pypi.org/project/timewarp-classic/ | versions 1.3.0, 1.3.4, 1.5.0 |
-| GitHub release | `v1.5.0` | marked Latest, body from `CHANGELOG.md` |
+| Wheel | `timewarp_classic-1.6.0-py3-none-any.whl` | ~254 KB, 68 files |
+| Source distribution | `timewarp_classic-1.6.0.tar.gz` | ~349 KB |
+| PyPI project | https://pypi.org/project/timewarp-classic/ | versions 1.3.0, 1.3.4, 1.5.0, 1.6.0 |
+| GitHub release | `v1.6.0` | marked Latest, body from `CHANGELOG.md` |
 | Desktop image | `ghcr.io/james-honeybadger/time-warp-classic` | linux/amd64 + linux/arm64 |
 | Web image | `ghcr.io/james-honeybadger/time-warp-classic-web` | linux/amd64 + linux/arm64 |
 
 Image tags per release: `latest`, `X.Y`, `X.Y.Z` and `vX.Y.Z`. `latest` is
 skipped for prerelease tags.
 
-The 1.5.0 desktop image was first published amd64-only by the previous
-workflow and was rebuilt for both architectures afterwards, so `v1.5.0` and
-`latest` are pullable on arm64 hosts too.
+Known gap: `publish-ghcr-web.yml` does not use `type=ref,event=tag` in its
+`docker/metadata-action` step, so the 1.6.0 web image has `1.6.0`, `1.6` and
+`latest` but no `v1.6.0` alias. Add the rule (as the desktop workflow has)
+before the next release; until then pull the web image by `1.6.0`.
+
+The 1.5.0 desktop image was first published amd64-only and rebuilt for both
+architectures afterwards; releases from 1.6.0 on are multi-arch first time.
 
 ---
 
@@ -65,13 +69,13 @@ curl -s https://pypi.org/simple/timewarp-classic/ | grep -o 'timewarp_classic-[0
 # Install the released package in a throwaway environment
 python3 -m venv /tmp/pypicheck
 /tmp/pypicheck/bin/pip install -q --upgrade pip
-/tmp/pypicheck/bin/pip install -q timewarp-classic==1.5.0
+/tmp/pypicheck/bin/pip install -q timewarp-classic==1.6.0
 /tmp/pypicheck/bin/timewarp --version
 
 # Containers
-docker pull ghcr.io/james-honeybadger/time-warp-classic:1.5.0
-docker pull ghcr.io/james-honeybadger/time-warp-classic-web:1.5.0
-docker run -d --rm -p 8000:8000 ghcr.io/james-honeybadger/time-warp-classic-web:1.5.0
+docker pull ghcr.io/james-honeybadger/time-warp-classic:1.6.0
+docker pull ghcr.io/james-honeybadger/time-warp-classic-web:1.6.0
+docker run -d --rm -p 8000:8000 ghcr.io/james-honeybadger/time-warp-classic-web:1.6.0
 curl -s http://localhost:8000/healthz
 
 # Workflow results
@@ -146,4 +150,4 @@ preferred path.
 - **Container exits immediately** - the web image needs no environment; the
   desktop image needs `DISPLAY` and an X11 socket.
 
-Last updated for the 1.5.0 release.
+Last updated for the 1.6.0 release.
