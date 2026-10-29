@@ -50,10 +50,9 @@ gh workflow run publish-ghcr-web.yml --ref main -f tag=v1.6.0
 Image tags per release: `latest`, `X.Y`, `X.Y.Z` and `vX.Y.Z`. `latest` is
 skipped for prerelease tags.
 
-Known gap: `publish-ghcr-web.yml` does not use `type=ref,event=tag` in its
-`docker/metadata-action` step, so the 1.6.0 web image has `1.6.0`, `1.6` and
-`latest` but no `v1.6.0` alias. Add the rule (as the desktop workflow has)
-before the next release; until then pull the web image by `1.6.0`.
+Both images now carry the same tag set: `publish-ghcr-web.yml` gained the
+`type=ref,event=tag` rule during 1.6.0, and the missing `v1.6.0` alias on the
+web image was added afterwards with the manual rebuild below.
 
 The 1.5.0 desktop image was first published amd64-only and rebuilt for both
 architectures afterwards; releases from 1.6.0 on are multi-arch first time.
