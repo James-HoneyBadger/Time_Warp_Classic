@@ -69,6 +69,18 @@ def _parse_args(argv=None):
         "--timeout", type=float, default=10.0,
         help="seconds a web program may run before it is stopped (default 10)",
     )
+    parser.add_argument(
+        "--input-timeout", type=float, default=300.0,
+        help="seconds a web program may wait for input before it is stopped (default 300)",
+    )
+    parser.add_argument(
+        "--max-output-lines", type=int, default=20000,
+        help="output lines per web run before it is stopped (default 20000)",
+    )
+    parser.add_argument(
+        "--max-iterations", type=int, default=50_000_000,
+        help="interpreter steps per web run before it is stopped (default 50000000)",
+    )
     return parser.parse_args(argv)
 
 
@@ -116,7 +128,9 @@ def main(argv=None):
         plugins = PluginRegistry.load()
         for problem in plugins.problems:
             print(f"plugin skipped: {problem}")
-        serve(host=args.host, port=args.port, timeout=args.timeout, plugins=plugins)
+        serve(host=args.host, port=args.port, timeout=args.timeout, plugins=plugins,
+              input_timeout=args.input_timeout, max_output_lines=args.max_output_lines,
+              max_iterations=args.max_iterations)
         return EXIT_OK
 
     print("\U0001f680 Launching Time Warp Classic...")

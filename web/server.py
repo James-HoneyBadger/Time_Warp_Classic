@@ -14,6 +14,7 @@ from __future__ import annotations
 import contextlib
 import io
 import json
+import re
 import signal
 import threading
 import time
@@ -67,6 +68,10 @@ MAX_RUN_ID = 64
 # past this many the run is stopped rather than flooding the browser.
 MAX_OUTPUT_LINES = 20_000
 
+# Server-side drafts: saved programs live under this directory as JSON files.
+DRAFTS_DIR = Path.home() / ".timewarp" / "drafts"
+MAX_DRAFT_NAME = 64
+
 REPL_INPUT_MESSAGE = "?INPUT needs a running program: put it in the editor and press Run"
 
 
@@ -118,10 +123,45 @@ class _ActiveRun:
         self.interpreter = interpreter
         self.stopped = False
         self.waiting_for_input = False
+        self._paused = False
+        self._steps = 0
+        self._gate = threading.Event()
+        self._gate.set()
 
     def stop(self):
         self.stopped = True
+        self._gate.set()
         self.interpreter.stop_program()
+
+    def pause(self):
+        self._paused = True
+        self._gate.clear()
+
+    def resume(self):
+        self._paused = False
+        self._steps = 0
+        self._gate.set()
+
+    def step(self):
+        """Run exactly one more line, then pause again."""
+        self._steps += 1
+        self._paused = True
+        self._gate.set()
+
+    def wait_if_paused(self):
+        """Block the run thread while paused. Returns seconds spent blocked."""
+        blocked = 0.0
+        while True:
+            if self.interpreter.stop_requested:
+                return blocked
+            if not self._paused:
+                return blocked
+            if self._steps > 0:
+                self._steps -= 1
+                return blocked
+            start = time.monotonic()
+            self._gate.wait(0.05)
+            blocked += time.monotonic() - start
 
 
 class RunnerService:
@@ -129,7 +169,9 @@ class RunnerService:
 
     def __init__(self, timeout=DEFAULT_TIMEOUT, plugins=None, examples_dir=None,
                  repl_timeout=DEFAULT_REPL_TIMEOUT, max_sessions=MAX_REPL_SESSIONS,
-                 session_ttl=REPL_SESSION_TTL, input_timeout=DEFAULT_INPUT_TIMEOUT):
+                 session_ttl=REPL_SESSION_TTL, input_timeout=DEFAULT_INPUT_TIMEOUT,
+                 max_output_lines=MAX_OUTPUT_LINES, max_iterations=DEFAULT_ITERATIONS,
+                 drafts_dir=None):
         self.timeout = timeout
         self.plugins = plugins if plugins is not None else PluginRegistry()
         self.examples_dir = Path(examples_dir or EXAMPLES_DIR)
@@ -137,6 +179,9 @@ class RunnerService:
         self.max_sessions = max_sessions
         self.session_ttl = session_ttl
         self.input_timeout = input_timeout
+        self.max_output_lines = max_output_lines
+        self.max_iterations = max_iterations
+        self.drafts_dir = Path(drafts_dir or DRAFTS_DIR)
         self._slots = threading.BoundedSemaphore(MAX_CONCURRENT_RUNS)
         self._lock = threading.Lock()
         self._sessions = {}
@@ -207,6 +252,72 @@ class RunnerService:
         if base not in candidate.parents or not candidate.is_file():
             raise BadRequest("no such example", status=404)
         return candidate.read_text(encoding="utf-8")
+
+    # ---- drafts -------------------------------------------------------
+
+    def _draft_path(self, name):
+        """Resolve a draft name to a file inside the drafts directory."""
+        name = str(name or "").strip()
+        if not name or len(name) > MAX_DRAFT_NAME:
+            raise BadRequest("draft name must be 1-64 characters", status=400)
+        if not re.fullmatch(r"[A-Za-z0-9][A-Za-z0-9._-]*", name):
+            raise BadRequest(
+                "draft names use letters, digits, dot, dash or underscore", status=400
+            )
+        return self.drafts_dir / f"{name}.json"
+
+    def drafts(self):
+        """Saved drafts, newest first."""
+        if not self.drafts_dir.is_dir():
+            return []
+        found = []
+        for path in self.drafts_dir.glob("*.json"):
+            if path.is_file():
+                found.append(
+                    {
+                        "name": path.stem,
+                        "modified": path.stat().st_mtime,
+                    }
+                )
+        found.sort(key=lambda entry: entry["modified"], reverse=True)
+        return found
+
+    def draft_source(self, name):
+        """Source text of one draft."""
+        path = self._draft_path(name)
+        if not path.is_file():
+            raise BadRequest("no such draft", status=404)
+        try:
+            data = json.loads(path.read_text(encoding="utf-8"))
+        except (OSError, json.JSONDecodeError):
+            raise BadRequest("draft is unreadable", status=500)
+        return {
+            "name": path.stem,
+            "language": str(data.get("language") or ""),
+            "program": str(data.get("program") or ""),
+        }
+
+    def save_draft(self, name, language, program):
+        """Create or replace a draft, refusing unsafe names and huge programs."""
+        if not isinstance(program, str):
+            raise BadRequest("'program' must be text")
+        if len(program.encode("utf-8", "replace")) > MAX_PROGRAM_BYTES:
+            raise BadRequest("program is too large", status=413)
+        path = self._draft_path(name)
+        self.drafts_dir.mkdir(parents=True, exist_ok=True)
+        path.write_text(
+            json.dumps({"language": language, "program": program}),
+            encoding="utf-8",
+        )
+        return {"name": path.stem}
+
+    def delete_draft(self, name):
+        """Delete a draft; returns False when it does not exist."""
+        path = self._draft_path(name)
+        if path.is_file():
+            path.unlink()
+            return True
+        return False
 
     # ---- REPL ---------------------------------------------------------
 
@@ -358,10 +469,32 @@ class RunnerService:
         active.interpreter.input_buffer.append(text.rstrip("\r\n"))
         return active.waiting_for_input
 
+    def _active_run(self, run_id):
+        with self._lock:
+            active = self._runs.get(str(run_id or ""))
+        if active is None:
+            raise BadRequest("that program is no longer running", status=404)
+        return active
+
+    def pause(self, run_id):
+        """Pause a running program between lines."""
+        self._active_run(run_id).pause()
+        return True
+
+    def resume(self, run_id):
+        """Let a paused program carry on."""
+        self._active_run(run_id).resume()
+        return True
+
+    def step(self, run_id):
+        """Let a paused program run one more line."""
+        self._active_run(run_id).step()
+        return True
+
     # ---- execution ----------------------------------------------------
 
     def run(self, language, program, emit=None, emit_frame=None, run_id=None,
-            on_input=None, keepalive=None):
+            on_input=None, keepalive=None, breakpoints=None):
         """Run *program* and return a result summary.
 
         Each console line is passed to *emit* as it is produced, which is what
@@ -370,6 +503,8 @@ class RunnerService:
         told the prompt whenever the program waits for a line of input (which
         arrives through :meth:`send_input`), and *keepalive* is called while
         it waits.  Waiting for input does not count against the time limit.
+        *breakpoints* is a list of 1-based source line numbers at which the
+        run stops (reported as ``BREAK IN n``).
         """
         if not isinstance(program, str):
             raise BadRequest("'program' must be text")
@@ -393,9 +528,9 @@ class RunnerService:
             if produced["capped"]:
                 return
             produced["lines"] += 1
-            if produced["lines"] > MAX_OUTPUT_LINES:
+            if produced["lines"] > self.max_output_lines:
                 produced["capped"] = True
-                raw_sink(f"Stopped: output limit of {MAX_OUTPUT_LINES} lines reached")
+                raw_sink(f"Stopped: output limit of {self.max_output_lines} lines reached")
                 if active is not None:
                     active.interpreter.stop_program()
                 return
@@ -418,15 +553,25 @@ class RunnerService:
                 interpreter = Time_WarpInterpreter()
             interpreter.console_banner = False
             interpreter.turtle_console = False
-            interpreter.max_iterations = DEFAULT_ITERATIONS
+            interpreter.max_iterations = self.max_iterations
             interpreter.plugins = self.plugins
             interpreter.input_buffer = []
+            if breakpoints:
+                interpreter.breakpoints = {
+                    int(point) - 1
+                    for point in breakpoints
+                    if str(point).lstrip("-").isdigit()
+                }
+                interpreter.breakpoints_active = True
 
             active = _ActiveRun(run_id, interpreter)
             with self._lock:
                 self._runs[run_id] = active
 
             def pump():
+                # Time spent paused at a breakpoint does not count toward the
+                # limit, so pausing a program cannot time it out.
+                paused["seconds"] += active.wait_if_paused()
                 elapsed = time.monotonic() - started - paused["seconds"]
                 if elapsed > self.timeout:
                     if not timed_out["value"]:
@@ -478,6 +623,7 @@ class RunnerService:
             self._slots.release()
 
         stopped = bool(active and active.stopped)
+        interrupted = bool(active and active.interpreter.interrupted)
         capped = produced["capped"]
         return {
             "run": run_id,
@@ -486,9 +632,10 @@ class RunnerService:
             "errors": errors,
             "timed_out": timed_out["value"],
             "stopped": stopped,
+            "interrupted": interrupted,
             "output_capped": capped,
             "seconds": round(time.monotonic() - started, 3),
-            "exit": 1 if (errors or timed_out["value"] or stopped or capped) else 0,
+            "exit": 1 if (errors or timed_out["value"] or stopped or interrupted or capped) else 0,
             "canvas": final_canvas,
         }
 
@@ -543,6 +690,11 @@ class _Handler(BaseHTTPRequestHandler):
                 relative = path[len("/api/examples/"):]
                 source = self.service.example_source(relative)
                 return self._json(200, {"path": relative, "source": source})
+            if path == "/api/drafts":
+                return self._json(200, {"drafts": self.service.drafts()})
+            if path.startswith("/api/drafts/"):
+                relative = path[len("/api/drafts/"):]
+                return self._json(200, self.service.draft_source(relative))
             if path == "/favicon.ico":
                 return self._send(204, b"", "image/x-icon")
             return self._error(404, f"no route for {path}")
@@ -553,13 +705,30 @@ class _Handler(BaseHTTPRequestHandler):
 
     def do_POST(self):  # noqa: N802 - BaseHTTPRequestHandler API
         path = urlparse(self.path).path
-        if path not in ("/api/run", "/api/repl", "/api/highlight",
-                        "/api/stop", "/api/input"):
+        if path not in ("/api/run", "/api/repl", "/api/highlight", "/api/stop",
+                        "/api/input", "/api/drafts", "/api/pause", "/api/resume",
+                        "/api/step"):
             return self._error(404, f"no route for {path}")
 
         try:
             request = self._read_request()
             language = request.get("language")
+
+            if path == "/api/drafts":
+                saved = self.service.save_draft(
+                    request.get("name"), language, request.get("program", "")
+                )
+                return self._json(200, saved)
+
+            if path == "/api/pause":
+                self.service.pause(request.get("run"))
+                return self._json(200, {"paused": True})
+            if path == "/api/resume":
+                self.service.resume(request.get("run"))
+                return self._json(200, {"paused": False})
+            if path == "/api/step":
+                self.service.step(request.get("run"))
+                return self._json(200, {"stepped": True})
 
             if path == "/api/highlight":
                 program = request.get("program", "")
@@ -592,18 +761,36 @@ class _Handler(BaseHTTPRequestHandler):
 
             program = request.get("program", "")
             run_id = request.get("run")
+            breakpoints = request.get("breakpoints")
             if run_id is not None and not isinstance(run_id, str):
                 raise BadRequest("'run' must be text")
+            if breakpoints is not None and not isinstance(breakpoints, list):
+                raise BadRequest("'breakpoints' must be a list of line numbers")
             if "text/event-stream" in (self.headers.get("Accept") or ""):
-                self._stream_run(language, program, run_id)
+                self._stream_run(language, program, run_id, breakpoints)
             else:
-                self._json(200, self.service.run(language, program, run_id=run_id))
+                self._json(200, self.service.run(
+                    language, program, run_id=run_id, breakpoints=breakpoints,
+                ))
         except BadRequest as exc:
             self._error(exc.status, str(exc))
         except json.JSONDecodeError:
             self._error(400, "request body is not valid JSON")
         except Exception as exc:  # noqa: BLE001
             self._error(500, str(exc))
+
+    def do_DELETE(self):  # noqa: N802 - BaseHTTPRequestHandler API
+        path = urlparse(self.path).path
+        if not path.startswith("/api/drafts/"):
+            return self._error(404, f"no route for {path}")
+        try:
+            relative = path[len("/api/drafts/"):]
+            deleted = self.service.delete_draft(relative)
+            return self._json(200, {"deleted": deleted})
+        except BadRequest as exc:
+            return self._error(exc.status, str(exc))
+        except Exception as exc:  # noqa: BLE001
+            return self._error(500, str(exc))
 
     def _read_request(self):
         """Read and decode the JSON request body."""
@@ -633,7 +820,7 @@ class _Handler(BaseHTTPRequestHandler):
             raise BadRequest("index.html is missing from the install", status=500)
         self._send(200, index.read_bytes(), "text/html; charset=utf-8")
 
-    def _stream_run(self, language, program, run_id=None):
+    def _stream_run(self, language, program, run_id=None, breakpoints=None):
         """Run the program, streaming each console line as it appears.
 
         A write that fails means the browser went away (tab closed, Stop
@@ -674,6 +861,7 @@ class _Handler(BaseHTTPRequestHandler):
                 run_id=run_id,
                 on_input=lambda prompt: event("input", {"prompt": prompt}),
                 keepalive=lambda: write(": waiting for input\n\n"),
+                breakpoints=breakpoints,
             )
         except BadRequest as exc:
             event("error", {"error": str(exc), "status": exc.status})
@@ -704,16 +892,25 @@ class TimeWarpWebServer(ThreadingHTTPServer):
 
 
 def create_server(host=DEFAULT_HOST, port=DEFAULT_PORT, timeout=DEFAULT_TIMEOUT,
-                  plugins=None, verbose=False):
+                  plugins=None, verbose=False, input_timeout=DEFAULT_INPUT_TIMEOUT,
+                  max_output_lines=MAX_OUTPUT_LINES, max_iterations=DEFAULT_ITERATIONS):
     """Build (but do not start) a server; port 0 picks a free port."""
-    service = RunnerService(timeout=timeout, plugins=plugins)
+    service = RunnerService(
+        timeout=timeout, plugins=plugins, input_timeout=input_timeout,
+        max_output_lines=max_output_lines, max_iterations=max_iterations,
+    )
     return TimeWarpWebServer((host, port), service, verbose=verbose)
 
 
 def serve(host=DEFAULT_HOST, port=DEFAULT_PORT, timeout=DEFAULT_TIMEOUT,
-          plugins=None, verbose=False):
+          plugins=None, verbose=False, input_timeout=DEFAULT_INPUT_TIMEOUT,
+          max_output_lines=MAX_OUTPUT_LINES, max_iterations=DEFAULT_ITERATIONS):
     """Run the web IDE until interrupted; returns the port that was used."""
-    server = create_server(host, port, timeout, plugins, verbose)
+    server = create_server(
+        host, port, timeout, plugins, verbose,
+        input_timeout=input_timeout, max_output_lines=max_output_lines,
+        max_iterations=max_iterations,
+    )
     browser_host = "127.0.0.1" if host in ("0.0.0.0", "::") else host
     print(f"Time Warp Classic web IDE: http://{browser_host}:{server.server_port}/")
     print("Press Ctrl+C to stop.")

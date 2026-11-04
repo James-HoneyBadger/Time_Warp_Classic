@@ -126,11 +126,18 @@ test with `curl`.
 | `GET` | `/api/languages` | | `{"languages": [{"name", "key", "extension", "available"}]}` |
 | `GET` | `/api/examples` | | `{"examples": [{"name", "language", "path"}]}` |
 | `GET` | `/api/examples/<path>` | | `{"path", "source"}` |
-| `POST` | `/api/run` | `{language, program, run?}` | Result object, or an event stream |
+| `POST` | `/api/run` | `{language, program, run?, breakpoints?}` | Result object, or an event stream |
 | `POST` | `/api/stop` | `{run}` | `{"stopped": true}`, or `false` if it was not running |
 | `POST` | `/api/input` | `{run, text}` | `{"accepted": true, "waiting": bool}` |
+| `POST` | `/api/pause` | `{run}` | `{"paused": true}` |
+| `POST` | `/api/resume` | `{run}` | `{"paused": false}` |
+| `POST` | `/api/step` | `{run}` | `{"stepped": true}` |
 | `POST` | `/api/repl` | `{session, language, line, program?}` | One statement's result |
 | `POST` | `/api/highlight` | `{language, program}` | `{"html": "..."}` |
+| `GET` | `/api/drafts` | | `{"drafts": [{"name", "modified"}]}` |
+| `GET` | `/api/drafts/<name>` | | `{"name", "language", "program"}` |
+| `POST` | `/api/drafts` | `{name, language, program}` | `{"name"}` |
+| `DELETE` | `/api/drafts/<name>` | | `{"deleted": bool}` |
 
 Language names are case-insensitive. In `/api/languages`, `available` is
 `false` when the language's external runtime (Node.js, Perl, a plugin's
@@ -150,13 +157,19 @@ curl -s localhost:8000/api/run \
  "seconds": 0.004, "exit": 0, "canvas": null}
 ```
 
-`exit` is `1` if the program reported an error, timed out, was stopped or hit
-the output cap. `canvas` holds the final frame when something was drawn (see
-below).
+`exit` is `1` if the program reported an error, timed out, was stopped, hit
+the output cap, or stopped at a breakpoint. `canvas` holds the final frame
+when something was drawn (see below).
 
 `run` is an optional id of up to 64 characters that you choose; the server
 generates one if you don't. Use it with `/api/stop` and `/api/input`. Starting a
 second run with an id that is still active returns `409`.
+
+Send `breakpoints` as a list of 1-based editor line numbers and the run stops
+at the first one, printing `BREAK IN n`. While a built-in-language program
+runs you can `POST /api/pause` to freeze it between lines, `/api/step` to run
+one more line, and `/api/resume` to carry on. (Pausing and breakpoints apply
+to the line-by-line interpreters, not the subprocess languages.)
 
 ### Streaming
 
@@ -276,9 +289,9 @@ given, then draws the overlay, so the turtle and text stay sharp.
 | Program size | 256 KB | `413` |
 | Concurrent runs (incl. REPL lines) | 4 | `429` immediately, not queued |
 | Run time | `--timeout`, default 10 s, not counting built-in input waits | `Stopped: time limit…`, `timed_out: true` |
-| Waiting for input | 300 s | `Stopped: no input for 300s` |
-| Output | 20,000 lines per run | Run stopped, `output_capped: true` |
-| Loop backstop | 50 million iterations | Run stopped |
+| Waiting for input | `--input-timeout`, default 300 s | `Stopped: no input for 300s` |
+| Output | `--max-output-lines`, default 20,000 lines per run | Run stopped, `output_capped: true` |
+| Loop backstop | `--max-iterations`, default 50 million | Run stopped |
 | REPL line | 8 KB, 2 s | `413`, or the line is stopped |
 | REPL sessions | 16, expire after 10 idle minutes | Least recently used is dropped |
 
@@ -329,6 +342,7 @@ The server runs arbitrary programs for anyone who can reach it, and it has
 
 ## Not included
 
-There are no breakpoints, no single-stepping, no error-history dialog and no
-themes. Use the desktop IDE for those. Files are opened and saved through the
-browser, so there is no server-side file browser.
+Breakpoints and pausing are built in (click a gutter line number, or use the
+Pause/Step/Resume buttons). There is no error-history dialog and no themes
+yet. Files are opened and saved through the browser or as server-side drafts
+(`/api/drafts`), so there is no general server-side file browser.

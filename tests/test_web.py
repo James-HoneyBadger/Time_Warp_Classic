@@ -236,6 +236,71 @@ def test_service_run_does_not_write_to_stdout(capsys):
     assert capsys.readouterr().out == ""
 
 
+def test_service_output_limit_is_configurable():
+    """A small max_output_lines stops a chatty program and reports it."""
+    service = RunnerService(max_output_lines=3)
+    result = service.run("BASIC", "10 FOR I = 1 TO 10\n20 PRINT I\n30 NEXT I")
+
+    assert result["output_capped"] is True
+    assert result["exit"] == 1
+    assert any("output limit of 3 lines" in line for line in result["output"])
+    assert len(result["output"]) == 4  # three lines plus the stop notice
+
+
+def test_service_breakpoints_stop_at_the_given_line():
+    """A breakpoint (editor line number) stops the run and reports it."""
+    service = RunnerService()
+    result = service.run(
+        "BASIC", "10 FOR I = 1 TO 5\n20 PRINT I\n30 NEXT I", breakpoints=[2]
+    )
+
+    assert result["interrupted"] is True
+    assert result["exit"] == 1
+    assert any("BREAK IN 2" in line for line in result["output"])
+
+
+def test_service_pause_step_and_resume():
+    """Pause freezes a run, step lets one line through, resume finishes it."""
+    import threading
+
+    service = RunnerService(max_output_lines=1_000_000)
+    lines = []
+    done = {}
+
+    def target():
+        done.update(service.run(
+            "BASIC",
+            "10 FOR I = 1 TO 100000\n20 PRINT I\n30 NEXT I",
+            emit=lines.append,
+            run_id="pausetest",
+        ))
+
+    thread = threading.Thread(target=target)
+    thread.start()
+    deadline = time.monotonic() + 5
+    while time.monotonic() < deadline and len(lines) < 10:
+        time.sleep(0.01)
+    assert len(lines) >= 10, lines
+
+    service.pause("pausetest")
+    time.sleep(0.3)
+    count = len(lines)
+    time.sleep(0.3)
+    assert len(lines) == count, "program kept running while paused"
+
+    for _ in range(10):
+        service.step("pausetest")
+        time.sleep(0.05)
+        if len(lines) > count:
+            break
+    assert len(lines) > count, "step produced no output"
+
+    service.resume("pausetest")
+    thread.join(timeout=15)
+    assert not thread.is_alive(), "program did not finish after resume"
+    assert done["exit"] == 0
+
+
 def test_service_rejects_blank_language():
     service = RunnerService()
 
@@ -296,6 +361,38 @@ def test_service_runs_a_plugin_language(tmp_path):
     # Each run has its own interpreter; output must not go to the first one.
     second = service.run("TinyPython", 'print("second run")')
     assert "second run" in second["output"]
+
+
+# --------------------------------------------------------------- drafts
+
+def test_service_saves_and_lists_drafts(tmp_path):
+    service = RunnerService(drafts_dir=tmp_path / "drafts")
+
+    service.save_draft("hello", "BASIC", '10 PRINT "HI"')
+
+    names = [entry["name"] for entry in service.drafts()]
+    assert names == ["hello"]
+    source = service.draft_source("hello")
+    assert source["language"] == "BASIC"
+    assert source["program"] == '10 PRINT "HI"'
+
+
+def test_service_deletes_drafts(tmp_path):
+    service = RunnerService(drafts_dir=tmp_path / "drafts")
+    service.save_draft("temp", "Logo", "FD 10")
+
+    assert service.delete_draft("temp") is True
+    assert service.delete_draft("temp") is False
+    assert service.drafts() == []
+
+
+def test_service_rejects_unsafe_draft_names(tmp_path):
+    service = RunnerService(drafts_dir=tmp_path / "drafts")
+
+    with pytest.raises(BadRequest):
+        service.save_draft("../escape", "BASIC", "10 PRINT 1")
+    with pytest.raises(BadRequest):
+        service.draft_source("a/b")
 
 
 # ------------------------------------------------------------------- REPL
@@ -595,9 +692,8 @@ def test_stop_endpoint_interrupts_a_streaming_run(base):
     assert '"stopped": true' in result["text"]
 
 
-def test_output_flood_is_capped(monkeypatch):
-    monkeypatch.setattr("web.server.MAX_OUTPUT_LINES", 50)
-    service = RunnerService(timeout=10)
+def test_output_flood_is_capped():
+    service = RunnerService(timeout=10, max_output_lines=50)
 
     result = service.run("BASIC", '10 PRINT "X"\n20 GOTO 10')
 

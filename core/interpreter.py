@@ -197,6 +197,9 @@ class Time_WarpInterpreter:  # pylint: disable=too-many-public-methods
         # Debugging and breakpoints
         self.debug_mode = False
         self.breakpoints = set()
+        # Breakpoints normally need debug mode, which also traces every line.
+        # Hosts (the web IDE) set this to break without the tracing noise.
+        self.breakpoints_active = False
 
         # Pascal prints per-statement traces ("✅ X := 1", "📝 Declared ...").
         # TRACE OFF in a program, or a host, can switch these off.
@@ -1804,7 +1807,7 @@ class Time_WarpInterpreter:  # pylint: disable=too-many-public-methods
                     self.interrupted = True
                     break
 
-                if self.debug_mode and self.current_line in self.breakpoints:
+                if (self.debug_mode or self.breakpoints_active) and self.current_line in self.breakpoints:
                     # Reported once, by the run loop's finally block.
                     self.interrupted = True
                     break
