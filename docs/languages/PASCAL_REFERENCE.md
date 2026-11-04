@@ -25,6 +25,10 @@ BEGIN
 END.
 ```
 
+The interpreter traces declarations and assignments with lines such as
+`📝 Declared variables` and `✅ X := 1`. `TRACE OFF` silences them
+(`TRACE ON` turns them back on).
+
 ## Variables & Types
 
 ### Variable Declaration
@@ -322,6 +326,7 @@ END.
 | Array | `ARRAY[a..b] OF TYPE` | `ARRAY[1..10] OF INTEGER` |
 | Record | `RECORD ... END` | `TPoint = RECORD x,y END` |
 | Type | `TYPE name = ...` | `TYPE TColor = (R,G,B)` |
+| Trace | `TRACE ON` / `TRACE OFF` | `TRACE OFF` |
 
 ## See Also
 

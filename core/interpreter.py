@@ -198,6 +198,10 @@ class Time_WarpInterpreter:  # pylint: disable=too-many-public-methods
         self.debug_mode = False
         self.breakpoints = set()
 
+        # Pascal prints per-statement traces ("✅ X := 1", "📝 Declared ...").
+        # TRACE OFF in a program, or a host, can switch these off.
+        self.pascal_trace = True
+
         # Execution control / host integration
         self.pump_callback = None  # called every line so a GUI stays responsive
         self.input_provider = None  # callable(prompt) -> str | None
@@ -1270,8 +1274,18 @@ class Time_WarpInterpreter:  # pylint: disable=too-many-public-methods
         """Interpolate *VAR* and {VAR} tokens and evaluate *expr* tokens inside a text string.
 
         This central helper is used by T: and MT: to keep interpolation logic
-        consistent and reduce duplication.
+        consistent and reduce duplication.  In PILOT it also resolves the
+        ``%name`` system variables (``%answer``, ``%matched``, …).
         """
+        # PILOT system variables (%answer, %matched, %left, %right, …).
+        if self.current_language_mode == "pilot" and hasattr(self, "pilot_executor"):
+            system_vars = getattr(self.pilot_executor, "system_vars", {})
+
+            def replace_system_var(match):
+                return str(system_vars.get(match.group(1).lower(), ""))
+
+            text = re.sub(r"%([A-Za-z_][A-Za-z0-9_]*)", replace_system_var, text)
+
         # First replace explicit variable occurrences like *VAR* and {VAR}
         for var_name, var_value in self.variables.items():
             text = text.replace(f"*{var_name}*", str(var_value))

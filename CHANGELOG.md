@@ -21,6 +21,11 @@ All notable changes to Time Warp Classic are recorded here. The format follows
   desktop.
 - **Open… / Save** (`Ctrl+S`) for local files, and the editor is autosaved to
   browser storage. Loading an example over edited text asks first.
+- **Pascal `TRACE OFF` / `TRACE ON`.** Switches off the per-statement trace
+  lines (`✅ X := 1`, `📝 Declared variables`, …) that clutter loops, and
+  brings them back.
+- **PILOT `%` system variables in text.** `T:%answer`, `T:%matched` and the
+  other `%…` variables are now substituted in `T:`/`MT:`/`TH:` text.
 
 ### Fixed
 

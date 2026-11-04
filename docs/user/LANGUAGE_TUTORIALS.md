@@ -692,7 +692,8 @@ Real division: 3.4
 
 Assignment is `:=`. The interpreter traces each assignment with a `✅`
 line; this is useful for seeing what a program does, and noisy in
-loops. `WriteLn` prints its arguments with nothing in between.
+loops. `TRACE OFF` silences those lines (`TRACE ON` brings them back).
+`WriteLn` prints its arguments with nothing in between.
 
 ### Loops
 

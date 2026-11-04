@@ -56,6 +56,20 @@ class TwPascalExecutor:
         self.compiler_directives = {}  # Compiler directives like {$DEFINE}
         self.inline_asm_enabled = False  # For ASM blocks
 
+    def _trace(self, text):
+        """Print per-statement trace chatter only when tracing is on."""
+        if self.interpreter.pascal_trace:
+            self.interpreter.log_output(text)
+
+    def _handle_trace(self, command):
+        """Handle TRACE ON / TRACE OFF."""
+        setting = command[5:].strip().upper()
+        if setting == "OFF":
+            self.interpreter.pascal_trace = False
+        elif setting == "ON":
+            self.interpreter.pascal_trace = True
+        return "continue"
+
     # Dispatch table: keyword → handler method name
     _CMD_HANDLERS = {
         "PROGRAM": "_handle_program",
@@ -82,6 +96,7 @@ class TwPascalExecutor:
         "READLN": "_handle_readln",
         "WRITELN": "_handle_writeln",
         "WRITE": "_handle_write",
+        "TRACE": "_handle_trace",
     }
 
     # Keywords that are handled by their parent statement; return "continue" immediately
@@ -167,14 +182,14 @@ class TwPascalExecutor:
         """Handle INTERFACE section"""
         # INTERFACE
         if self.current_unit:
-            self.interpreter.log_output("🔗 Entering interface section")
+            self._trace("🔗 Entering interface section")
         return "continue"
 
     def _handle_implementation(self, command):
         """Handle IMPLEMENTATION section"""
         # IMPLEMENTATION
         if self.current_unit:
-            self.interpreter.log_output("⚙️ Entering implementation section")
+            self._trace("⚙️ Entering implementation section")
         return "continue"
 
     def _handle_uses(self, command):
@@ -186,7 +201,7 @@ class TwPascalExecutor:
         units = [u.strip().upper() for u in uses_part.split(",")]
         for unit in units:
             if unit in self.units:
-                self.interpreter.log_output(f"📚 Using unit {unit}")
+                self._trace(f"📚 Using unit {unit}")
             else:
                 self.interpreter.debug_output(f"Unit {unit} not found")
         return "continue"
@@ -213,7 +228,7 @@ class TwPascalExecutor:
                     # Type alias
                     self.data_types[name] = type_def.upper()
 
-                self.interpreter.log_output(f"🏷️ Type {name} defined")
+                self._trace(f"🏷️ Type {name} defined")
         except Exception as e:
             self.interpreter.debug_output(f"TYPE declaration error: {e}")
         return "continue"
@@ -233,7 +248,7 @@ class TwPascalExecutor:
                     "fields": {},
                     "methods": {},
                 }
-                self.interpreter.log_output(f"🏗️ Object {name} inherits from {parent}")
+                self._trace(f"🏗️ Object {name} inherits from {parent}")
             else:
                 # Base object
                 name = object_part.upper()
@@ -242,7 +257,7 @@ class TwPascalExecutor:
                     "fields": {},
                     "methods": {},
                 }
-                self.interpreter.log_output(f"🏗️ Object {name} declared")
+                self._trace(f"🏗️ Object {name} declared")
         except Exception as e:
             self.interpreter.debug_output(f"OBJECT declaration error: {e}")
         return "continue"
@@ -254,7 +269,7 @@ class TwPascalExecutor:
             match = re.match(r"CONSTRUCTOR\s+(\w+)\s*\((.*?)\)", command, re.IGNORECASE)
             if match:
                 name = match.group(1).upper()
-                self.interpreter.log_output(f"🔨 Constructor {name} declared")
+                self._trace(f"🔨 Constructor {name} declared")
         except Exception as e:
             self.interpreter.debug_output(f"CONSTRUCTOR declaration error: {e}")
         return "continue"
@@ -266,7 +281,7 @@ class TwPascalExecutor:
             match = re.match(r"DESTRUCTOR\s+(\w+)", command, re.IGNORECASE)
             if match:
                 name = match.group(1).upper()
-                self.interpreter.log_output(f"💥 Destructor {name} declared")
+                self._trace(f"💥 Destructor {name} declared")
         except Exception as e:
             self.interpreter.debug_output(f"DESTRUCTOR declaration error: {e}")
         return "continue"
@@ -275,10 +290,10 @@ class TwPascalExecutor:
         """Handle ASM block (simulated)"""
         # ASM ... END;
         if not self.inline_asm_enabled:
-            self.interpreter.log_output("⚠️ Inline assembly not enabled")
+            self._trace("⚠️ Inline assembly not enabled")
             return "continue"
 
-        self.interpreter.log_output("🔧 Entering assembly block (simulated)")
+        self._trace("🔧 Entering assembly block (simulated)")
         return "continue"
 
     def _handle_directive(self, command):
@@ -293,26 +308,26 @@ class TwPascalExecutor:
                 # {$I filename} - include file
                 if len(parts) > 1:
                     filename = parts[1]
-                    self.interpreter.log_output(f"📄 Including file {filename}")
+                    self._trace(f"📄 Including file {filename}")
             elif dir_name == "DEFINE":
                 # {$DEFINE name} or {$DEFINE name value}
                 if len(parts) > 1:
                     name = parts[1].upper()
                     value = parts[2] if len(parts) > 2 else "1"
                     self.compiler_directives[name] = value
-                    self.interpreter.log_output(f"🏷️ Defined {name} = {value}")
+                    self._trace(f"🏷️ Defined {name} = {value}")
             elif dir_name == "IFDEF":
                 # {$IFDEF name} - conditional compilation
                 if len(parts) > 1:
                     name = parts[1].upper()
                     defined = name in self.compiler_directives
-                    self.interpreter.log_output(f"🔍 IFDEF {name} = {defined}")
+                    self._trace(f"🔍 IFDEF {name} = {defined}")
             elif dir_name == "IFNDEF":
                 # {$IFNDEF name} - conditional compilation
                 if len(parts) > 1:
                     name = parts[1].upper()
                     not_defined = name not in self.compiler_directives
-                    self.interpreter.log_output(f"🔍 IFNDEF {name} = {not_defined}")
+                    self._trace(f"🔍 IFNDEF {name} = {not_defined}")
         except Exception as e:
             self.interpreter.debug_output(f"Directive error: {e}")
         return "continue"
@@ -363,7 +378,7 @@ class TwPascalExecutor:
                             dimensions = array_match.group(2)
                             self._declare_array(array_name, dimensions, var_type)
 
-                self.interpreter.log_output(
+                self._trace(
                     f"📝 Declared variables: {', '.join(variables)} as {var_type}"
                 )
         except Exception as e:
@@ -418,7 +433,7 @@ class TwPascalExecutor:
                     enum_dict[value] = i
                 self.constants.update(enum_dict)
                 self.data_types[name] = "ENUM"
-                self.interpreter.log_output(
+                self._trace(
                     f"🔢 Enum {name} with values: {', '.join(values)}"
                 )
         except Exception as e:
@@ -434,7 +449,7 @@ class TwPascalExecutor:
                 name = name.strip().upper()
                 value = self._evaluate_expression(value_expr.strip())
                 self.constants[name] = value
-                self.interpreter.log_output(f"🔒 Constant {name} = {value}")
+                self._trace(f"🔒 Constant {name} = {value}")
         except Exception as e:
             self.interpreter.debug_output(f"CONST declaration error: {e}")
         return "continue"
@@ -460,7 +475,7 @@ class TwPascalExecutor:
                     # Also store in interpreter variables for compatibility
                     self.interpreter.variables[var_name] = value
 
-                self.interpreter.log_output(f"✅ {var_name} := {value}")
+                self._trace(f"✅ {var_name} := {value}")
         except Exception as e:
             self.interpreter.debug_output(f"Assignment error: {e}")
         return "continue"
@@ -929,7 +944,7 @@ class TwPascalExecutor:
                     "params": params,
                     "body": [],  # Would need to collect following lines until END
                 }
-                self.interpreter.log_output(f"📋 Procedure {proc_name} declared")
+                self._trace(f"📋 Procedure {proc_name} declared")
         except Exception as e:
             self.interpreter.debug_output(f"PROCEDURE declaration error: {e}")
         return "continue"
@@ -954,7 +969,7 @@ class TwPascalExecutor:
                     "return_type": return_type,
                     "body": [],  # Would need to collect following lines until END
                 }
-                self.interpreter.log_output(f"🔧 Function {func_name} declared")
+                self._trace(f"🔧 Function {func_name} declared")
         except Exception as e:
             self.interpreter.debug_output(f"FUNCTION declaration error: {e}")
         return "continue"
@@ -968,10 +983,10 @@ class TwPascalExecutor:
                 name = match.group(1).upper()
 
                 if name in self.procedures:
-                    self.interpreter.log_output(f"📞 Calling procedure {name}")
+                    self._trace(f"📞 Calling procedure {name}")
                     # Execute procedure (simplified)
                 elif name in self.functions:
-                    self.interpreter.log_output(f"🔧 Calling function {name}")
+                    self._trace(f"🔧 Calling function {name}")
                     # Execute function and return result (simplified)
                     return "continue"
         except Exception as e:

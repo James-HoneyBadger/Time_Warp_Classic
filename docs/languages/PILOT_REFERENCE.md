@@ -132,7 +132,7 @@ T:always printed
 ```
 
 The system variables `%answer`, `%matched`, `%left` and `%right` are
-updated by `A:` and `M:` but are not substituted in `T:` text.
+updated by `A:` and `M:` and are substituted in `T:` text.
 
 ## Labels, Jumps and Subroutines
 
@@ -286,8 +286,8 @@ END
 - `M:` is a substring match with wildcards; it does not set `%left`/`%right`
   reliably and there is no `JM:` match-number jump.
 - `TH:` and `CA:` do not control the cursor; output is line-based.
-- `%answer` and friends cannot be printed with `T:`; store answers with
-  `A:VAR` instead.
+- `%answer` and friends are system variables: `T:%answer` prints the last
+  answer, `T:%matched` the last match.
 - Instruction codes are case-sensitive and unknown codes are ignored
   silently, so check spelling when a line seems to do nothing.
 

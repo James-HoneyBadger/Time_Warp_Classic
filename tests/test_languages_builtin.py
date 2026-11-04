@@ -127,6 +127,13 @@ def test_pilot_compute_and_interpolate(run):
     assert "Value 5" in lines
 
 
+def test_pilot_percent_system_variables_interpolate(run):
+    """T: resolves %answer and friends from the last A:/M:."""
+    lines = run("pilot", "A:[name]\nT:Hi %answer\nE:", answer="Ada")
+
+    assert "Hi Ada" in lines
+
+
 @pytest.mark.parametrize(
     ("answer", "expected", "unexpected"),
     [("Y", "Great!", "OK"), ("N", "OK", "Great!")],
@@ -180,6 +187,18 @@ def test_pascal_inline_if_else(run):
     )
 
     assert "SMALL" in lines and "BIG" not in lines
+
+
+def test_pascal_trace_can_be_switched_off(run):
+    """TRACE OFF hides the ✅/📝 trace lines; TRACE ON brings them back."""
+    lines = run(
+        "pascal",
+        "var x: integer;\ntrace off\nx := 5\nwriteln(x)\ntrace on\nx := 9",
+    )
+
+    assert "5" in lines
+    assert "✅ X := 5" not in lines
+    assert "✅ X := 9" in lines
 
 
 @pytest.mark.parametrize(("value", "expected"), [(7, "BIG"), (2, "")])
