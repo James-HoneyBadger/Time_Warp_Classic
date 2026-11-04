@@ -2309,7 +2309,7 @@ class TwLogoExecutor:
             while self._eval_logo_condition(cond_str):
                 guard += 1
                 if guard > 10000:
-                    self.interpreter.log_output("WHILE aborted: iteration limit reached")
+                    self.interpreter.log_error("WHILE aborted: iteration limit reached")
                     break
                 result = self._execute_command_block(body_str)
                 if result == "stop":
@@ -2333,7 +2333,7 @@ class TwLogoExecutor:
             while not self._eval_logo_condition(cond_str):
                 guard += 1
                 if guard > 10000:
-                    self.interpreter.log_output("UNTIL aborted: iteration limit reached")
+                    self.interpreter.log_error("UNTIL aborted: iteration limit reached")
                     break
                 result = self._execute_command_block(body_str)
                 if result == "stop":
@@ -2357,7 +2357,7 @@ class TwLogoExecutor:
             while True:
                 guard += 1
                 if guard > 10000:
-                    self.interpreter.log_output("DO.WHILE aborted: iteration limit reached")
+                    self.interpreter.log_error("DO.WHILE aborted: iteration limit reached")
                     break
                 result = self._execute_command_block(body_str)
                 if result == "stop":
@@ -2383,7 +2383,7 @@ class TwLogoExecutor:
             while True:
                 guard += 1
                 if guard > 10000:
-                    self.interpreter.log_output("DO.UNTIL aborted: iteration limit reached")
+                    self.interpreter.log_error("DO.UNTIL aborted: iteration limit reached")
                     break
                 result = self._execute_command_block(body_str)
                 if result == "stop":

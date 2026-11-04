@@ -197,10 +197,10 @@ POLY 6 50
 |------|---------|-------|
 | `REPEAT n [cmds]` | `REPEAT 4 [FD 100 RT 90]` | `n` must be a literal integer. Blocks may span lines and nest. Each `REPEAT` stops after 5000 commands with an error (`REPEAT aborted: expansion too large`) |
 | `IF cond [cmd]` | `IF :x > 3 [STOP]` | One line only. Only the first command in the block runs |
-| `WHILE [cond] [cmds]` | `WHILE [:n < 3] [MAKE "n :n + 1 FD 10]` | Limit 10000 iterations |
-| `UNTIL [cond] [cmds]` | `UNTIL [:n >= 3] [MAKE "n :n + 1 FD 1]` | |
-| `DO.WHILE [cmds] [cond]` | `DO.WHILE [MAKE "n :n - 1 FD 1] [:n > 0]` | Body runs at least once |
-| `DO.UNTIL [cmds] [cond]` | `DO.UNTIL [MAKE "n :n + 1 FD 1] [:n == 2]` | |
+| `WHILE [cond] [cmds]` | `WHILE [:n < 3] [MAKE "n :n + 1 FD 10]` | Limit 10000 iterations (reported as an error) |
+| `UNTIL [cond] [cmds]` | `UNTIL [:n >= 3] [MAKE "n :n + 1 FD 1]` | Limit 10000 iterations (reported as an error) |
+| `DO.WHILE [cmds] [cond]` | `DO.WHILE [MAKE "n :n - 1 FD 1] [:n > 0]` | Body runs at least once. Limit 10000 iterations (reported as an error) |
+| `DO.UNTIL [cmds] [cond]` | `DO.UNTIL [MAKE "n :n + 1 FD 1] [:n == 2]` | Limit 10000 iterations (reported as an error) |
 | `COND [[cond] [cmds]] …` | `COND [[:x > 1] [FD 5]] [[:x < 1] [FD 6]]` | First true clause runs |
 | `CASE value [match cmds] …` | `CASE :x [ELSE FD 3]` | Numeric matches never succeed (see below) |
 | `STOP` | `STOP` | Leaves a procedure. Ignored at top level |

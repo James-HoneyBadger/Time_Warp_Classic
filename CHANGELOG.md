@@ -41,8 +41,10 @@ All notable changes to Time Warp Classic are recorded here. The format follows
   desktop console still shows it.
 - Pascal's `🚀 Starting program` line is gone from normal output (it is now
   debug-only, without the emoji).
-- A Logo `REPEAT` that hits its 5000-command safety cap now reports an error
-  instead of a plain note, so it counts in the exit status and error history.
+- A Logo loop that hits its safety cap (`REPEAT` at 5000 commands, or
+  `WHILE`/`UNTIL`/`DO.WHILE`/`DO.UNTIL` at 10000 iterations) now reports an
+  error instead of a plain note, so it counts in the exit status and error
+  history.
 - The desktop About dialog now reads the real version instead of a hardcoded
   one.
 - `python3 Time_Warp.py --web` now loads plugin languages from
