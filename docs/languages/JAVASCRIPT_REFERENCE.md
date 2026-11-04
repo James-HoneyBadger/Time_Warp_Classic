@@ -1,787 +1,275 @@
-# JavaScript Language Reference
+# JavaScript in Time Warp Classic
 
-Complete reference for JavaScript syntax in Time Warp Classic.
+Time Warp does not reimplement JavaScript. It saves your program to a
+temporary `.js` file and runs it with [Node.js](https://nodejs.org/) in a
+separate process. This is server-side JavaScript: there is no browser, no
+DOM, no `alert()` and no `document`, even in the web IDE.
 
-> **Note:** JavaScript runs via Node.js subprocess with a 30-second timeout. All modern ES6+ features are supported.
+This page covers what is different inside Time Warp: how Node is found, how
+output and input travel, time limits, and error reporting. For the language
+itself, see the [official documentation](#further-reading).
 
-## Quick Reference
+## At a glance
 
-| Feature | Syntax | Example |
-|---------|--------|---------|
-| Variables | `let`/`const`/`var` | `let x = 10` |
-| Console | `console.log(expr)` | `console.log("Hello")` |
-| Operators | `+ - * / % **` | `5 + 3` |
-| If/Else | `if (cond) { ... }` | `if (x > 5) { ... }` |
-| For Loop | `for (let i=0; i<n; i++)` | `for (let i=0; i<10; i++)` |
-| While Loop | `while (cond) { ... }` | `while (x < 100) { ... }` |
-| Function | `function name(args) { }` | `function add(a,b) { return a+b }` |
-| Arrow | `(args) => expr` | `const sq = x => x * x` |
-| Class | `class Name { ... }` | `class Dog { bark() {} }` |
-| Template | `` `${expr}` `` | `` `Hello ${name}` `` |
-| Destruct | `const {a, b} = obj` | `const [x, y] = [1, 2]` |
-| Spread | `...array` | `[...arr1, ...arr2]` |
-| Array | `[value, value, ...]` | `[1, 2, 3]` |
-| Object | `{key: value, ...}` | `{name: "Alice"}` |
+| Topic | Behaviour |
+|-------|-----------|
+| Runtime | `node` on `PATH`, then `nodejs`; must be installed separately |
+| Output | stdout and stderr merged, shown line by line as the program prints |
+| Input | The console bar feeds the program's stdin; read it with `readline` |
+| Time limit | 30 s in the desktop IDE and `timewarp --run`; 10 s by default in the web IDE |
+| Stop | Ctrl+. (desktop) or the Stop button (web); the console shows `BREAK` |
+| Errors | `?ERROR IN n: ...` naming the editor line, often followed by a `?HINT:` line |
+| Turtle graphics | Not available |
+| Console REPL | Each line runs in a fresh process; nothing carries over |
 
-## Variables & Data Types
+## Which Node runs
 
-### Variable Declaration
+Time Warp looks for `node`, then `nodejs`, on `PATH`, and uses the first
+one whose `node --version` succeeds. It does not bundle Node. Install it
+from [nodejs.org](https://nodejs.org/) or your package manager
+(`apt install nodejs`, `brew install node`).
 
-```javascript
-// ES6+ (preferred)
-let x = 10;                // Block-scoped, reassignable
-const name = "Alice";      // Block-scoped, constant
-const PI = 3.14159;        // Cannot be reassigned
+The version matters. Language features, and whether `import` statements
+work in a plain `.js` file, depend on the Node you have. Node 20.19 and
+later detect ES module syntax automatically; older versions need
+`require()`. To check, run `console.log(process.version)` from the console
+bar.
 
-// Legacy
-var count = 0;             // Function-scoped (avoid in new code)
+The web container image (`Dockerfile.web`) does not install Node by
+default (the lines are there, commented out), so JavaScript is
+unavailable there until you enable them.
 
-// Multiple declarations
-let a = 1, b = 2, c = 3;
-const [first, second] = [10, 20];  // Destructuring
+### When Node is missing
+
+The language menu shows JavaScript as "(runtime missing)" (in the web IDE
+the status bar also says "JavaScript needs its runtime installed on the
+server"). Running anyway prints:
+
+```text
+?JAVASCRIPT NOT FOUND - install it to run these scripts (install Node.js from nodejs.org)
 ```
 
-### Data Types
+Install Node and restart Time Warp.
+
+## How a run works
+
+1. The editor text is written to a temporary file such as
+   `/tmp/tmpdffr8nwp.js`. That name appears in stack traces; the line
+   numbers match the editor.
+2. Time Warp starts `node <file>`. On Linux and macOS the command is
+   wrapped in `stdbuf -oL -eL` when `stdbuf` exists.
+3. The working directory is the directory Time Warp was started from, not
+   the folder your file is saved in. Relative paths in `fs` calls resolve
+   from there.
+4. `require()` and `import` look for packages relative to the temporary
+   file, so a `node_modules` folder next to your saved file is **not**
+   found. Globally installed modules are not found either. Point
+   `NODE_PATH` at a `node_modules` folder before starting Time Warp:
+
+   ```bash
+   NODE_PATH=$HOME/myproject/node_modules timewarp
+   ```
+
+   Built-in modules (`fs`, `path`, `readline`, `os`, ...) always work.
+5. When the program ends, the temporary file is deleted.
+
+Node exits when there is nothing left to do: no pending timers, promises
+or open streams. A program that leaves a `readline` interface open keeps
+running until the time limit, so close it when you are done.
+
+## Output
+
+- `console.log`, `console.error` and `process.stdout.write` all go to the
+  console, in order.
+- A line is shown when its newline arrives. `process.stdout.write("...")`
+  without `\n` stays invisible until a later newline or the end of the
+  program.
+- Objects and arrays print in Node's inspect format:
+  `console.log([3, 1, 2], {k: 1})` shows `[ 3, 1, 2 ] { k: 1 }`.
+- The web IDE stops a run after 20,000 lines of output
+  (`Stopped: output limit of 20000 lines reached`).
+
+## Input
+
+While a program is running, the console bar sends what you type to the
+program's stdin, one line per Enter, echoed in the console. Node has no
+built-in `input()`; this small helper does the job:
 
 ```javascript
-typeof 42              // "number"
-typeof "hello"         // "string"
-typeof 3.14            // "number"
-typeof true            // "boolean"
-typeof [1, 2]          // "object"
-typeof {a: 1}          // "object"
-typeof undefined       // "undefined"
-typeof function(){}    // "function"
-```
-
-### Type Coercion
-
-```javascript
-Number("42")           // 42
-String(42)             // "42"
-Boolean(1)             // true
-parseInt("42")         // 42
-parseFloat("3.14")     // 3.14
-```
-
-## Operators
-
-### Arithmetic
-
-```javascript
-+       Addition         5 + 3 = 8
--       Subtraction      5 - 3 = 2
-*       Multiplication   5 * 3 = 15
-/       Division         6 / 2 = 3
-%       Modulo           7 % 3 = 1
-++      Increment        x++
---      Decrement        x--
-```
-
-### Assignment
-
-```javascript
-x = 5;
-x += 3;    // x = x + 3
-x -= 2;    // x = x - 2
-x *= 2;    // x = x * 2
-x /= 4;    // x = x / 4
-x %= 2;    // x = x % 2
-```
-
-### Comparison
-
-```javascript
-==      Equal value       5 == 5
-===     Strict equal      5 === 5
-!=      Not equal         5 != 3
-!==     Strict not equal  5 !== 3
-<       Less than         3 < 5
->       Greater than      5 > 3
-<=      Less or equal     5 <= 5
->=      Greater or equal  5 >= 5
-```
-
-### Logical
-
-```javascript
-&&      AND               x > 5 && y < 10
-||      OR                x == 1 || x == 2
-!       NOT               !done
-```
-
-## Control Structures
-
-### If/Else
-
-```javascript
-if (condition) {
-    statements;
-} else if (condition) {
-    statements;
-} else {
-    statements;
+const readline = require("readline");
+const rl = readline.createInterface({ input: process.stdin });
+const lines = rl[Symbol.asyncIterator]();
+async function ask(question) {
+  console.log(question);
+  return (await lines.next()).value;
 }
 
-if (age >= 18) {
-    console.log("Adult");
-} else {
-    console.log("Minor");
+async function main() {
+  const name = await ask("Name?");
+  const age = Number(await ask("Age?"));
+  console.log(`Hello, ${name}. Next year you will be ${age + 1}.`);
+  rl.close();
 }
+main();
 ```
 
-### Switch
+Typing `Ada` and then `41` gives:
 
-```javascript
-switch (value) {
-    case 1:
-        console.log("One");
-        break;
-    case 2:
-        console.log("Two");
-        break;
-    default:
-        console.log("Other");
-}
+```text
+Name?
+Ada
+Age?
+41
+Hello, Ada. Next year you will be 42.
 ```
 
-### For Loop
+Things to know:
+
+- **Print prompts with `console.log`.** A prompt written without a newline
+  (`rl.question("Name? ", ...)`) does not appear until the next newline.
+- **Typing ahead works.** Lines typed early wait in the pipe.
+- **There is no end-of-file.** stdin stays open, so a `rl.on("close")`
+  handler never fires and `for await (const line of rl)` never finishes on
+  its own. Stop at a known count or a sentinel line, then call
+  `rl.close()`.
+- **Waiting counts toward the time limit.** The built-in languages pause
+  the clock at `INPUT`; Node programs do not. In the web IDE the default
+  limit is 10 seconds; raise it with `timewarp --web --timeout N`.
+- **The web IDE cannot tell that the program is waiting.** Type anyway.
+
+## Time limits and stopping
+
+| Where | Limit | What you see |
+|-------|-------|--------------|
+| Desktop IDE, `timewarp --run` | 30 s | `?ERROR: JavaScript script timed out after 30s` and a `?HINT:` |
+| Web IDE | 10 s (set with `--timeout`) | `Stopped: time limit of 10s reached`, then `BREAK` |
+
+The 30-second limit belongs to the JavaScript runner itself, so it also
+caps web runs whose `--timeout` is higher. A `setInterval` that is never
+cleared keeps Node alive until one of these limits ends it.
+
+To stop a program early, press Ctrl+. in the desktop IDE or the Stop
+button in the browser. The process is killed and the console prints
+`BREAK`.
+
+## Errors and hints
+
+When Node exits with an error, Time Warp shows Node's message and stack
+trace, then a summary line and, when it recognises the error, a hint:
 
 ```javascript
-for (var i = 0; i < 5; i++) {
-    console.log(i);  // 0, 1, 2, 3, 4
-}
-
-for (var i = 0; i < 10; i += 2) {
-    console.log(i);  // 0, 2, 4, 6, 8
-}
+const total = 10;
+console.log(totl);
 ```
 
-### While Loop
+```text
+/tmp/tmpdffr8nwp.js:2
+console.log(totl);
+            ^
 
-```javascript
-var count = 0;
-while (count < 5) {
-    console.log(count);
-    count++;
-}
-
-var i = 5;
-do {
-    console.log(i);
-    i--;
-} while (i > 0);
+ReferenceError: totl is not defined
+    at Object.<anonymous> (/tmp/tmpdffr8nwp.js:2:13)
+    ...
+Node.js v20.20.2
+?ERROR IN 2: ReferenceError: totl is not defined
+?HINT: give the name a value before using it - check the spelling too. See docs/languages/JAVASCRIPT_REFERENCE.md.
 ```
 
-### Break & Continue
+- The line number comes from the stack trace. In the desktop IDE, click
+  the `?ERROR IN` line to jump to it.
+- Hints exist for undefined names, syntax errors and time-outs. Other
+  errors, such as `TypeError: Cannot read properties of null`, get the
+  `?ERROR` line only. Dividing by zero is not an error in JavaScript;
+  it gives `Infinity` or `NaN`.
+- Syntax errors are reported as `?ERROR:` without a line number. The line
+  is in Node's first output line (`/tmp/....js:3`).
+- A missing module currently produces an unhelpful summary
+  (`?ERROR IN 1: requireStack: [...]`). Read the `Error: Cannot find
+  module 'name'` line above it.
+- Unhandled promise rejections are errors too and are reported the same
+  way.
+- `process.exit(3)` is reported as
+  `?ERROR: JavaScript script exited with code 3`.
 
-```javascript
-for (var i = 0; i < 10; i++) {
-    if (i == 5) break;        // Exit loop
-    if (i == 2) continue;     // Skip iteration
-    console.log(i);
-}
+## The console REPL
+
+When no program is running, a line typed in the console bar is run as a
+complete, one-line program in a brand-new Node process:
+
+```text
+>console.log([1, 2, 3].map(x => x * 2))
+[ 2, 4, 6 ]
 ```
 
-## Arrays
+Nothing persists between lines, and a bare expression such as `2 + 2`
+prints nothing: wrap it in `console.log()`. Each line has a 2-second
+limit, after which it is stopped without a message.
 
-### Array Basics
+## Turtle graphics
 
-```javascript
-var numbers = [1, 2, 3, 4, 5];
-var mixed = [1, "hello", true];
+Not available. The Time Warp canvas is driven only by the built-in
+languages. Use Logo for turtle work.
 
-// Access
-numbers[0]             // 1
-numbers[numbers.length - 1]  // 5
+## Cheat sheet
 
-// Length
-numbers.length         // 5
+| Task | JavaScript |
+|------|-----------|
+| Print | `console.log("x =", x)`, `` console.log(`${x.toFixed(2)}`) `` |
+| Variables | `const pi = 3.14;` `let n = 0;` (avoid `var`) |
+| Arithmetic | `+ - * / %`, `**` power, `Math.floor(a / b)` integer division |
+| Compare / logic | `=== !== < <= > >=`, `&& \|\| !` (prefer `===` to `==`) |
+| If | `if (x > 0) { ... } else if (x === 0) { ... } else { ... }` |
+| Counted loop | `for (let i = 1; i <= 10; i++) { ... }` |
+| Loop over array | `for (const x of xs) { ... }` |
+| Function | `function area(w, h) { return w * h; }` or `const area = (w, h) => w * h;` |
+| Array | `const xs = [1, 2, 3]; xs.push(4); xs.length; xs.at(-1)` |
+| Array methods | `xs.map(f)`, `xs.filter(f)`, `xs.reduce((a, b) => a + b, 0)` |
+| Sort numbers | `xs.sort((a, b) => a - b)` (the default sort is by string) |
+| Object | `const p = { name: "Ada", age: 41 }; p.name; Object.keys(p)` |
+| Map | `const m = new Map(); m.set("a", 1); m.get("a")` |
+| Strings | `s.toUpperCase()`, `s.split(" ")`, `parts.join(", ")`, `s.slice(1, 4)` |
+| Numbers | `Number("42")`, `parseInt(s, 10)`, `Math.round(x)`, `Math.random()` |
+| Errors | `try { ... } catch (e) { console.log(e.message); }` |
+| Async | `await new Promise(r => setTimeout(r, 500));` inside an `async` function |
+| Comment | `// line` or `/* block */` |
 
-// Modify
-numbers[0] = 10;
-```
-
-### Array Methods
-
-```javascript
-numbers.push(6)        // Add to end -> [1,2,3,4,5,6]
-numbers.pop()          // Remove from end -> 6
-numbers.unshift(0)     // Add to beginning -> [0,1,2,3,4,5]
-numbers.shift()        // Remove from beginning -> 0
-numbers.join(", ")     // "1, 2, 3, 4, 5"
-numbers.reverse()      // [5, 4, 3, 2, 1]
-numbers.sort()         // [1, 2, 3, 4, 5]
-numbers.indexOf(3)     // 2
-```
-
-### Array Iteration
-
-```javascript
-// For loop
-for (var i = 0; i < numbers.length; i++) {
-    console.log(numbers[i]);
-}
-
-// For..in loop
-for (var i in numbers) {
-    console.log(numbers[i]);
-}
-```
-
-## Objects
-
-### Object Basics
+A complete program:
 
 ```javascript
-var person = {
-    name: "Alice",
-    age: 30,
-    city: "New York"
-};
-
-// Access
-person.name            // "Alice"
-person["age"]          // 30
-
-// Modify
-person.email = "alice@example.com";
-person["phone"] = "555-1234";
-
-// Delete
-delete person.city;
-```
-
-### Object Methods
-
-```javascript
-var person = {name: "Alice", age: 30};
-
-Object.keys(person)    // ["name", "age"]
-Object.values(person)  // ["Alice", 30]
-
-// Iteration
-for (var key in person) {
-    console.log(key + ": " + person[key]);
-}
-```
-
-## Functions
-
-### Function Definition
-
-```javascript
-function greet(name) {
-    return "Hello, " + name;
+function isPrime(n) {
+  if (n < 2) return false;
+  for (let d = 2; d * d <= n; d++) {
+    if (n % d === 0) return false;
+  }
+  return true;
 }
 
-function add(a, b) {
-    return a + b;
+const primes = [];
+for (let n = 0; n < 50; n++) {
+  if (isPrime(n)) primes.push(n);
 }
-
-function printMessage(msg) {
-    console.log(msg);
-}
-
-// Calling
-greet("Alice")         // "Hello, Alice"
-add(5, 3)              // 8
-printMessage("Hi")
+console.log(`${primes.length} primes below 50:`);
+console.log(primes.join(" "));
 ```
 
-### Anonymous Functions
-
-```javascript
-var square = function(x) {
-    return x * x;
-};
-
-square(5);             // 25
+```text
+15 primes below 50:
+2 3 5 7 11 13 17 19 23 29 31 37 41 43 47
 ```
 
-### Function Parameters
-
-```javascript
-function introduce(name, age) {
-    console.log(name + " is " + age);
-}
-
-// Default parameters
-function greet(name) {
-    name = name || "Guest";  // Default to "Guest"
-    return "Hello, " + name;
-}
-
-// Variable arguments
-function sum() {
-    var total = 0;
-    for (var i = 0; i < arguments.length; i++) {
-        total += arguments[i];
-    }
-    return total;
-}
-
-sum(1, 2, 3, 4, 5);    // 15
-```
-
-### Recursion
-
-```javascript
-function factorial(n) {
-    if (n <= 1) return 1;
-    return n * factorial(n - 1);
-}
-
-factorial(5);          // 120
-
-function fibonacci(n) {
-    if (n <= 1) return n;
-    return fibonacci(n - 1) + fibonacci(n - 2);
-}
-
-fibonacci(6);          // 8
-```
-
-## String Operations
-
-### String Basics
-
-```javascript
-var msg = "Hello, World!";
-
-// Length
-msg.length             // 13
-
-// Access characters
-msg[0]                 // "H"
-msg.charAt(0)          // "H"
-
-// Case conversion
-msg.toUpperCase()      // "HELLO, WORLD!"
-msg.toLowerCase()      // "hello, world!"
-```
-
-### String Methods
-
-```javascript
-var str = "Hello World";
-
-str.length             // 11
-str.substring(0, 5)    // "Hello"
-str.slice(0, 5)        // "Hello"
-str.indexOf("World")   // 6
-str.lastIndexOf("o")   // 7
-str.replace("World", "JavaScript")
-str.split(" ")         // ["Hello", "World"]
-str.trim()             // Remove whitespace
-str.startsWith("Hello") // true
-str.endsWith("World")  // true
-```
-
-### String Concatenation
-
-```javascript
-"Hello" + " " + "World"       // "Hello World"
-var msg = "Hello";
-msg += " World";              // "Hello World"
-```
-
-## Math Object
-
-```javascript
-Math.abs(-5)           // 5
-Math.max(3, 5, 2)      // 5
-Math.min(3, 5, 2)      // 2
-Math.round(4.7)        // 5
-Math.floor(4.7)        // 4
-Math.ceil(4.2)         // 5
-Math.sqrt(16)          // 4
-Math.pow(2, 3)         // 8
-Math.random()          // 0.something
-Math.sin(0)            // 0
-Math.cos(0)            // 1
-Math.PI                // 3.14159...
-Math.E                 // 2.71828...
-```
-
-## Complete Examples
-
-### Temperature Converter
-
-```javascript
-var celsius = 25;
-var fahrenheit = (celsius * 9/5) + 32;
-console.log(celsius + "C = " + fahrenheit + "F");
-```
-
-### Sum of Array
-
-```javascript
-var numbers = [1, 2, 3, 4, 5];
-var sum = 0;
-for (var i = 0; i < numbers.length; i++) {
-    sum += numbers[i];
-}
-console.log("Sum: " + sum);
-```
-
-### Fibonacci Sequence
-
-```javascript
-function fibonacci(n) {
-    if (n <= 1) return n;
-    return fibonacci(n - 1) + fibonacci(n - 2);
-}
-
-for (var i = 0; i < 8; i++) {
-    console.log(fibonacci(i));
-}
-```
-
-### Word Counter
-
-```javascript
-var text = "hello world hello javascript";
-var words = text.split(" ");
-var count = {};
-
-for (var i = 0; i < words.length; i++) {
-    var word = words[i];
-    count[word] = (count[word] || 0) + 1;
-}
-
-for (var word in count) {
-    console.log(word + ": " + count[word]);
-}
-```
-
-## Arrow Functions
-
-```javascript
-// Arrow function syntax
-const square = (x) => x * x;
-const add = (a, b) => a + b;
-
-// Single parameter (parentheses optional)
-const double = x => x * 2;
-
-// Multi-line body
-const greet = (name) => {
-    const msg = `Hello, ${name}!`;
-    return msg;
-};
-
-// With array methods
-const numbers = [1, 2, 3, 4, 5];
-const evens = numbers.filter(n => n % 2 === 0);
-const doubled = numbers.map(n => n * 2);
-const sum = numbers.reduce((acc, n) => acc + n, 0);
-```
-
-## Template Literals
-
-```javascript
-const name = "Alice";
-const age = 30;
-
-// String interpolation
-console.log(`Hello, ${name}!`);
-console.log(`${name} is ${age} years old`);
-
-// Multi-line strings
-const html = `
-  <div>
-    <h1>${name}</h1>
-    <p>Age: ${age}</p>
-  </div>
-`;
-
-// Expressions in templates
-console.log(`2 + 3 = ${2 + 3}`);
-console.log(`${name.toUpperCase()} is ${age >= 18 ? 'adult' : 'minor'}`);
-```
-
-## Destructuring
-
-### Array Destructuring
-
-```javascript
-const [a, b, c] = [1, 2, 3];
-const [first, ...rest] = [10, 20, 30, 40];
-// first = 10, rest = [20, 30, 40]
-
-// Skip elements
-const [, second, , fourth] = [1, 2, 3, 4];
-
-// Default values
-const [x = 0, y = 0] = [5];  // x = 5, y = 0
-```
-
-### Object Destructuring
-
-```javascript
-const person = { name: "Alice", age: 30, city: "NYC" };
-const { name, age } = person;
-
-// Rename
-const { name: firstName, age: years } = person;
-
-// Default values
-const { name, email = "N/A" } = person;
-
-// Nested
-const { address: { street, zip } } = complexObj;
-```
-
-## Spread & Rest Operators
-
-```javascript
-// Spread arrays
-const arr1 = [1, 2, 3];
-const arr2 = [4, 5, 6];
-const combined = [...arr1, ...arr2];  // [1, 2, 3, 4, 5, 6]
-
-// Spread objects
-const defaults = { color: "red", size: 10 };
-const custom = { ...defaults, size: 20 };  // { color: "red", size: 20 }
-
-// Rest parameters
-function sum(...numbers) {
-    return numbers.reduce((acc, n) => acc + n, 0);
-}
-sum(1, 2, 3, 4);  // 10
-```
-
-## Classes
-
-```javascript
-class Animal {
-    constructor(name, sound) {
-        this.name = name;
-        this.sound = sound;
-    }
-
-    speak() {
-        console.log(`${this.name} says ${this.sound}`);
-    }
-
-    toString() {
-        return `Animal(${this.name})`;
-    }
-}
-
-// Inheritance
-class Dog extends Animal {
-    constructor(name) {
-        super(name, "Woof");
-        this.tricks = [];
-    }
-
-    learn(trick) {
-        this.tricks.push(trick);
-    }
-
-    showTricks() {
-        console.log(`${this.name} knows: ${this.tricks.join(", ")}`);
-    }
-}
-
-const dog = new Dog("Rex");
-dog.speak();             // Rex says Woof
-dog.learn("sit");
-dog.showTricks();        // Rex knows: sit
-```
-
-### Static Methods & Getters
-
-```javascript
-class Circle {
-    constructor(radius) {
-        this._radius = radius;
-    }
-
-    get area() {
-        return Math.PI * this._radius ** 2;
-    }
-
-    get circumference() {
-        return 2 * Math.PI * this._radius;
-    }
-
-    static fromDiameter(d) {
-        return new Circle(d / 2);
-    }
-}
-
-const c = new Circle(5);
-console.log(c.area);            // ~78.54
-const c2 = Circle.fromDiameter(10);
-```
-
-## Promises & Async/Await
-
-### Promises
-
-```javascript
-const delay = (ms) => new Promise(resolve => setTimeout(resolve, ms));
-
-const fetchData = () => {
-    return new Promise((resolve, reject) => {
-        const data = { name: "Alice", age: 30 };
-        resolve(data);
-    });
-};
-
-fetchData()
-    .then(data => console.log(data.name))
-    .catch(err => console.error(err));
-```
-
-### Async/Await
-
-```javascript
-async function getData() {
-    try {
-        const data = await fetchData();
-        console.log(data.name);
-    } catch (err) {
-        console.error("Error:", err);
-    }
-}
-```
-
-## Closures
-
-```javascript
-function makeCounter() {
-    let count = 0;
-    return {
-        increment: () => ++count,
-        decrement: () => --count,
-        getCount: () => count
-    };
-}
-
-const counter = makeCounter();
-counter.increment();     // 1
-counter.increment();     // 2
-counter.decrement();     // 1
-console.log(counter.getCount());  // 1
-```
-
-## Error Handling
-
-```javascript
-try {
-    const result = riskyOperation();
-    console.log(result);
-} catch (error) {
-    console.error("Error:", error.message);
-} finally {
-    console.log("Cleanup complete");
-}
-
-// Custom errors
-class ValidationError extends Error {
-    constructor(message) {
-        super(message);
-        this.name = "ValidationError";
-    }
-}
-```
-
-## Regular Expressions
-
-```javascript
-const text = "Hello World 123";
-
-// Test
-/World/.test(text);              // true
-
-// Match
-text.match(/\d+/);              // ["123"]
-text.match(/[A-Z]/g);           // ["H", "W"]
-
-// Replace
-text.replace(/World/, "JS");    // "Hello JS 123"
-text.replace(/\d/g, "#");       // "Hello World ###"
-
-// Split
-"a,b,c".split(/,/);             // ["a", "b", "c"]
-```
-
-## Iterators & Generators
-
-```javascript
-// Generator function
-function* fibonacci() {
-    let a = 0, b = 1;
-    while (true) {
-        yield a;
-        [a, b] = [b, a + b];
-    }
-}
-
-const fib = fibonacci();
-for (let i = 0; i < 8; i++) {
-    console.log(fib.next().value);
-}
-
-// for...of
-for (const val of [10, 20, 30]) {
-    console.log(val);
-}
-```
-
-## Map & Set
-
-```javascript
-// Map (key-value pairs, any key type)
-const map = new Map();
-map.set("name", "Alice");
-map.set(42, "answer");
-console.log(map.get("name"));   // "Alice"
-console.log(map.size);          // 2
-
-// Set (unique values)
-const set = new Set([1, 2, 2, 3, 3]);
-console.log(set.size);          // 3
-set.add(4);
-set.has(2);                     // true
-```
-
-## Tips & Tricks
-
-1. **Use `let`/`const`** instead of `var`
-2. **Use `===`** for strict comparison (not `==`)
-3. **Use arrow functions** for short callbacks
-4. **Use template literals** for string formatting
-5. **Use destructuring** to extract values cleanly
-6. **Use `console.log()`** for debugging
-7. **Use `try/catch`** for error handling
-8. **Execution timeout:** 30 seconds for all JavaScript programs
-
-## Common Gotchas
-
-```javascript
-// Type coercion
-"5" + 3                // "53" (string concatenation)
-"5" - 3                // 2 (numeric subtraction)
-
-// Loose equality
-0 == false             // true
-0 === false            // false
-
-// let vs var scope
-for (let i = 0; i < 3; i++) {}
-// console.log(i);    // ReferenceError (let is block-scoped)
-```
-
-## See Also
-
-- [LANGUAGE_TUTORIALS.md](../user/LANGUAGE_TUTORIALS.md)
-- [examples/javascript/](../../examples/javascript/)
-
----
-
-**Last Updated:** 2025
+## Known limitations (1.6.0)
+
+- `timewarp --run file.js --language javascript` does not pass the
+  terminal's stdin to the program.
+- Syntax errors and missing modules get poor `?ERROR` summary lines (see
+  above).
+- A REPL line that runs past 2 seconds is stopped silently.
+
+## Further reading
+
+- [Node.js documentation](https://nodejs.org/docs/latest/api/) - use the
+  version matching your `node --version`
+- [MDN JavaScript Guide](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Guide)
+- [MDN JavaScript Reference](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference)
+- Examples: [examples/javascript/](../../examples/javascript/)
+- [Language tutorials](../user/LANGUAGE_TUTORIALS.md#javascript)

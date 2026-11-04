@@ -1,135 +1,253 @@
 # Web IDE
 
-The same interpreter that powers the desktop IDE is available in a browser. A
-small standard-library HTTP server exposes it, so there is nothing to install
-beyond Python itself.
+`--web` serves the Studio, a single-page editor, from a small HTTP server built
+only on the standard library. It uses the same interpreters as the desktop IDE.
+You can use it on a machine without Tk, in a container, or from a tablet on
+your LAN.
 
 ```bash
-python Time_Warp.py --web            # http://127.0.0.1:8000/
-python Time_Warp.py --web --port 0   # pick a free port
+python3 Time_Warp.py --web              # http://127.0.0.1:8000/
+python3 Time_Warp.py --web --port 0     # pick a free port
+python3 Time_Warp.py --web --timeout 30 # allow longer runs
 ```
 
-From the desktop IDE: **Program → Open Web IDE** starts the server on a free
-port, prints the URL in the console and opens the page.
+From the desktop IDE, **Program → Open Web IDE** starts a server on a free port,
+prints the URL in the console and opens your browser.
 
 ## Options
 
 | Flag | Default | Meaning |
 |------|---------|---------|
 | `--web` | off | Serve the browser UI instead of opening a window |
-| `--host` | `127.0.0.1` | Bind address; `0.0.0.0` for containers |
-| `--port` | `8000` | Port, `0` picks a free one |
-| `--timeout` | `10` | Seconds a single run may last before it is stopped |
+| `--host` | `127.0.0.1` | Bind address; use `0.0.0.0` in a container |
+| `--port` | `8000` | Port; `0` picks a free one |
+| `--timeout` | `10` | Seconds of CPU-side run time before a program is stopped |
 
-## The page
+## Using the page
 
-- Language selector covering the nine built-ins and any loaded plugins.
-- Editor with a line-number gutter, `Ctrl+Enter` to run, `Tab` for indentation.
-- Console that streams output line by line while the program runs, with error
-  lines in red and the elapsed time in the status bar.
-- Example picker that loads the programs from `examples/`.
-- **Syntax highlighting** driven by the same Pygments lexers as the desktop
-  editor (see below).
-- **Graphics pane** showing turtle output (Logo, BASIC turtle commands) as
-  run-length encoded pixel frames, with a *Save PNG* button.
-- **REPL bar** under the console: type a statement, press Enter, see the
-  result immediately. `Up`/`Down` recall earlier lines.
+| Area | What it does |
+|------|--------------|
+| Header | Language picker, **Run**, **Stop**, **Examples…**, **Open…**, **Save**, and a status line showing elapsed time and the outcome |
+| Program | Editor with a line-number gutter and Pygments highlighting. `Tab` indents and can be undone. |
+| Console | Streams output as it is produced. Errors are red and `?HINT:` lines are styled as suggestions. **Clear** empties it. |
+| Console bar | REPL when idle; the program's stdin while a run is active (see below) |
+| Graphics | Turtle output from Logo, BASIC and PILOT, with **Save PNG** |
 
-`READY.`, `Interpreter ready.` and turtle chatter are IDE chrome and are not
-shown; program output and `?ERROR IN n` lines are.
+Keyboard shortcuts:
+
+| Keys | Action |
+|------|--------|
+| `Ctrl+Enter` | Run |
+| `Ctrl+.` | Stop |
+| `Ctrl+S` | Save the program as a file (download) |
+| `Up` / `Down` | Recall earlier lines in the console bar |
+
+On macOS `Cmd` works in place of `Ctrl`. The divider between the editor and the
+console can be dragged, or moved with the arrow keys when it has focus. Below
+760 px wide the panes stack vertically.
+
+**Your work is kept.** The editor text and language are saved to the browser's
+`localStorage` as you type (key `timewarp.web.v1`) and restored on reload. If
+loading an example or opening a file would replace edited text, the page asks
+first.
+
+**Open… and Save** work on files on *your* machine, never the server. Open
+picks the language from the file extension (`.bas`, `.logo`, `.pas`, `.fth`,
+`.pl`, `.py`, `.js`, …). Save downloads the editor text with the current
+language's extension.
+
+### Input
+
+When a running program asks for input, the console bar turns into its stdin.
+It shows a `?` prompt and, as its placeholder, the program's prompt (or else the
+last line of output). Type a line and press Enter. This works for every
+language:
+
+- **Built-in interpreters** (BASIC `INPUT`, PILOT `A:`, Pascal `readln`)
+  pause until you answer. Time spent waiting **does not** count
+  toward `--timeout`. A program that waits more than 5 minutes is stopped with
+  `Stopped: no input for 300s`.
+- **Python, JavaScript, Perl and plugin languages** run as a child process.
+  Each line you send is written to the child's stdin. The server can't tell when
+  a child is blocked reading, so waiting **does** count toward the time limit.
+  Raise `--timeout` for interactive programs in these languages. The line you
+  type can appear before the program's own prompt, because the child only
+  flushes its prompt once it has read the input.
+
+If a program reads input while the console bar is idle, nobody can answer, so
+direct-mode `INPUT` is refused with a hint to run it from the editor.
+
+### Stopping
+
+**Stop** (or `Ctrl+.`) ends the run within a fraction of a second. Built-in
+languages finish with the usual `BREAK IN n` line; child processes are
+terminated. The run also stops if you close or reload the tab.
+
+### Console bar (REPL)
+
+When nothing is running, a line typed in the console bar runs at once in an
+interpreter that is kept between lines, so variables, the Forth stack and the
+turtle's position carry over.
+
+**BASIC works like direct mode on a home computer.** The program in the editor
+is the program in memory:
+
+```
+> 10 PRINT "HELLO"         stores line 10 in the editor
+> 20 GOTO 10
+> LIST                     lists the editor's program, sorted
+> RUN                      runs it, exactly like pressing Run
+> 20                       deletes line 20
+> PRINT 2+2                any other statement runs immediately
+ 4
+```
+
+`RENUMBER`, `NEW`, `TRON`/`TROFF` and the other console commands from the desktop
+IDE work the same way. Unnumbered lines already in the editor are kept.
+
+Python, JavaScript, Perl and plugin languages evaluate each line in a fresh
+process, so nothing carries over between lines.
+
+### What you will not see
+
+`READY.`, `Interpreter ready.` and turtle chatter such as *Pen up* or *Turtle
+returned to home position* belong to the desktop console and are suppressed.
+Program output, errors and `?HINT:` lines are always shown.
 
 ## HTTP API
 
-Everything the page does is a plain JSON call, which makes the server easy to
-script.
+Everything the page does is a JSON call, so the server is easy to script or
+test with `curl`.
 
-| Method | Path | Returns |
-|--------|------|---------|
-| `GET` | `/` | The editor page |
-| `GET` | `/healthz` | `{"status": "ok"}` |
-| `GET` | `/api/languages` | `{"languages": [{"name", "key", "extension", "available"}]}` |
-| `GET` | `/api/examples` | `{"examples": [{"name", "language", "path"}]}` |
-| `GET` | `/api/examples/<path>` | `{"path", "source"}` |
-| `POST` | `/api/run` | Result object, or an event stream (see below) |
-| `POST` | `/api/repl` | Runs one statement in a persistent session |
-| `POST` | `/api/highlight` | Returns coloured HTML for the editor |
+| Method | Path | Body | Returns |
+|--------|------|------|---------|
+| `GET` | `/` | | The editor page |
+| `GET` | `/healthz` | | `{"status": "ok"}` |
+| `GET` | `/api/languages` | | `{"languages": [{"name", "key", "extension", "available"}]}` |
+| `GET` | `/api/examples` | | `{"examples": [{"name", "language", "path"}]}` |
+| `GET` | `/api/examples/<path>` | | `{"path", "source"}` |
+| `POST` | `/api/run` | `{language, program, run?}` | Result object, or an event stream |
+| `POST` | `/api/stop` | `{run}` | `{"stopped": true}`, or `false` if it was not running |
+| `POST` | `/api/input` | `{run, text}` | `{"accepted": true, "waiting": bool}` |
+| `POST` | `/api/repl` | `{session, language, line, program?}` | One statement's result |
+| `POST` | `/api/highlight` | `{language, program}` | `{"html": "..."}` |
 
-`POST /api/run` takes `{"language": "BASIC", "program": "10 PRINT 1"}`.
-Language names are case-insensitive. `available` in `/api/languages` is `false`
-for a language whose external runtime (Node.js, Perl, a plugin executable) is
-not installed on the server; the page marks those options "(runtime missing)".
-With `Accept: application/json` (the default) the reply is:
+Language names are case-insensitive. In `/api/languages`, `available` is
+`false` when the language's external runtime (Node.js, Perl, a plugin's
+executable) is not installed on the server. The page shows those languages as
+"(runtime missing)".
+
+### Running a program
+
+```bash
+curl -s localhost:8000/api/run \
+  -d '{"language": "BASIC", "program": "10 PRINT 6*7"}'
+```
 
 ```json
-{"language": "BASIC", "output": ["1"], "errors": 0,
- "timed_out": false, "seconds": 0.012, "exit": 0}
+{"run": "3f2c…", "language": "BASIC", "output": ["42"], "errors": 0,
+ "timed_out": false, "stopped": false, "output_capped": false,
+ "seconds": 0.004, "exit": 0, "canvas": null}
 ```
 
-With `Accept: text/event-stream` the reply is a stream of frames:
+`exit` is `1` if the program reported an error, timed out, was stopped or hit
+the output cap. `canvas` holds the final frame when something was drawn (see
+below).
+
+`run` is an optional id of up to 64 characters that you choose; the server
+generates one if you don't. Use it with `/api/stop` and `/api/input`. Starting a
+second run with an id that is still active returns `409`.
+
+### Streaming
+
+With `Accept: text/event-stream` the reply is a stream of
+[server-sent events](https://html.spec.whatwg.org/multipage/server-sent-events.html):
 
 ```
-data: {"line": "1"}
+event: start
+data: {"run": "3f2c…"}
+
+data: {"line": "WHAT IS YOUR NAME"}
+
+event: input
+data: {"prompt": "WHAT IS YOUR NAME"}
+
+: waiting for input
+
+data: {"line": "ADA"}
+
+event: canvas
+data: {"type": "canvas", "width": 600, ...}
 
 event: done
-data: {"language": "BASIC", "errors": 0, "timed_out": false, "seconds": 0.012, "exit": 0}
+data: {"run": "3f2c…", "language": "BASIC", "errors": 0, "timed_out": false,
+       "stopped": false, "output_capped": false, "seconds": 3.1, "exit": 0,
+       "has_canvas": false}
 ```
 
-Invalid input is answered with `400` (`unknown language`, malformed JSON), `413`
-(program over 256 KB) or `429` (more than four runs at once). A run that
-exceeds the time limit stops itself and reports `timed_out: true`.
+| Event | Meaning |
+|-------|---------|
+| `start` | Always first; carries the run id |
+| *(unnamed)* | One console line |
+| `input` | The program is waiting; answer with `POST /api/input` |
+| `canvas` | A graphics frame (see below) |
+| `done` | Always last on success; the result without `output` and `canvas` |
+| `error` | The request was rejected (`{"error", "status"}`) instead of run |
 
-## REPL
+While a program waits for input, a `: waiting for input` comment is sent every
+5 seconds so proxies don't close the idle connection. If the client
+disconnects, the server stops the run.
 
-`POST /api/repl` takes `{"session": "...", "language": "BASIC", "line": "PRINT 2+2"}`.
-The server keeps one interpreter per *session* id, so variables survive between
-lines:
+Example session from a shell:
 
+```bash
+curl -sN localhost:8000/api/run -H 'Accept: text/event-stream' \
+  -d '{"language":"BASIC","program":"10 INPUT A\n20 PRINT A*2","run":"demo"}' &
+curl -s localhost:8000/api/input -d '{"run":"demo","text":"21"}'
 ```
-> LET A = 6
-> PRINT A * 7
-42
+
+`/api/input` returns `404` once the run has finished. Input sent before the
+program asks is queued and used by the next read.
+
+### REPL
+
+```bash
+curl -s localhost:8000/api/repl \
+  -d '{"session": "me", "language": "BASIC", "line": "PRINT 2+2"}'
 ```
 
-- The page generates a session id per tab; send your own to script it.
-- Changing the language starts a fresh interpreter for that session.
-- Turtle commands (`FD 60`, `DRAW`) draw on the session's canvas, and every
-  reply carries a full canvas frame when something was drawn.
-- Replies are `{"session", "language", "output": [...], "status", "exit", "canvas"}`.
-  `exit` is 1 when the statement reported an error.
-- Requests are answered with `400` (blank line, unknown language), `413`
-  (statement over 8 KB) or `429` (busy).
-- A session is capped at 16 per server, expires after 10 idle minutes, and each
-  line may run for 2 seconds before it is stopped.
+The reply is `{"session", "language", "output", "status", "exit", "canvas"}`.
+`exit` is `1` when the statement failed.
 
-Languages that delegate to another runtime (Python, JavaScript, Perl, plugins)
-evaluate each line in a fresh process, so variables do not persist for them.
+For BASIC, send the editor text as `program`. The reply then includes
+`program` when a numbered line or `NEW`/`RENUMBER` changed it, and `run` with
+the program text when `RUN` was typed. Executing that text is the client's job;
+the page does it with `/api/run`.
 
-## Syntax highlighting
+Each `session` id has its own interpreter. Changing the language starts a new
+one. The page uses one session per tab.
 
-`POST /api/highlight` takes `{"language": "Python", "program": "..."}` and
-returns `{"html": "<span style=\"color: …\">def</span>…"}`.
+### Syntax highlighting
 
-- The server renders tokens with Pygments (`web/highlight.py`), emitting inline
-  colours and no wrapper element, so the page needs no stylesheet for it.
-- The page paints that HTML in a `<pre>` behind the **transparent textarea**,
-  which keeps the caret, selection, undo and scrolling native.
-- Requests are debounced (180 ms) and stale replies are discarded, so typing
-  stays responsive.
-- Language labels map to lexers (`basic` uses the Commodore BASIC lexer,
-  `pascal`, `prolog`, `forth`, `perl`, `python` and `javascript` have their
-  own). PILOT and Logo stay plain; a plugin's `syntax` alias is used.
-- Source text is escaped, so a program containing `<script>` can never inject
-  markup. Unknown languages, and installs without Pygments, fall back to
-  escaped plain text.
+`POST /api/highlight` returns the program as HTML with inline colours from the
+same Pygments lexers the desktop editor uses (`web/highlight.py`). There is no
+wrapper element and no stylesheet. The page paints the HTML in a `<pre>` behind
+a transparent `<textarea>`, so caret, selection, undo and scrolling stay native.
 
-## Graphics canvas and RLE frames
+- Requests are debounced and stale replies dropped. Until colours arrive, or if
+  the request fails, the text is shown plain rather than hidden.
+- `basic` uses Pygments' Commodore BASIC lexer. Pascal, Prolog, Forth, Perl,
+  Python and JavaScript have their own lexers, and a plugin's `syntax` alias is
+  honoured. PILOT and Logo stay plain.
+- Source text is always escaped, so a program containing `<script>` cannot
+  inject markup. Without Pygments installed, every language is escaped plain
+  text.
 
-Turtle output is rasterised on the server into a palette-indexed pixel buffer
-and sent as **run-length encoded** frames, so a 600×400 drawing costs a few
-hundred bytes per update instead of 240 000 pixels.
+## Graphics frames
 
-With a plain request the final frame is in `result.canvas`. While streaming,
-each update arrives as an SSE event:
+Turtle output is rasterised on the server into a palette-indexed buffer of
+600×400 pixels. It is sent as **run-length encoded** frames, so an update
+costs a few hundred bytes rather than 240,000 pixels.
 
 ```
 event: canvas
@@ -142,32 +260,37 @@ data: {"type": "canvas", "width": 600, "height": 400,
 | Field | Meaning |
 |-------|---------|
 | `width`, `height` | Full canvas size |
-| `x`, `y`, `w`, `h` | Rectangle this frame updates (only what changed) |
+| `x`, `y`, `w`, `h` | The rectangle this frame updates (only what changed) |
 | `palette` | CSS colours; index 0 is the background |
-| `rle` | base64 of repeated *(uint16 little-endian run, uint8 palette index)* |
-| `overlay` | Small vector list (turtle marker, tagged shapes, text) drawn on top |
+| `rle` | base64 of repeated *(uint16 little-endian run length, uint8 palette index)* |
+| `overlay` | Vector items drawn on top: turtle marker, ovals, rectangles, lines, text |
 
-The browser keeps a full-size `ImageData`, paints only the rectangle it is
-given, then draws the overlay. The turtle marker and text stay vector so they
-remain crisp and can move without repainting the pixels. Decoding is
-implemented in `web/canvas.py` (`decode_rle`) as well, which is what the tests
-use.
+The page keeps a full-size `ImageData`, repaints only the rectangle it is
+given, then draws the overlay, so the turtle and text stay sharp.
+`web/canvas.py` has a matching `decode_rle` that the tests use.
 
 ## Limits
 
-- Programs are capped at 256 KB.
-- Four programs may run concurrently; further requests wait for a free slot and
-  are refused with `429` rather than queued forever.
-- Each run is stopped by the wall clock (default 10 s). A 50-million-iteration
-  cap is a backstop in case a loop somehow outruns the clock check.
-- Every run gets a fresh interpreter, so programs cannot see each other's
-  variables; REPL sessions deliberately keep theirs.
-- REPL statements are capped at 8 KB, 2 seconds and 16 concurrent sessions.
+| Limit | Value | When exceeded |
+|-------|-------|---------------|
+| Program size | 256 KB | `413` |
+| Concurrent runs (incl. REPL lines) | 4 | `429` immediately, not queued |
+| Run time | `--timeout`, default 10 s, not counting built-in input waits | `Stopped: time limit…`, `timed_out: true` |
+| Waiting for input | 300 s | `Stopped: no input for 300s` |
+| Output | 20,000 lines per run | Run stopped, `output_capped: true` |
+| Loop backstop | 50 million iterations | Run stopped |
+| REPL line | 8 KB, 2 s | `413`, or the line is stopped |
+| REPL sessions | 16, expire after 10 idle minutes | Least recently used is dropped |
+
+Malformed requests (a bad `Content-Length`, a body that isn't UTF-8 or isn't a
+JSON object, an unknown language) are answered with `400`. Every run gets a
+fresh interpreter; only REPL sessions keep state.
+
+The browser console keeps the last 5,000 lines, so a long run stays responsive.
 
 ## Container
 
-Every `vX.Y.Z` tag publishes a prebuilt image for `linux/amd64` and
-`linux/arm64`:
+Each `vX.Y.Z` tag publishes an image for `linux/amd64` and `linux/arm64`:
 
 ```bash
 docker run --rm -p 8000:8000 ghcr.io/james-honeybadger/time-warp-classic-web:latest
@@ -180,28 +303,32 @@ docker build -f Dockerfile.web -t timewarp-web .
 docker run --rm -p 8000:8000 timewarp-web
 ```
 
-The image contains the built-in interpreters plus Pygments for syntax
-highlighting. JavaScript needs Node.js, Perl
-needs Perl, and plugin languages need their runtime — uncomment the `apt-get`
-line in the Dockerfile or extend the image. `HEALTHCHECK` uses `/healthz`.
+The image contains the built-in interpreters and Pygments. JavaScript needs
+Node.js, Perl needs Perl, and plugin languages need their own runtimes. Enable
+the `apt-get` line in `Dockerfile.web` or extend the image. `HEALTHCHECK` polls
+`/healthz`. To expose plugin languages, set `TIMEWARP_PLUGIN_PATH` to a mounted
+folder.
 
-Set `TIMEWARP_PLUGIN_PATH` to a mounted folder to expose plugin languages.
+If you put the server behind nginx, streaming already works: responses carry
+`X-Accel-Buffering: no`. Other proxies may need response buffering turned off
+for `/api/run`.
 
 ## Security
 
-The server runs arbitrary programs on behalf of whoever can reach it, and it
-has **no authentication**.
+The server runs arbitrary programs for anyone who can reach it, and it has
+**no authentication**.
 
-- The default `--host 127.0.0.1` keeps it local to your machine.
-- Only bind `0.0.0.0` inside a network you control, ideally behind a proxy that
-  adds authentication and rate limiting.
-- The built-in interpreters are sandboxed by design (no file or network access
-  from the expression evaluator), but **Python, JavaScript and Perl run real
-  subprocesses** and can do anything the user of the container can do. Do not
-  expose those languages to untrusted users.
+- The default `--host 127.0.0.1` keeps it to your machine.
+- Bind `0.0.0.0` only on a network you control, ideally behind a proxy that adds
+  authentication and rate limiting.
+- The built-in interpreters have no file or network access from programs.
+  **Python, JavaScript and Perl run as real processes** and can do anything the
+  server's user can. Don't offer those languages to people you don't trust.
+- Run ids are not secrets. Anyone who can reach the server can stop or feed
+  input to any run whose id they know.
 
 ## Not included
 
-The web edition focuses on write → run → read output. There is no file
-open/save, no turtle canvas, no breakpoints or single-stepping, and no
-debugger; use the desktop IDE for those.
+There are no breakpoints, no single-stepping, no error-history dialog and no
+themes. Use the desktop IDE for those. Files are opened and saved through the
+browser, so there is no server-side file browser.

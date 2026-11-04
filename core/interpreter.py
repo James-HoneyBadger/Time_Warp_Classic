@@ -211,6 +211,9 @@ class Time_WarpInterpreter:  # pylint: disable=too-many-public-methods
         # Hosts without a turtle canvas (web UI, exported runners) do not need
         # "Turtle moved" and "Drawing line ..." chatter either.
         self.turtle_console = True
+        # Python/JavaScript/Perl children read the IDE console via a pipe;
+        # a terminal host (--run) sets this False so they read its stdin.
+        self.subprocess_stdin_pipe = True
         # Safety cap for unattended runs (None = run until stopped, as the
         # original machines did).  Hosts that offer a Stop control disable it.
         self.max_iterations = 10000

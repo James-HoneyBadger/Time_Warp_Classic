@@ -1,322 +1,281 @@
-# Troubleshooting Guide
+# Troubleshooting
 
-Solutions for common issues in Time Warp Classic.
+Find the message you're seeing, then read the cause and fix. Messages are
+quoted exactly as Time Warp prints them.
 
-## Getting Started Issues
+- [Starting up](#starting-up)
+- [Running programs](#running-programs)
+- [The command line runner](#the-command-line-runner)
+- [The browser IDE](#the-browser-ide)
+- [Still stuck](#still-stuck)
 
-### Cannot Find Time Warp Application
+## Starting up
 
-**Problem:** Python file won't launch
+### `❌ GUI launch failed: No module named 'tkinter'`
 
-**Solutions:**
-1. Ensure Python 3.9+ is installed: `python --version`
-2. Install tkinter: `sudo apt-get install python3-tk` (Linux) or through Python installer (Windows)
-3. Run from terminal: `python Time_Warp.py`
+**Cause:** your Python was built without Tk. Common with distro Pythons and
+pyenv builds.
 
-### Window Doesn't Open
-
-**Problem:** Application hangs or no window appears
-
-**Solutions:**
-1. Check for errors in terminal
-2. Try with `PYTHONUNBUFFERED=1 python Time_Warp.py`
-3. Check Python PATH: `which python`
-4. Reinstall tkinter
-
-### Missing Dependencies
-
-**Problem:** Import errors on startup
-
-**Solutions:**
-```bash
-pip install -r requirements.txt
-```
-
----
-
-## Execution Issues
-
-### Code Won't Run
-
-**Problem:** Click Run but nothing happens
-
-**Solutions:**
-1. Ensure language is selected correctly
-2. Check syntax for obvious errors
-3. Look for error message in output panel
-4. Try a simple program: `PRINT "Hello"`
-
-### "Unknown Language" Error
-
-**Problem:** Language not recognized
-
-**Solutions:**
-1. Check language dropdown
-2. Enable "Auto-Detect Language"
-3. Ensure code uses correct syntax
-4. Try manual language selection
-
-### "Syntax Error" Messages
-
-**Problem:** "Syntax error at line X"
-
-**Solutions:**
-1. Check line for typos
-2. Verify opening/closing brackets and parentheses
-3. Check for missing keywords (END, ENDIF, etc.)
-4. Look at comprehensive demo for examples
-
-### No Output Shown
-
-**Problem:** Code runs but produces no output
-
-**Solutions:**
-1. Code completed silently (add PRINT statements)
-2. Output panel too small (resize window)
-3. Clear button was pressed (run again)
-4. Check for hidden output in error area
-
-### Infinite Loop / Program Hangs
-
-**Problem:** Program runs forever or doesn't respond
-
-**Solutions:**
-1. Press Ctrl+C in terminal to stop
-2. Check loop conditions
-3. Ensure loop has increment/terminator
-4. Look for recursive functions without base case
-
----
-
-## Language-Specific Issues
-
-### BASIC
-
-**Problem:** "REM" comment not recognized
-- Solution: Use `REM` followed by space
-
-**Problem:** Array index out of bounds
-- Solution: Check array size in DIM statement
-
-**Problem:** Undefined variable in expression
-- Solution: Use LET to assign before use
-
-### Python
-
-**Problem:** Indentation errors
-- Solution: Ensure consistent indentation (4 spaces)
-
-**Problem:** "Name not defined" error
-- Solution: Check variable spelling and scope
-
-**Problem:** List index out of range
-- Solution: Verify list size before accessing
-
-### JavaScript
-
-**Problem:** "Undefined" values
-- Solution: Check variable declarations
-
-**Problem:** "is not a function"
-- Solution: Verify function name and arguments
-
-**Problem:** Program killed after 30 seconds
-- Solution: JavaScript runs via Node.js with a 30-second timeout. Optimize or simplify long-running code.
-
-### Perl
-
-**Problem:** `.pl` file opens as Prolog instead of Perl
-- Solution: The `.pl` extension is shared by both Perl and Prolog. Time Warp examines file content to detect the correct language (looks for `print`, `my`, `use`, `sub` for Perl vs. `:-`, `?-` for Prolog). If auto-detection fails, manually select the language from the dropdown.
-
-**Problem:** "perl: command not found"
-- Solution: Install Perl (`sudo apt install perl` on Linux, or from [perl.org](https://www.perl.org/))
-
-**Problem:** Program killed after 30 seconds
-- Solution: Perl runs via subprocess with a 30-second timeout. Simplify long-running operations.
-
-### Runtime Availability
-
-**Problem:** A language is labelled "(runtime missing)"
-- Solution: That language runs through an external runtime that is not on `PATH`. Perl needs `perl` (`sudo apt install perl`, `brew install perl`, or [perl.org](https://www.perl.org/)); JavaScript needs Node.js from [nodejs.org](https://nodejs.org/). Plugin languages need the `executable` named in their manifest. Install the runtime and reopen the IDE — the label disappears from the language menu, the status bar and the web IDE.
-
-### Subprocess Languages (Python, JavaScript, Perl)
-
-**Problem:** "Execution timed out" or program killed
-- Solution: These languages run as external subprocesses with a **30-second timeout**. If your program needs more time, optimize the algorithm or reduce the workload. Built-in languages (BASIC, Logo, PILOT, Pascal, Prolog, Forth) have no timeout.
-
-### Prolog
-
-**Problem:** No solutions found
-- Solution: Check facts and rules
-- Verify query syntax
-
-**Problem:** Infinite recursion
-- Solution: Ensure base case is reached
-
----
-
-## GUI Issues
-
-### Text Editing Problems
-
-**Problem:** Text won't delete
-- Solution: Try Backspace or Delete key
-
-**Problem:** Find & Replace not working
-- Solution: Check search term is spelled correctly
-
-**Problem:** Line numbers incorrect
-- Solution: Refresh editor (Ctrl+A then Ctrl+V)
-
-### Display Issues
-
-**Problem:** Text too small/large
-- Solution: Adjust font size in Preferences
-
-**Problem:** Syntax highlighting missing
-- Solution: Check language selection
-
-**Problem:** Output text is unreadable
-- Solution: Change theme or font
-
----
-
-## Performance Issues
-
-### Program Runs Slowly
-
-**Solutions:**
-1. Reduce output volume (less PRINT statements)
-2. Optimize loops (fewer iterations)
-3. Reduce complexity (simpler expressions)
-4. Check memory usage (close other apps)
-
-### GUI Freezes During Execution
-
-**Solutions:**
-1. Reduce program size
-2. Add more output statements for progress
-3. Break into smaller programs
-4. Upgrade hardware
-
-### High Memory Usage
-
-**Solutions:**
-1. Limit array sizes
-2. Close and reopen application
-3. Reduce graphics resolution (Logo)
-4. Use simpler data types
-
----
-
-## File Operations
-
-### Cannot Open File
-
-**Problem:** "File not found" error
-
-**Solutions:**
-1. Verify file exists: `ls -l filename`
-2. Use absolute path: `/home/user/program.bas`
-3. Check file permissions: `chmod 644 filename`
-
-### Cannot Save File
-
-**Problem:** "Permission denied" error
-
-**Solutions:**
-1. Check write permissions: `chmod 755 directory`
-2. Use different directory
-3. Run as admin (not recommended)
-
-### File Corruption
-
-**Problem:** File opens but looks garbled
-
-**Solutions:**
-1. Check file encoding (should be UTF-8)
-2. Open in text editor first
-3. Recreate file
-4. Restore from backup
-
----
-
-## Advanced Troubleshooting
-
-### Check System Requirements
+**Fix:** install the Tk package for the Python you are using, then start
+again.
 
 ```bash
-python --version      # Should be 3.9+
-python -m tkinter     # Should open test window
-pip list             # Check installed packages
+sudo apt-get install python3-tk      # Debian/Ubuntu
+sudo dnf install python3-tkinter     # Fedora
+brew install python-tk               # macOS with Homebrew Python
+python3 -m tkinter                   # check: a small window should open
 ```
 
-### Run Diagnostic Program
+On Windows, rerun the python.org installer and tick "tcl/tk and IDLE".
+`run.py` tries the Linux and Homebrew installs for you (after asking).
 
-Create test_system.py:
-```python
-import sys
-import tkinter as tk
+If you don't need the desktop window, `python3 Time_Warp.py --web` needs no
+Tk at all.
 
-print(f"Python: {sys.version}")
-print(f"Platform: {sys.platform}")
+### `no display name and no $DISPLAY environment variable`
 
-try:
-    root = tk.Tk()
-    root.title("System Test")
-    tk.Label(root, text="GUI works!").pack()
-    root.after(1000, root.quit)
-    root.mainloop()
-except Exception as e:
-    print(f"GUI error: {e}")
+**Cause:** no graphical session: SSH without X forwarding, a container, CI.
+`run.py` warns about it up front: `No graphical display detected
+(DISPLAY/WAYLAND_DISPLAY unset)`.
+
+**Fix:** use the browser IDE (`--web`), connect with `ssh -X`, or for tests
+wrap the command in `xvfb-run -a`.
+
+### `run.py` stops at `Failed to create virtual environment`
+
+**Cause:** the `venv` module (or `ensurepip`) isn't installed. Debian and
+Ubuntu split it out.
+
+**Fix:** `sudo apt-get install python3-venv` (Fedora: `sudo dnf install
+python3-venv`), then `python3 run.py --clean`.
+
+### `python: command not found`
+
+**Cause:** many systems only ship `python3`.
+
+**Fix:** use `python3` in every command in these docs.
+
+### `ℹ️  PIL/Pillow not available - image features disabled`
+
+**Cause:** Pillow isn't installed in this environment.
+
+**Fix:** none needed to run programs. To silence it,
+`pip install -r requirements.txt` in the environment you launch from (or let
+`run.py` do it).
+
+### Fonts, theme or completion settings look wrong
+
+**Cause:** a bad or stale `~/.timewarp_settings.json`.
+
+**Fix:** delete it. The defaults (Dark theme, Courier, medium size, completion
+on) come back on the next start.
+
+## Running programs
+
+### Run prints nothing, or the output makes no sense
+
+**Cause:** usually the wrong language is selected. The desktop IDE starts on
+PILOT, so BASIC pasted into a fresh window runs as PILOT and prints nothing.
+
+**Fix:** set the language selector before pressing Run. Opening a file or
+using **Program → Load Example** sets it from the extension.
+
+### `?ERROR IN 120: ...` followed by `?HINT: ...`
+
+**Cause:** the program failed on line 120. The `?HINT:` line suggests the
+usual reason and names the language reference to read. For example:
+
+```
+?ERROR IN 1: Division by zero in expression
+?HINT: a value in the expression is 0 - check the divisor before dividing. See docs/languages/BASIC_REFERENCE.md.
 ```
 
-### Enable Debug Mode
+**Fix:** click the error line in the desktop IDE to jump to line 120. For
+Python, JavaScript and Perl the number is the script's own line, taken from
+the traceback.
 
-Look for debug settings in code or check terminal output verbosity.
+### The program never finishes
 
----
+**Cause:** an endless loop. Built-in languages have no time limit on the
+desktop.
 
-## Error Messages Reference
+**Fix:** press **Stop** or Ctrl+.. The console prints `BREAK IN n` with the
+line it was on; click it.
 
-| Error | Meaning | Solution |
-|-------|---------|----------|
-| SyntaxError | Invalid syntax | Check code structure |
-| NameError | Undefined variable | Define variable first |
-| TypeError | Wrong data type | Check value type |
-| ZeroDivisionError | Dividing by 0 | Check denominator |
-| IndexError | Invalid index | Check bounds |
-| KeyError | Missing dict key | Verify key exists |
+### The program is waiting and nothing happens
 
----
+**Cause:** it's waiting at `INPUT`, `A:`, `readln` or `input()`. There is no
+pop-up dialog.
 
-## Getting Help
+**Fix:** type into the console bar under the output and press Enter.
 
-### Check Documentation
-- [QUICK_START.md](QUICK_START.md) - Quick reference
-- [LANGUAGE_TUTORIALS.md](user/LANGUAGE_TUTORIALS.md) - Learn languages
-- [README.md](README.md) - Documentation index
+### Logo or BASIC drawing ran but printed nothing
 
-### Run Examples
-All working examples in `examples/` directory
+**Cause:** that's normal. Turtle programs draw; they don't print. The desktop
+console mentions pen moves such as *Pen up*; the browser IDE and `--run` hide
+those lines.
 
-### Check Demo Programs
-Each language has examples in:
-`examples/[language]/`
+**Fix:** look at the Turtle Graphics pane (shown for Logo and BASIC only).
+Under `--run` there is no canvas, so use an IDE to see the picture.
 
-### Search for Keywords
-Use Find (Ctrl+F) in documentation
+### `JavaScript (runtime missing)` / `?JAVASCRIPT NOT FOUND - install it to run these scripts (install Node.js from nodejs.org)`
 
----
+**Cause:** neither `node` nor `nodejs` on `PATH` answered `--version`. Perl
+gives `?PERL NOT FOUND - install it to run these scripts (install Perl (apt
+install perl, brew install perl, or strawberryperl.com))`. Plugin languages
+report the executable named in their manifest.
 
-## Still Having Issues?
+**Fix:** install the runtime, check with `node --version` or `perl --version`
+in the same shell, and restart Time Warp so it looks again. Python never shows
+this: it uses the interpreter running Time Warp.
 
-1. **Check the demos:** Are they working?
-2. **Try simple code:** Can you run `PRINT "Hello"`?
-3. **Review examples:** Look at similar working program
-4. **Read error carefully:** Error message usually points to issue
-5. **Search documentation:** Most issues covered here
+### `?ERROR: Python script timed out after 30s`
 
----
+**Cause:** Python, JavaScript and Perl programs get 30 seconds each (the same
+message names `JavaScript` or `Perl`). Built-in languages have no such limit
+on the desktop.
 
-**Happy Debugging! 🔧**
+**Fix:** make the program do less, or run the script directly with `python3`,
+`node` or `perl` if it really needs longer.
+
+### A Prolog `.pl` file opens as Perl (or the other way round)
+
+**Cause:** `.pl` belongs to both. Time Warp picks Prolog only if the file
+contains `:-` or `?-` and looks more like Prolog than Perl.
+
+**Fix:** change the language selector, or save Prolog as `.pro`.
+
+### A plugin language is missing from the selector
+
+**Cause:** its manifest in `~/.timewarp/plugins/` didn't load, or was added
+after start-up.
+
+**Fix:** **Preferences → Plugins → Reload Plugins**, and see
+[dev/PLUGINS.md](dev/PLUGINS.md) for the manifest format.
+
+## The command line runner
+
+### `?ERROR: --language is required when running a plain source file`
+
+**Cause:** `--run` doesn't guess the language from the extension. Only a
+`.twrun` bundle carries its own.
+
+**Fix:** add it: `python3 Time_Warp.py --run hello.bas --language basic` (or
+`-l basic`). The exit code was 2.
+
+### `?ERROR: no such file: hello.bas`
+
+**Cause:** the path is wrong relative to where you ran the command.
+
+**Fix:** check with `ls`, or pass an absolute path.
+
+## The browser IDE
+
+### `OSError: [Errno 98] Address already in use`
+
+(`[Errno 48]` on macOS.)
+
+**Cause:** something already listens on port 8000, often an earlier
+`--web` you forgot about.
+
+**Fix:** stop the other server (`ss -ltnp 'sport = :8000'` or
+`lsof -i :8000` shows who has it), or choose another port:
+`--port 8001`, or `--port 0` for any free one. The URL is printed at start-up:
+`Time Warp Classic web IDE: http://127.0.0.1:8001/`.
+
+### The browser can't reach the server
+
+**Cause:** the server isn't running, or it's bound to `127.0.0.1` inside a
+container or on another machine.
+
+**Fix:** check the terminal for the `Time Warp Classic web IDE:` line. In a
+container, bind `--host 0.0.0.0` and publish the port (`-p 8000:8000`); the
+`Dockerfile.web` image already does both. Read
+[dev/WEB.md](dev/WEB.md#security) before exposing it beyond localhost.
+
+### A language shows `(runtime missing)` / `JavaScript needs its runtime installed on the server`
+
+**Cause:** the runtime is missing on the machine running the server, not
+your browser's machine. The `Dockerfile.web` image does not install Node.js.
+
+**Fix:** install it where the server runs, or extend the image as described in
+[dev/WEB.md](dev/WEB.md#container), then restart the server.
+
+### `too many programs are running, try again`
+
+**Cause:** the server allows four runs at a time (REPL lines count too). The
+fifth is refused straight away, not queued (the HTTP API answers 429). Programs still
+waiting for input hold their slot. In the console bar the equivalent is
+`the previous statement is still running`.
+
+**Fix:** stop runs you've left waiting in other tabs, or wait and try again.
+
+### `Stopped: time limit of 10s reached`
+
+**Cause:** the run went past `--timeout` (default 10 seconds). For built-in
+languages, time spent waiting for input doesn't count. For Python, JavaScript
+and Perl it does, and their own 30-second cap still applies whatever
+`--timeout` says.
+
+**Fix:** restart the server with a bigger limit, e.g.
+`python3 Time_Warp.py --web --timeout 60`, or answer prompts faster.
+
+### `Stopped: no input for 300s`
+
+**Cause:** a program sat at an input prompt for 5 minutes.
+
+**Fix:** answer sooner, or press Stop when you walk away.
+
+### `Stopped: output limit of 20000 lines reached`
+
+**Cause:** the run printed more than 20,000 lines; usually a `PRINT` in a
+loop that doesn't end.
+
+**Fix:** fix the loop, or print less.
+
+### `?INPUT needs a running program: put it in the editor and press Run`
+
+**Cause:** you typed `INPUT` (or a line that reads input) into the idle
+console bar. Nobody can answer it there.
+
+**Fix:** put the program in the editor and press Run; the console bar then
+becomes its stdin.
+
+### `?ERROR: the connection to the server closed before the program finished`
+
+The status line reads `connection lost`.
+
+**Cause:** the server stopped or restarted mid-run, or a proxy closed the
+stream.
+
+**Fix:** check the server's terminal and start it again. Behind a proxy other
+than nginx, turn response buffering off for `/api/run`.
+
+### `?ERROR: ... (is the server still running?)`
+
+The status line reads `server unreachable`.
+
+**Cause:** the browser couldn't reach the server at all.
+
+**Fix:** start it again. Your editor text is safe: it's kept in the browser's
+`localStorage`.
+
+### `<file> is larger than the 256 KB program limit`
+
+**Cause:** **Open…** refuses files over 256 KB; the server answers
+`program is too large` (HTTP 413) for the same reason.
+
+**Fix:** split the program.
+
+## Still stuck
+
+1. Check the basics: `python3 --version` (3.9 or newer),
+   `python3 Time_Warp.py --version`, `python3 -m tkinter`.
+2. Run a bundled example from the command line. If this works, the
+   interpreter is fine and the problem is in your program or the GUI:
+   `python3 Time_Warp.py --run examples/basic/INDEX.bas -l basic`
+3. Run the tests: `python3 -m pytest -q` (after
+   `pip install -r requirements-dev.txt`).
+4. See the [FAQ](FAQ.md), or open an issue at
+   <https://github.com/James-HoneyBadger/Time_Warp_Classic/issues> with the
+   exact error text, your OS, and both version numbers.

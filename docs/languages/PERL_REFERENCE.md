@@ -1,583 +1,245 @@
-# Perl Language Reference
+# Perl in Time Warp Classic
 
-Complete reference for Perl syntax in Time Warp Classic.
+Time Warp does not reimplement Perl. It saves your program to a temporary
+`.pl` file and runs it with the system `perl` in a separate process. Text
+munging, regular expressions, hashes, CPAN modules you have installed: it
+is all real Perl 5.
 
-> **Note:** Perl runs via subprocess with a 30-second timeout.
+This page covers what is different inside Time Warp: how `perl` is found,
+how output and input travel, time limits, and error reporting. For the
+language itself, see [perldoc](#further-reading).
 
-## Program Structure
+## At a glance
 
-```perl
-#!/usr/bin/perl
-use strict;
-use warnings;
+| Topic | Behaviour |
+|-------|-----------|
+| Runtime | `perl` on `PATH`, then `perl5`; must be installed separately |
+| Output | stdout and stderr merged, shown line by line as the program prints |
+| Input | The console bar feeds `STDIN`, one line per Enter |
+| Time limit | 30 s in the desktop IDE and `timewarp --run`; 10 s by default in the web IDE |
+| Stop | Ctrl+. (desktop) or the Stop button (web); the console shows `BREAK` |
+| Errors | `?ERROR IN n: ...` naming the editor line, sometimes followed by a `?HINT:` line |
+| Turtle graphics | Not available |
+| Console REPL | Each line runs in a fresh process; nothing carries over |
 
-# Your code here
+## Which Perl runs
+
+Time Warp looks for `perl`, then `perl5`, on `PATH` and uses the first one
+whose `perl --version` succeeds. Most Linux and macOS systems already have
+one; on Windows install [Strawberry Perl](https://strawberryperl.com/). To
+check the version, run `print "$^V\n";` from the console bar.
+
+### When Perl is missing
+
+The language menu shows Perl as "(runtime missing)" (in the web IDE the
+status bar also says "Perl needs its runtime installed on the server").
+Running anyway prints:
+
+```text
+?PERL NOT FOUND - install it to run these scripts (install Perl (apt install perl, brew install perl, or strawberryperl.com))
 ```
 
-## Variables
+Install Perl and restart Time Warp.
 
-### Scalars ($)
+## How a run works
 
-```perl
-$x = 10;
-$name = "Alice";
-$pi = 3.14159;
-$active = 1;        # Boolean
-```
+1. Time Warp puts `$| = 1; ` at the very start of line 1 (autoflush, so
+   output is not held back) and writes the program to a temporary file
+   such as `/tmp/tmp0u0tho6x.pl`. Nothing is inserted as a new line, so
+   line numbers in messages match the editor.
+2. Time Warp starts `perl <file>`. On Linux and macOS the command is
+   wrapped in `stdbuf -oL -eL` when `stdbuf` exists.
+3. The working directory is the directory Time Warp was started from, not
+   the folder your file is saved in. Relative paths in `open` resolve from
+   there.
+4. `.` is not in `@INC`, and the temporary file lives elsewhere anyway, so
+   `use MyModule;` does not find a `MyModule.pm` next to your saved file.
+   Set `PERL5LIB` before starting Time Warp, or use
+   `use lib '/full/path';`.
+5. When the program ends, the temporary file is deleted.
 
-### Arrays (@)
+Because the prefix shares line 1, a `#!` line there turns into a plain
+comment (harmless; you do not need one), and `use v5.36;` on line 1
+still works.
 
-```perl
-@numbers = (1, 2, 3, 4, 5);
-@colors = qw(red green blue);
-@mixed = (1, "hello", 3.14);
+## Output
 
-# Access
-$numbers[0]         # 1
-$numbers[-1]        # 5 (last element)
-```
+- `print`, `printf`, `say` (with `use feature 'say';`) and `warn` all go
+  to the console, in order.
+- A line is shown when its newline arrives. `print "Working..."` without
+  `\n` stays invisible until a later newline or the end of the program.
+- Warnings appear in the console but do not fail the run. With
+  `use warnings;`, an undefined value in a string shows up as
+  `Use of uninitialized value $u in concatenation (.) or string at /tmp/....pl line 2.`
+- The web IDE stops a run after 20,000 lines of output
+  (`Stopped: output limit of 20000 lines reached`).
 
-### Hashes (%)
+## Input
 
-```perl
-%person = (
-    'name' => 'Alice',
-    'age' => 30,
-    'city' => 'New York'
-);
-
-# Access
-$person{'name'}     # Alice
-```
-
-## Operators
-
-### Arithmetic
-
-```perl
-+       Addition
--       Subtraction
-*       Multiplication
-/       Division
-%       Modulo
-**      Power
-```
-
-### String Operations
+While a program is running, the console bar sends what you type to
+`STDIN`, one line per Enter, echoed in the console.
 
 ```perl
-.       Concatenation    "Hello" . " World"
-x       Repetition       "ab" x 3 = "ababab"
+print "Name?\n";
+chomp(my $name = <STDIN>);
+print "Age?\n";
+chomp(my $age = <STDIN>);
+printf "Hello, %s. Next year you will be %d.\n", $name, $age + 1;
 ```
 
-### Comparison (Numeric)
+Typing `Ada` and then `41` gives:
+
+```text
+Name?
+Ada
+Age?
+41
+Hello, Ada. Next year you will be 42.
+```
+
+Things to know:
+
+- **End prompts with `\n`.** A prompt without one does not appear until
+  the next newline.
+- **Typing ahead works.** Lines typed early wait in the pipe.
+- **There is no end-of-file.** `STDIN` stays open, so
+  `while (my $line = <STDIN>)` and `my @all = <STDIN>` wait until the time
+  limit. Stop at a known count or a sentinel such as an empty line:
+  `last if $line eq '';` after `chomp`.
+- **Waiting counts toward the time limit.** The built-in languages pause
+  the clock at `INPUT`; Perl programs do not. In the web IDE the default
+  limit is 10 seconds; raise it with `timewarp --web --timeout N`.
+- **The web IDE cannot tell that the program is waiting.** Type anyway.
+
+## Time limits and stopping
+
+| Where | Limit | What you see |
+|-------|-------|--------------|
+| Desktop IDE, `timewarp --run` | 30 s | `?ERROR: Perl script timed out after 30s` and a `?HINT:` |
+| Web IDE | 10 s (set with `--timeout`) | `Stopped: time limit of 10s reached`, then `BREAK` |
+
+The 30-second limit belongs to the Perl runner itself, so it also caps web
+runs whose `--timeout` is higher.
+
+To stop a program early, press Ctrl+. in the desktop IDE or the Stop
+button in the browser. The process is killed and the console prints
+`BREAK`.
+
+## Errors and hints
+
+When Perl exits with an error, Time Warp shows Perl's message, then a
+summary line naming the editor line and, when it recognises the error, a
+hint:
 
 ```perl
-==      Equal
-!=      Not equal
-<       Less than
->       Greater than
-<=      Less or equal
->=      Greater or equal
-<=>     Spaceship (compare)
+my $n = 0;
+print 10 / $n, "\n";
 ```
 
-### Comparison (String)
-
-```perl
-eq      Equal
-ne      Not equal
-lt      Less than
-gt      Greater than
-le      Less or equal
-ge      Greater or equal
-cmp     Compare
+```text
+Illegal division by zero at /tmp/tmp0u0tho6x.pl line 2.
+?ERROR IN 2: Illegal division by zero
+?HINT: a value in the expression is 0 - check the divisor before dividing. See docs/languages/PERL_REFERENCE.md.
 ```
 
-### Logical
+- The line number comes from Perl's `at ... line N`. In the desktop IDE,
+  click the `?ERROR IN` line to jump to it.
+- Hints are matched against the summary line. Runtime errors such as
+  division by zero, and time-outs, get one.
+- **Compile errors** (strict violations, syntax errors, missing modules)
+  are summarised unhelpfully, as
+  `?ERROR IN n: Execution of /tmp/....pl aborted due to compilation errors.`
+  or `?ERROR IN 1: BEGIN failed--compilation aborted`, and get no hint.
+  The real message is in the lines above, for example
+  `Global symbol "$y" requires explicit package name ... line 4.` or
+  `Can't locate Foo/Bar.pm in @INC ...`.
+- `die "Out of coffee\n";` prints the message and is summarised as
+  `?ERROR: Perl script exited with code 255`. A `die` message without a
+  trailing `\n` includes `at ... line N`, so the summary names the line.
+- `exit 3;` is reported as `?ERROR: Perl script exited with code 3`.
 
-```perl
-&&      AND
-||      OR
-!       NOT
-and     AND (lower precedence)
-or      OR (lower precedence)
-not     NOT (lower precedence)
+Start programs with `use strict;` and `use warnings;`. Most Perl
+surprises turn into a message with a line number.
+
+## The console REPL
+
+When no program is running, a line typed in the console bar is run as a
+complete, one-line program in a brand-new `perl` process:
+
+```text
+>print join(",", map { $_ * $_ } 1..5), "\n";
+1,4,9,16,25
 ```
 
-## Control Structures
-
-### If/Elsif/Else
-
-```perl
-if ($x > 5) {
-    print "Greater";
-} elsif ($x == 5) {
-    print "Equal";
-} else {
-    print "Less";
-}
-```
-
-### Unless (Opposite of If)
-
-```perl
-unless ($x == 0) {
-    print "Not zero";
-}
-```
-
-### For Loop
-
-```perl
-for (my $i = 0; $i < 10; $i++) {
-    print $i;
-}
-
-for my $i (1..10) {
-    print $i;
-}
-```
-
-### Foreach Loop
-
-```perl
-foreach my $num (@numbers) {
-    print $num;
-}
-
-for my $color (@colors) {
-    print $color;
-}
-```
-
-### While Loop
-
-```perl
-while ($count < 10) {
-    print $count;
-    $count++;
-}
-
-until ($count == 10) {
-    print $count;
-    $count++;
-}
-```
-
-### Last & Next (Break/Continue)
-
-```perl
-for my $i (1..10) {
-    if ($i == 5) { last; }      # Break
-    if ($i == 2) { next; }      # Continue
-    print $i;
-}
-```
-
-## Arrays
-
-### Array Operations
-
-```perl
-@array = (1, 2, 3);
-push(@array, 4);            # Add to end
-$elem = pop(@array);        # Remove from end
-unshift(@array, 0);         # Add to beginning
-shift(@array);              # Remove from beginning
-
-# Length
-$len = scalar @array;
-$last_index = $#array;
-
-# Join
-$str = join(", ", @array);
-
-# Split
-@words = split(/\s+/, $text);
-```
-
-### Array Slices
-
-```perl
-@numbers = (1, 2, 3, 4, 5);
-@slice = @numbers[1, 3];    # (2, 4)
-```
-
-### Array Range
-
-```perl
-@range = (1..10);           # (1, 2, 3, ..., 10)
-@letters = ('a'..'z');
-```
-
-## Hashes
-
-### Hash Operations
-
-```perl
-%hash = ('key1' => 'value1', 'key2' => 'value2');
-
-# Access
-$hash{'key1'}
-
-# Add/modify
-$hash{'key3'} = 'value3';
-
-# Delete
-delete $hash{'key1'};
-
-# Keys and values
-@keys = keys %hash;
-@values = values %hash;
-
-# Check existence
-if (exists $hash{'key'}) { ... }
-```
-
-### Hash Iteration
-
-```perl
-while (my ($key, $value) = each %hash) {
-    print "$key => $value\n";
-}
-
-foreach my $key (keys %hash) {
-    print "$key => $hash{$key}\n";
-}
-```
-
-## Strings
-
-### String Basics
-
-```perl
-$str = "Hello";
-$len = length($str);
-$upper = uc($str);          # Uppercase
-$lower = lc($str);          # Lowercase
-$cap = ucfirst($str);       # Capitalize
-```
-
-### String Methods
-
-```perl
-substr($str, 0, 2)          # First 2 chars
-index($str, "ell")          # Find position
-rindex($str, "l")           # Find from right
-uc($str)                    # Uppercase
-lc($str)                    # Lowercase
-reverse($str)               # Reverse
-```
-
-### String Interpolation
-
-```perl
-$name = "Alice";
-print "Hello, $name!";      # "Hello, Alice!"
-print 'Hello, $name!';      # 'Hello, $name!' (literal)
-print qq(Hello, $name!);    # "Hello, Alice!"
-```
-
-### Regular Expressions
-
-```perl
-$text = "Hello World";
-
-# Match
-if ($text =~ /World/) { print "Found"; }
-if ($text !~ /xyz/) { print "Not found"; }
-
-# Substitution
-$text =~ s/World/Perl/;     # "Hello Perl"
-$text =~ s/o/0/g;          # Replace all
-
-# Split
-@words = split(/\s+/, $text);
-
-# Patterns
-/^start/                    # Start of string
-/end$/                      # End of string
-/[aeiou]/                   # Character class
-/[^aeiou]/                  # Negated class
-/a+/                        # One or more
-/a*/                        # Zero or more
-/a?/                        # Zero or one
-```
-
-### Regex Modifiers
-
-```perl
-/pattern/i                  # Case-insensitive
-/pattern/g                  # Global (all matches)
-/pattern/m                  # Multiline (^ and $ match line boundaries)
-/pattern/s                  # Single-line (. matches newline)
-/pattern/x                  # Extended (allow comments/whitespace)
-
-# Combined modifiers
-$text =~ s/hello/Hi/gi;    # Case-insensitive, replace all
-
-# Extended mode example
-if ($text =~ /
-    ^           # Start of string
-    (\w+)       # Capture word
-    \s+         # Whitespace
-    (\d+)       # Capture number
-    $           # End of string
-/x) {
-    print "Word: $1, Number: $2\n";
-}
-```
-
-### Capture Groups
-
-```perl
-if ("2025-06-15" =~ /(\d{4})-(\d{2})-(\d{2})/) {
-    print "Year: $1, Month: $2, Day: $3\n";
-}
-
-# Named captures
-if ($text =~ /(?<name>\w+)\s+(?<age>\d+)/) {
-    print "Name: $+{name}, Age: $+{age}\n";
-}
-```
-
-## Functions/Subroutines
-
-### Subroutine Definition
-
-```perl
-sub greet {
-    my ($name) = @_;
-    print "Hello, $name!";
-}
-
-greet("Alice");
-
-sub add {
-    my ($a, $b) = @_;
-    return $a + $b;
-}
-
-$sum = add(5, 3);
-```
-
-### Return Values
-
-```perl
-sub get_multiple {
-    return (1, 2, 3);
-}
-
-my ($a, $b, $c) = get_multiple();
-```
-
-### Lexical Variables (my)
-
-```perl
-sub function {
-    my $local_var = 10;     # Local to function
-    our $global_var;        # Package variable
-}
-```
-
-## References
-
-### Creating References
-
-```perl
-$scalar_ref = \$scalar;
-$array_ref = \@array;
-$hash_ref = \%hash;
-$code_ref = \&subroutine;
-
-$array_ref = [1, 2, 3];    # Anonymous array
-$hash_ref = {a => 1, b => 2};  # Anonymous hash
-```
-
-### Dereferencing
-
-```perl
-$$scalar_ref                # Dereference scalar
-@$array_ref                 # Dereference array
-$array_ref->[0]             # Array element
-%$hash_ref                  # Dereference hash
-$hash_ref->{key}            # Hash element
-&$code_ref                  # Call function
-```
-
-## Map and Grep
-
-### Map (Transform)
-
-```perl
-@numbers = (1, 2, 3, 4, 5);
-@squared = map { $_ * $_ } @numbers;  # (1, 4, 9, 16, 25)
-
-@words = qw(hello world);
-@lengths = map { length($_) } @words;  # (5, 5)
-```
-
-### Grep (Filter)
-
-```perl
-@numbers = (1, 2, 3, 4, 5);
-@even = grep { $_ % 2 == 0 } @numbers;  # (2, 4)
-
-@words = qw(apple banana apricot);
-@awords = grep { /^a/ } @words;  # (apple, apricot)
-```
-
-## File I/O
-
-### Reading Files
-
-```perl
-open(my $fh, '<', 'file.txt') or die "Cannot open file";
-while (my $line = <$fh>) {
-    print $line;
-}
-close($fh);
-```
-
-### Writing Files
-
-```perl
-open(my $fh, '>', 'output.txt') or die "Cannot open";
-print $fh "Hello, World!\n";
-close($fh);
-```
-
-### Appending
-
-```perl
-open(my $fh, '>>', 'file.txt') or die "Cannot open";
-print $fh "New line\n";
-close($fh);
-```
-
-## Useful Built-in Functions
-
-```perl
-abs($x)                 # Absolute value
-int($x)                 # Integer part
-sqrt($x)                # Square root
-sin($x), cos($x)        # Trigonometry
-exp($x), log($x)        # Exponential, logarithm
-rand()                  # Random 0..1
-int(rand(100))          # Random 0..99
-sort(@array)            # Sort array
-reverse(@array)         # Reverse
-scalar @array           # Array length
-chomp($str)             # Remove newline
-chop($str)              # Remove last character
-```
-
-## Complete Examples
-
-### Count Word Frequency
+Nothing persists between lines. Each line has a 2-second limit, after
+which it is stopped without a message. For anything longer, use the
+editor and Run.
+
+## Turtle graphics
+
+Not available. The Time Warp canvas is driven only by the built-in
+languages. Use Logo for turtle work.
+
+## Cheat sheet
+
+| Task | Perl |
+|------|------|
+| Pragmas | `use strict; use warnings;` |
+| Print | `print "x = $x\n";`, `printf "%.2f\n", $x;` |
+| Read a line | `chomp(my $s = <STDIN>);` |
+| Scalars | `my $n = 10; my $name = "Ada";` |
+| Arrays | `my @xs = (1, 2, 3); push @xs, 4; $xs[0]; $xs[-1]; scalar @xs` |
+| Hashes | `my %age = (ada => 41); $age{bob} = 30; exists $age{ada}; keys %age` |
+| Arithmetic | `+ - * / %`, `**` power, `int($a / $b)` integer division |
+| Compare numbers | `== != < <= > >=` |
+| Compare strings | `eq ne lt le gt ge`; join with `.`, repeat with `x` |
+| If | `if ($x > 0) { ... } elsif ($x == 0) { ... } else { ... }` |
+| Counted loop | `for my $i (1 .. 10) { ... }` |
+| Loop over array | `for my $x (@xs) { ... }`; hash: `for my $k (sort keys %h) { ... }` |
+| Loop control | `next`, `last` |
+| Subroutine | `sub area { my ($w, $h) = @_; return $w * $h; }` |
+| Match | `if ($s =~ /(\d+)/) { print "found $1\n"; }` |
+| Substitute | `(my $t = $s) =~ s/old/new/g;` |
+| Split / join | `my @w = split /\s+/, $s; join(", ", @w)` |
+| List tools | `grep { $_ > 2 } @xs`, `map { $_ * 2 } @xs`, `sort { $a <=> $b } @xs` |
+| Errors | `eval { ...; 1 } or print "failed: $@";` |
+| Comment | `# like this` |
+
+A complete program:
 
 ```perl
 use strict;
 use warnings;
 
-my $text = "hello world hello perl hello";
-my %freq;
+my $text = "the quick brown fox jumps over the lazy dog the end";
+my %count;
+$count{$_}++ for split /\s+/, $text;
 
-for my $word (split /\s+/, $text) {
-    $freq{$word}++;
-}
-
-for my $word (sort keys %freq) {
-    print "$word: $freq{$word}\n";
+for my $word (sort { $count{$b} <=> $count{$a} || $a cmp $b } keys %count) {
+    printf "%-6s %d\n", $word, $count{$word};
+    last if $word eq 'dog';
 }
 ```
 
-### Process Text
-
-```perl
-my @lines = (
-    "apple 100",
-    "banana 50",
-    "cherry 75"
-);
-
-my $total = 0;
-for my $line (@lines) {
-    my ($fruit, $price) = split /\s+/, $line;
-    $total += $price;
-    print "$fruit costs $price\n";
-}
-print "Total: $total\n";
+```text
+the    3
+brown  1
+dog    1
 ```
 
-## Closures & Anonymous Subroutines
+## Known limitations (1.6.0)
 
-```perl
-# Anonymous subroutine
-my $greet = sub {
-    my ($name) = @_;
-    return "Hello, $name!";
-};
-print $greet->("Alice");    # Hello, Alice!
+- `timewarp --run file.pl --language perl` does not pass the terminal's
+  stdin to the program.
+- Compile errors get a poor `?ERROR` summary line (see above).
+- A REPL line that runs past 2 seconds is stopped silently.
 
-# Closure (captures outer variable)
-sub make_counter {
-    my $count = 0;
-    return sub { return ++$count; };
-}
+## Further reading
 
-my $counter = make_counter();
-print $counter->();          # 1
-print $counter->();          # 2
-print $counter->();          # 3
-
-# Higher-order functions
-sub apply {
-    my ($func, @values) = @_;
-    return map { $func->($_) } @values;
-}
-
-my @doubled = apply(sub { $_[0] * 2 }, 1, 2, 3);  # (2, 4, 6)
-```
-
-## Sorting
-
-```perl
-# Default sort (lexicographic)
-@sorted = sort @array;
-
-# Numeric sort
-@sorted = sort { $a <=> $b } @numbers;
-
-# Reverse sort
-@sorted = sort { $b <=> $a } @numbers;
-
-# Custom sort
-@sorted = sort { length($a) <=> length($b) } @words;
-
-# Sort hash by value
-for my $key (sort { $hash{$a} <=> $hash{$b} } keys %hash) {
-    print "$key: $hash{$key}\n";
-}
-```
-
-## Tips & Best Practices
-
-1. **Use strict & warnings** always
-2. **Use lexical variables** (my)
-3. **Test regex separately** before using
-4. **Use meaningful variable names**
-5. **Avoid globals** when possible
-6. **Use references** for complex data
-7. **Check return values** (especially file I/O)
-8. **Execution timeout:** 30 seconds for all Perl programs
-
-## See Also
-
-- [LANGUAGE_TUTORIALS.md](../user/LANGUAGE_TUTORIALS.md)
-- [examples/perl/](../../examples/perl/)
-
----
-
-**Last Updated:** 2025
+- [perldoc.perl.org](https://perldoc.perl.org/) - the official
+  documentation; also `perldoc` on the command line
+- [perlintro](https://perldoc.perl.org/perlintro) - a quick tour of the
+  language
+- [perlretut](https://perldoc.perl.org/perlretut) - regular expressions
+- Examples: [examples/perl/](../../examples/perl/)
+- [Language tutorials](../user/LANGUAGE_TUTORIALS.md#perl)

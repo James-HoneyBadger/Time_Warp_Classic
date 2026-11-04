@@ -110,9 +110,13 @@ def main(argv=None):
         return _run_file(args.run, args.language)
 
     if args.web:
+        from core.plugins import PluginRegistry
         from web.server import serve
 
-        serve(host=args.host, port=args.port, timeout=args.timeout)
+        plugins = PluginRegistry.load()
+        for problem in plugins.problems:
+            print(f"plugin skipped: {problem}")
+        serve(host=args.host, port=args.port, timeout=args.timeout, plugins=plugins)
         return EXIT_OK
 
     print("\U0001f680 Launching Time Warp Classic...")

@@ -21,7 +21,11 @@ from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path
 from urllib.parse import unquote, urlparse
 
+import uuid
+
+from core import __version__
 from core.interpreter import Time_WarpInterpreter
+from core.languages.basic_console import BasicConsole
 from web.canvas import DEFAULT_HEIGHT, DEFAULT_WIDTH, RasterCanvas
 from web.highlight import highlight as highlight_source
 from core.languages.catalog import (
@@ -52,6 +56,19 @@ MAX_REPL_SESSIONS = 16
 REPL_SESSION_TTL = 600.0
 MAX_REPL_LINE = 8 * 1024
 
+# A program waiting at INPUT does not use up its time limit, but it does hold
+# a run slot, so the wait itself is capped.
+DEFAULT_INPUT_TIMEOUT = 300.0
+# While waiting for input the stream sends a comment this often, which is how
+# a closed tab is noticed.
+KEEPALIVE_INTERVAL = 5.0
+MAX_RUN_ID = 64
+# A tight PRINT loop can produce lines far faster than anyone can read them;
+# past this many the run is stopped rather than flooding the browser.
+MAX_OUTPUT_LINES = 20_000
+
+REPL_INPUT_MESSAGE = "?INPUT needs a running program: put it in the editor and press Run"
+
 
 class BadRequest(Exception):
     """The client asked for something that cannot be served."""
@@ -69,6 +86,7 @@ class _ReplSession:
         self.timeout = timeout
         self.plugins = plugins
         self.canvas = RasterCanvas(DEFAULT_WIDTH, DEFAULT_HEIGHT)
+        self.lock = threading.Lock()
         self.interpreter = self._new_interpreter()
         self.last_used = time.monotonic()
 
@@ -79,9 +97,31 @@ class _ReplSession:
         interpreter.turtle_console = False
         interpreter.max_iterations = DEFAULT_ITERATIONS
         interpreter.plugins = self.plugins
-        interpreter.set_language_mode(self.language.lower())
+        interpreter.input_buffer = []
+        # Without a provider, INPUT would read the server's own stdin.
+        interpreter.input_provider = self._refuse_input
+        with contextlib.redirect_stdout(io.StringIO()):
+            interpreter.set_language_mode(self.language.lower())
         interpreter.ide_turtle_canvas = self.canvas
         return interpreter
+
+    def _refuse_input(self, _prompt=""):
+        self.interpreter.log_output(REPL_INPUT_MESSAGE)
+        return None
+
+
+class _ActiveRun:
+    """Book-keeping for a run that can still be stopped or sent input."""
+
+    def __init__(self, run_id, interpreter):
+        self.run_id = run_id
+        self.interpreter = interpreter
+        self.stopped = False
+        self.waiting_for_input = False
+
+    def stop(self):
+        self.stopped = True
+        self.interpreter.stop_program()
 
 
 class RunnerService:
@@ -89,15 +129,18 @@ class RunnerService:
 
     def __init__(self, timeout=DEFAULT_TIMEOUT, plugins=None, examples_dir=None,
                  repl_timeout=DEFAULT_REPL_TIMEOUT, max_sessions=MAX_REPL_SESSIONS,
-                 session_ttl=REPL_SESSION_TTL):
+                 session_ttl=REPL_SESSION_TTL, input_timeout=DEFAULT_INPUT_TIMEOUT):
         self.timeout = timeout
         self.plugins = plugins if plugins is not None else PluginRegistry()
         self.examples_dir = Path(examples_dir or EXAMPLES_DIR)
         self.repl_timeout = repl_timeout
         self.max_sessions = max_sessions
         self.session_ttl = session_ttl
+        self.input_timeout = input_timeout
         self._slots = threading.BoundedSemaphore(MAX_CONCURRENT_RUNS)
+        self._lock = threading.Lock()
         self._sessions = {}
+        self._runs = {}
 
     # ---- metadata -----------------------------------------------------
 
@@ -167,12 +210,22 @@ class RunnerService:
 
     # ---- REPL ---------------------------------------------------------
 
-    def repl(self, session, language, line):
-        """Run one statement in a persistent session and return its output."""
+    def repl(self, session, language, line, program=None):
+        """Run one statement in a persistent session and return its output.
+
+        For BASIC the line goes through classic direct mode: ``10 PRINT 1``
+        edits *program* (the editor text), ``LIST``/``RUN``/``NEW`` work on
+        it, and the reply carries the edited ``program`` or the text to
+        ``run`` so the page can act on it.
+        """
         if not isinstance(line, str) or not line.strip():
             raise BadRequest("enter a statement to run")
         if len(line.encode("utf-8", "replace")) > MAX_REPL_LINE:
             raise BadRequest("statement is too long", status=413)
+        if program is not None and not isinstance(program, str):
+            raise BadRequest("'program' must be text")
+        if program and len(program.encode("utf-8", "replace")) > MAX_PROGRAM_BYTES:
+            raise BadRequest("program is too large", status=413)
 
         resolved = self._known_language(language)
         if resolved is None:
@@ -182,50 +235,89 @@ class RunnerService:
             raise BadRequest("too many programs are running, try again", status=429)
 
         try:
-            key = (str(session or "default")[:64]) or "default"
+            entry = self._session(session, resolved)
+            if not entry.lock.acquire(timeout=self.repl_timeout + 1.0):
+                raise BadRequest("the previous statement is still running", status=429)
+            try:
+                return self._repl_line(entry, line, program)
+            finally:
+                entry.last_used = time.monotonic()
+                entry.lock.release()
+        finally:
+            self._slots.release()
+
+    def _session(self, session, language):
+        key = str(session or "default")[:MAX_RUN_ID] or "default"
+        with self._lock:
             entry = self._sessions.get(key)
-            if entry is None or entry.language != resolved:
-                entry = _ReplSession(resolved, self.repl_timeout, self.plugins)
+            if entry is None or entry.language != language:
+                entry = _ReplSession(language, self.repl_timeout, self.plugins)
+                entry.key = key
                 self._sessions[key] = entry
                 self._trim_sessions()
             entry.last_used = time.monotonic()
+            return entry
 
-            lines = []
-            interpreter = entry.interpreter
-            interpreter.log_output = lines.append
+    def _repl_line(self, entry, line, program):
+        lines = []
+        interpreter = entry.interpreter
+        interpreter.log_output = lambda text: lines.append(str(text))
+        # A previous line may have been stopped by the deadline.
+        interpreter.stop_requested = False
+        interpreter.interrupted = False
+        interpreter.input_buffer = []
 
-            started = time.monotonic()
+        started = time.monotonic()
 
-            def pump():
-                if time.monotonic() - started > self.repl_timeout:
-                    interpreter.stop_program()
+        def pump():
+            if time.monotonic() - started > self.repl_timeout:
+                interpreter.stop_program()
 
-            interpreter.pump_callback = pump
-            try:
+        interpreter.pump_callback = pump
+
+        edits = {"program": None, "run": None}
+        status = "continue"
+        try:
+            if entry.language == "BASIC":
+                editor = {"text": program or ""}
+
+                def set_program(text):
+                    editor["text"] = text
+                    edits["program"] = text
+
+                console = BasicConsole(
+                    interpreter,
+                    get_program=lambda: editor["text"],
+                    set_program=set_program,
+                    run_program=lambda text: edits.__setitem__("run", text),
+                )
+                lines.extend(console.submit(line))
+            else:
                 status = interpreter.execute_line(line)
-            except Exception as exc:  # noqa: BLE001 - report to the console
-                lines.append(f"?ERROR: {exc}")
-                status = "error"
+        except Exception as exc:  # noqa: BLE001 - report to the console
+            lines.append(f"?ERROR: {exc}")
+            status = "error"
 
-            if status == "end":
-                interpreter.running = False
+        if status == "end":
+            interpreter.running = False
 
-            failed = status in ("error",) or any(
-                line_text.startswith("?ERROR") for line_text in lines
-            )
-            frame = (
-                entry.canvas.frame(force=True) if entry.canvas.has_drawing else None
-            )
-            return {
-                "session": key,
-                "language": resolved,
-                "output": lines,
-                "status": status,
-                "exit": 1 if failed else 0,
-                "canvas": frame,
-            }
-        finally:
-            self._slots.release()
+        failed = status == "error" or any(
+            text.startswith("?") and not text.startswith("?HINT") for text in lines
+        )
+        frame = entry.canvas.frame(force=True) if entry.canvas.has_drawing else None
+        reply = {
+            "session": entry.key,
+            "language": entry.language,
+            "output": lines,
+            "status": status,
+            "exit": 1 if failed else 0,
+            "canvas": frame,
+        }
+        if edits["program"] is not None:
+            reply["program"] = edits["program"]
+        if edits["run"] is not None:
+            reply["run"] = edits["run"]
+        return reply
 
     def _trim_sessions(self):
         """Drop idle sessions, then the least recently used ones."""
@@ -237,14 +329,47 @@ class RunnerService:
             oldest = min(self._sessions, key=lambda key: self._sessions[key].last_used)
             del self._sessions[oldest]
 
+    # ---- run control --------------------------------------------------
+
+    def stop(self, run_id):
+        """Stop a running program; returns False when it is not running."""
+        with self._lock:
+            active = self._runs.get(str(run_id or ""))
+        if active is None:
+            return False
+        active.stop()
+        return True
+
+    def send_input(self, run_id, text):
+        """Queue one line of input for a running program.
+
+        Built-in languages read it at their next INPUT; Python, JavaScript,
+        Perl and plugin languages receive it on stdin.  Returns whether the
+        program was waiting for it.
+        """
+        if not isinstance(text, str):
+            raise BadRequest("'text' must be text")
+        if len(text.encode("utf-8", "replace")) > MAX_REPL_LINE:
+            raise BadRequest("input is too long", status=413)
+        with self._lock:
+            active = self._runs.get(str(run_id or ""))
+        if active is None:
+            raise BadRequest("that program is no longer running", status=404)
+        active.interpreter.input_buffer.append(text.rstrip("\r\n"))
+        return active.waiting_for_input
+
     # ---- execution ----------------------------------------------------
 
-    def run(self, language, program, emit=None, emit_frame=None):
+    def run(self, language, program, emit=None, emit_frame=None, run_id=None,
+            on_input=None, keepalive=None):
         """Run *program* and return a result summary.
 
         Each console line is passed to *emit* as it is produced, which is what
         makes the browser output stream.  *emit_frame* receives run-length
-        encoded canvas frames while a turtle program draws.
+        encoded canvas frames while a turtle program draws.  *on_input* is
+        told the prompt whenever the program waits for a line of input (which
+        arrives through :meth:`send_input`), and *keepalive* is called while
+        it waits.  Waiting for input does not count against the time limit.
         """
         if not isinstance(program, str):
             raise BadRequest("'program' must be text")
@@ -255,17 +380,37 @@ class RunnerService:
         if resolved is None:
             raise BadRequest(f"unknown language: {language}")
 
+        run_id = str(run_id or uuid.uuid4().hex)[:MAX_RUN_ID]
+        with self._lock:
+            if run_id in self._runs:
+                raise BadRequest("a run with that id is already active", status=409)
+
         lines = []
-        sink = emit or lines.append
+        raw_sink = emit or lines.append
+        produced = {"lines": 0, "capped": False}
+
+        def sink(text):
+            if produced["capped"]:
+                return
+            produced["lines"] += 1
+            if produced["lines"] > MAX_OUTPUT_LINES:
+                produced["capped"] = True
+                raw_sink(f"Stopped: output limit of {MAX_OUTPUT_LINES} lines reached")
+                if active is not None:
+                    active.interpreter.stop_program()
+                return
+            raw_sink(text)
 
         if not self._slots.acquire(blocking=False):
             raise BadRequest("too many programs are running, try again", status=429)
         started = time.monotonic()
+        paused = {"seconds": 0.0}
         timed_out = {"value": False}
         canvas = RasterCanvas(
             DEFAULT_WIDTH, DEFAULT_HEIGHT, on_change=emit_frame
         )
         final_canvas = None
+        active = None
         try:
             with contextlib.redirect_stdout(io.StringIO()):
                 # The constructor announces itself; that belongs to the IDE,
@@ -275,15 +420,47 @@ class RunnerService:
             interpreter.turtle_console = False
             interpreter.max_iterations = DEFAULT_ITERATIONS
             interpreter.plugins = self.plugins
+            interpreter.input_buffer = []
+
+            active = _ActiveRun(run_id, interpreter)
+            with self._lock:
+                self._runs[run_id] = active
 
             def pump():
-                if time.monotonic() - started > self.timeout:
+                elapsed = time.monotonic() - started - paused["seconds"]
+                if elapsed > self.timeout:
                     if not timed_out["value"]:
                         timed_out["value"] = True
                         sink(f"Stopped: time limit of {self.timeout:g}s reached")
                     interpreter.stop_program()
 
+            def provide_input(prompt=""):
+                waited_from = time.monotonic()
+                last_ping = waited_from
+                active.waiting_for_input = True
+                try:
+                    if on_input is not None:
+                        on_input(str(prompt or ""))
+                    while not interpreter.input_buffer:
+                        if interpreter.stop_requested:
+                            return None
+                        now = time.monotonic()
+                        if now - waited_from > self.input_timeout:
+                            sink(f"Stopped: no input for {self.input_timeout:g}s")
+                            return None
+                        if keepalive is not None and now - last_ping >= KEEPALIVE_INTERVAL:
+                            last_ping = now
+                            keepalive()
+                        time.sleep(0.02)
+                    value = interpreter.input_buffer.pop(0)
+                    sink(value)
+                    return value
+                finally:
+                    active.waiting_for_input = False
+                    paused["seconds"] += time.monotonic() - waited_from
+
             interpreter.pump_callback = pump
+            interpreter.input_provider = provide_input
             interpreter.log_output = lambda text: sink(str(text))
             interpreter.ide_turtle_canvas = canvas
             interpreter.run_program(program, language=resolved)
@@ -296,15 +473,22 @@ class RunnerService:
             sink(f"?ERROR: {exc}")
             errors = 1
         finally:
+            with self._lock:
+                self._runs.pop(run_id, None)
             self._slots.release()
 
+        stopped = bool(active and active.stopped)
+        capped = produced["capped"]
         return {
+            "run": run_id,
             "language": resolved,
             "output": lines,
             "errors": errors,
             "timed_out": timed_out["value"],
+            "stopped": stopped,
+            "output_capped": capped,
             "seconds": round(time.monotonic() - started, 3),
-            "exit": 1 if (errors or timed_out["value"]) else 0,
+            "exit": 1 if (errors or timed_out["value"] or stopped or capped) else 0,
             "canvas": final_canvas,
         }
 
@@ -312,7 +496,7 @@ class RunnerService:
 class _Handler(BaseHTTPRequestHandler):
     """Routes the browser and the JSON API to a :class:`RunnerService`."""
 
-    server_version = "TimeWarpClassic/1.4"
+    server_version = f"TimeWarpClassic/{__version__}"
     protocol_version = "HTTP/1.0"
 
     @property
@@ -369,7 +553,8 @@ class _Handler(BaseHTTPRequestHandler):
 
     def do_POST(self):  # noqa: N802 - BaseHTTPRequestHandler API
         path = urlparse(self.path).path
-        if path not in ("/api/run", "/api/repl", "/api/highlight"):
+        if path not in ("/api/run", "/api/repl", "/api/highlight",
+                        "/api/stop", "/api/input"):
             return self._error(404, f"no route for {path}")
 
         try:
@@ -382,7 +567,7 @@ class _Handler(BaseHTTPRequestHandler):
                     raise BadRequest("'program' must be text")
                 if len(program.encode("utf-8", "replace")) > MAX_PROGRAM_BYTES:
                     raise BadRequest("program is too large", status=413)
-                spec = self.service.plugins.get(language)
+                spec = self.service.plugins.get(language) if language else None
                 html_text = highlight_source(
                     language, program, alias=spec.syntax if spec else None
                 )
@@ -390,15 +575,29 @@ class _Handler(BaseHTTPRequestHandler):
 
             if path == "/api/repl":
                 result = self.service.repl(
-                    request.get("session"), language, request.get("line", "")
+                    request.get("session"), language, request.get("line", ""),
+                    program=request.get("program"),
                 )
                 return self._json(200, result)
 
+            if path == "/api/stop":
+                stopped = self.service.stop(request.get("run"))
+                return self._json(200, {"stopped": stopped})
+
+            if path == "/api/input":
+                waiting = self.service.send_input(
+                    request.get("run"), request.get("text", "")
+                )
+                return self._json(200, {"accepted": True, "waiting": waiting})
+
             program = request.get("program", "")
+            run_id = request.get("run")
+            if run_id is not None and not isinstance(run_id, str):
+                raise BadRequest("'run' must be text")
             if "text/event-stream" in (self.headers.get("Accept") or ""):
-                self._stream_run(language, program)
+                self._stream_run(language, program, run_id)
             else:
-                self._json(200, self.service.run(language, program))
+                self._json(200, self.service.run(language, program, run_id=run_id))
         except BadRequest as exc:
             self._error(exc.status, str(exc))
         except json.JSONDecodeError:
@@ -408,11 +607,20 @@ class _Handler(BaseHTTPRequestHandler):
 
     def _read_request(self):
         """Read and decode the JSON request body."""
-        length = int(self.headers.get("Content-Length") or 0)
-        if length > MAX_PROGRAM_BYTES + 1024:
+        try:
+            length = int(self.headers.get("Content-Length") or 0)
+        except ValueError:
+            raise BadRequest("Content-Length is not a number") from None
+        if length < 0:
+            raise BadRequest("Content-Length is negative")
+        if length > MAX_PROGRAM_BYTES * 2 + 1024:
             raise BadRequest("request is too large", status=413)
         body = self.rfile.read(length) if length else b"{}"
-        request = json.loads(body.decode("utf-8") or "{}")
+        try:
+            text = body.decode("utf-8")
+        except UnicodeDecodeError:
+            raise BadRequest("request body is not UTF-8") from None
+        request = json.loads(text or "{}")
         if not isinstance(request, dict):
             raise BadRequest("expected a JSON object")
         return request
@@ -425,32 +633,50 @@ class _Handler(BaseHTTPRequestHandler):
             raise BadRequest("index.html is missing from the install", status=500)
         self._send(200, index.read_bytes(), "text/html; charset=utf-8")
 
-    def _stream_run(self, language, program):
-        """Run the program, streaming each console line as it appears."""
+    def _stream_run(self, language, program, run_id=None):
+        """Run the program, streaming each console line as it appears.
+
+        A write that fails means the browser went away (tab closed, Stop
+        pressed and the fetch aborted), so the run is stopped instead of
+        carrying on for nobody.
+        """
         self.send_response(200)
         self.send_header("Content-Type", "text/event-stream; charset=utf-8")
         self.send_header("Cache-Control", "no-cache")
+        self.send_header("X-Accel-Buffering", "no")
         self.send_header("Connection", "close")
         self.end_headers()
 
+        run_id = str(run_id or uuid.uuid4().hex)[:MAX_RUN_ID]
+        state = {"closed": False}
+
+        def write(text):
+            if state["closed"]:
+                return
+            try:
+                self.wfile.write(text.encode("utf-8"))
+                self.wfile.flush()
+            except OSError:
+                state["closed"] = True
+                self.service.stop(run_id)
+
+        def event(name, data):
+            write(f"event: {name}\ndata: {json.dumps(data)}\n\n")
+
         def emit(line):
-            frame = json.dumps({"line": line}) + "\n\n"
-            self.wfile.write(f"data: {frame}".encode("utf-8"))
-            self.wfile.flush()
+            write(f"data: {json.dumps({'line': line})}\n\n")
 
-        def emit_frame(canvas_frame):
-            payload = json.dumps(canvas_frame)
-            self.wfile.write(f"event: canvas\ndata: {payload}\n\n".encode("utf-8"))
-            self.wfile.flush()
-
+        write(f"event: start\ndata: {json.dumps({'run': run_id})}\n\n")
         try:
             result = self.service.run(
-                language, program, emit=emit, emit_frame=emit_frame
+                language, program, emit=emit,
+                emit_frame=lambda frame: event("canvas", frame),
+                run_id=run_id,
+                on_input=lambda prompt: event("input", {"prompt": prompt}),
+                keepalive=lambda: write(": waiting for input\n\n"),
             )
         except BadRequest as exc:
-            payload = json.dumps({"error": str(exc), "status": exc.status})
-            self.wfile.write(f"event: error\ndata: {payload}\n\n".encode("utf-8"))
-            self.wfile.flush()
+            event("error", {"error": str(exc), "status": exc.status})
             return
 
         done = {

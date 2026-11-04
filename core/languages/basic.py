@@ -1213,7 +1213,7 @@ class TwBasicExecutor:
             if not self.interpreter.turtle_graphics:
                 self.interpreter.init_turtle_graphics()
             self.interpreter.turtle_graphics["pen_down"] = False
-            self.interpreter.log_output("Pen up - turtle will move without drawing")
+            self.interpreter.turtle_log("Pen up - turtle will move without drawing")
         except Exception as e:
             self.interpreter.debug_output(f"PENUP error: {e}")
         return "continue"
@@ -1224,7 +1224,7 @@ class TwBasicExecutor:
             if not self.interpreter.turtle_graphics:
                 self.interpreter.init_turtle_graphics()
             self.interpreter.turtle_graphics["pen_down"] = True
-            self.interpreter.log_output("Pen down - turtle will draw when moving")
+            self.interpreter.turtle_log("Pen down - turtle will draw when moving")
         except Exception as e:
             self.interpreter.debug_output(f"PENDOWN error: {e}")
         return "continue"

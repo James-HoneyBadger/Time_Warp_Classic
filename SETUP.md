@@ -1,510 +1,257 @@
-# Time Warp Classic - Setup & Launch Guide
+# Setup
 
-## Quick Start
+Installation and environment details for Time Warp Classic. For a tour of what
+it does, see the [README](README.md); for a first program, the
+[quick start](docs/QUICK_START.md).
 
-### Option 1: Python Script (Cross-Platform Recommended)
-The easiest way to set up and launch Time Warp Classic on any operating system:
+## Requirements
 
-```bash
-python3 run.py
-```
+| Need | For | Notes |
+|------|-----|-------|
+| Python 3.9+ | Everything | Package metadata lists 3.9 through 3.14 |
+| Tkinter | Desktop IDE only | Bundled with python.org installers; a separate package on many Linux distros |
+| `pygments` | Syntax highlighting | Desktop and web; plain text without it |
+| `pygame-ce` | Some BASIC graphics statements | Optional at runtime |
+| `Pillow` | Image features in the interpreter | Optional at runtime; a notice is printed when it is missing |
+| `perl` | Perl programs | Must be on `PATH` |
+| `node` or `nodejs` | JavaScript programs | Must be on `PATH` |
 
-This will:
-1. Create a Python virtual environment (if needed) and bootstrap `pip` inside it
-2. Offer to install a missing system package (for example `tkinter`), then
-   install the Python dependencies
-3. Verify the installation
-4. Launch the GUI
+The three Python packages are listed in [`requirements.txt`](requirements.txt)
+and in `pyproject.toml`, so every install route below pulls them in. The web
+IDE and the `--run` command line runner do not need Tkinter.
 
-### Option 2: Bash Script (Linux/macOS)
-```bash
-./run.sh
-```
+Optional extras defined in `pyproject.toml`:
 
-### Option 3: Batch Script (Windows)
-```cmd
-run.bat
-```
+| Extra | Installs | Used by |
+|-------|----------|---------|
+| `metrics` | `psutil` | Real memory figures in **Performance → Show Statistics** |
+| `test` | `pytest`, `pytest-cov`, `pytest-mock`, `pytest-xdist` | The test suite |
+| `dev` | `build`, `twine`, `black`, `flake8` | Packaging and linting |
 
----
+## Installing
 
-## Prerequisites
-
-- **Python 3.9 or higher** (required)
-- **tkinter** (usually included with Python)
-- Internet connection (for initial dependency installation)
-
-### Checking Your Python Version
+### From PyPI
 
 ```bash
-python3 --version
-```
-
-If you have Python 3.8 or lower, you'll need to upgrade. Visit [python.org](https://www.python.org) to download Python 3.9+.
-
----
-
-## Installation Methods
-
-### Method 1: Python Script (Recommended)
-
-The `run.py` script is the most portable and user-friendly option:
-
-```bash
-# Standard startup (creates venv, installs dependencies, launches GUI)
-python3 run.py
-
-# Recreate the virtual environment from scratch
-python3 run.py --clean
-
-# Skip dependency installation (for faster startup on subsequent runs)
-python3 run.py --no-install
-
-# Show help information
-python3 run.py --help
-```
-
-**Advantages:**
-- Works on Windows, macOS, and Linux
-- Automatic Python 3.9+ checking
-- Clear colored output with progress indicators
-- Bootstraps `pip` when a virtual environment was created without it
-- Offers to install the OS `tkinter` package when it is missing (`apt-get`,
-  `dnf`, `yum`, `zypper`, `pacman`, `apk`, or Homebrew) — it always asks
-  first, and prompts for `sudo` credentials only when required
-- Warns early when no graphical display is available
-- Handles both tkinter checks and optional dependencies
-- Self-contained - no external shell required
-
-**What it does:**
-1. Verifies Python 3.9+ is installed
-2. Creates `venv/` directory with isolated Python environment
-3. Bootstraps `pip` inside the venv if it is missing
-4. Offers to install the system `tkinter` package when the interpreter lacks it
-5. Upgrades pip, setuptools, and wheel
-6. Installs all dependencies from `requirements.txt`
-7. Verifies tkinter (required) and optional packages
-8. Launches `Time_Warp.py`
-
-### Method 2: Bash Script (Linux/macOS)
-
-The `run.sh` script is optimized for Unix-like systems:
-
-```bash
-# Standard startup
-./run.sh
-
-# Recreate virtual environment
-./run.sh --clean
-
-# Skip installation
-./run.sh --no-install
-```
-
-**Advantages:**
-- Pure shell script, no Python bootstrapping needed
-- Integrated with Unix development tools
-- Minimal resource usage
-
-### Method 3: Batch Script (Windows)
-
-The `run.bat` script is native Windows batch:
-
-```cmd
-REM Standard startup
-run.bat
-
-REM Recreate virtual environment
-run.bat --clean
-
-REM Skip installation
-run.bat --no-install
-```
-
-**Advantages:**
-- Native Windows batch file
-- No WSL or external tools required
-- Works with Windows Command Prompt and PowerShell
-
-### Method 4: Manual Setup
-
-If you prefer manual control:
-
-```bash
-# Create and activate virtual environment
 python3 -m venv venv
+source venv/bin/activate          # Windows: venv\Scripts\activate
+pip install timewarp-classic      # or "timewarp-classic[metrics]"
+timewarp                          # desktop IDE
+```
 
-# On Linux/macOS:
-source venv/bin/activate
+The `timewarp` command takes the same options as `python3 Time_Warp.py`
+(listed in the [README](README.md#command-line)).
 
-# On Windows:
-venv\Scripts\activate
+### From a clone, with the launcher
 
-# Install dependencies
-pip install --upgrade pip setuptools wheel
+```bash
+git clone https://github.com/James-HoneyBadger/Time_Warp_Classic.git
+cd Time_Warp_Classic
+python3 run.py                    # any OS
+./run.sh                          # Linux/macOS, plain bash
+run.bat                           # Windows (uses "python")
+```
+
+All three accept the same flags:
+
+| Flag | Effect |
+|------|--------|
+| `--clean` | Delete and recreate `venv/` |
+| `--no-install` | Skip dependency installation (faster later starts) |
+| `--help` | Usage (`run.py` only) |
+
+`run.py`, step by step:
+
+1. Checks for Python 3.9 or newer.
+2. Creates `venv/` if needed and bootstraps `pip` inside it if it is missing.
+3. If Tkinter is missing, offers to install it with the system package
+   manager (`apt-get`, `dnf`, `yum`, `zypper`, `pacman`, `apk`, or Homebrew on
+   macOS). It always asks first and uses `sudo` only when needed.
+4. Upgrades `pip`, `setuptools` and `wheel`, then installs `pygame-ce` (skipped
+   if some `pygame` is already importable), `pygments` and `Pillow`, one at a
+   time so one failure does not block the rest. It also installs `pytest`,
+   `pytest-cov`, `black` and `flake8`; failures there are ignored.
+5. Verifies the imports, warns if there is no graphical display, and launches
+   `Time_Warp.py`.
+
+`run.sh` and `run.bat` follow the same steps, but only report a missing
+Tkinter (with the command to install it) instead of offering to install it.
+
+### From a clone, by hand
+
+```bash
+python3 -m venv venv
+source venv/bin/activate          # Windows: venv\Scripts\activate
+pip install --upgrade pip
 pip install -r requirements.txt
-
-# Launch the application
 python3 Time_Warp.py
 ```
 
----
+### For development
+
+```bash
+python3 -m venv venv && source venv/bin/activate
+pip install -e ".[test,dev]"      # or: pip install -r requirements-dev.txt
+```
+
+`requirements-dev.txt` covers the runtime packages plus `pytest`,
+`pytest-cov`, `pytest-mock`, `pytest-xdist`, `black` and `flake8`.
+
+## Tkinter
+
+Check it with:
+
+```bash
+python3 -c "import tkinter; print(tkinter.TkVersion)"
+```
+
+If that fails with `No module named '_tkinter'` or `No module named 'tkinter'`:
+
+| System | Command |
+|--------|---------|
+| Debian/Ubuntu | `sudo apt-get install python3-tk` |
+| Fedora/RHEL | `sudo dnf install python3-tkinter` |
+| Arch | `sudo pacman -S tk` |
+| macOS (Homebrew Python) | `brew install python-tk` |
+| Windows | Re-run the python.org installer and tick "tcl/tk and IDLE" |
+
+A virtual environment uses the Tkinter of the Python it was created from, so
+install the system package first, then recreate the venv
+(`python3 run.py --clean`).
+
+## Running
+
+```bash
+python3 Time_Warp.py                                  # desktop IDE
+python3 Time_Warp.py --web                            # browser IDE, http://127.0.0.1:8000/
+python3 Time_Warp.py --web --host 0.0.0.0 --port 8080 --timeout 30
+python3 Time_Warp.py --run prog.bas --language basic  # headless, prints output
+python3 Time_Warp.py --version
+```
+
+The web server binds to `127.0.0.1` by default. Use `--host 0.0.0.0` only
+when you mean to expose it (for example inside a container); it runs whatever
+code it is sent. `--timeout` is the per-run limit in seconds (default 10).
+The server, its limits and its JSON API are described in
+[docs/dev/WEB.md](docs/dev/WEB.md).
+
+### Headless machines
+
+Tk needs an X11 or Wayland display. Without one, either use the web IDE or
+run the desktop IDE under a virtual framebuffer:
+
+```bash
+xvfb-run -a python3 Time_Warp.py
+```
+
+## Files Time Warp writes
+
+| Path | Contents |
+|------|----------|
+| `~/.timewarp_settings.json` | Theme, font family, font size and other preferences |
+| `~/.timewarp/plugins/` | Language plugin manifests (`*.json` or `<name>/plugin.json`) |
+| `venv/` | Virtual environment created by the launchers |
+
+Extra plugin directories can be added with the `TIMEWARP_PLUGIN_PATH`
+environment variable; see [docs/dev/PLUGINS.md](docs/dev/PLUGINS.md).
+
+## Docker
+
+Two images are built from this repository:
+
+| Image | Dockerfile | Needs a display |
+|-------|------------|-----------------|
+| `ghcr.io/james-honeybadger/time-warp-classic-web` | [`Dockerfile.web`](Dockerfile.web) | No |
+| `ghcr.io/james-honeybadger/time-warp-classic` | [`Dockerfile`](Dockerfile) | Yes (X11) |
+
+```bash
+# Web IDE on http://localhost:8000
+docker run --rm -p 8000:8000 ghcr.io/james-honeybadger/time-warp-classic-web:latest
+
+# Desktop IDE with X11 forwarding
+xhost +local:docker
+docker run --rm -e DISPLAY=$DISPLAY -v /tmp/.X11-unix:/tmp/.X11-unix \
+  ghcr.io/james-honeybadger/time-warp-classic:latest
+
+# Build locally
+docker build -f Dockerfile.web -t time-warp-classic-web .
+```
+
+Published tags are `latest`, `X.Y`, `X.Y.Z` and `vX.Y.Z`, for `linux/amd64`
+and `linux/arm64`. Pin a version instead of `latest` for reproducible setups.
+The web image installs only `pygments`, runs as a non-root user and has a
+health check on `/healthz`. Neither image includes Node.js, so JavaScript
+shows as runtime missing.
+
+## Tests and linting
+
+```bash
+python3 -m pytest                       # whole suite (tests/)
+python3 -m pytest tests/test_web.py     # one file
+python3 -m pytest -n auto               # parallel, needs pytest-xdist
+python3 -m pytest --cov                 # coverage of core/ and gui/, needs pytest-cov
+xvfb-run -a python3 -m pytest           # include GUI tests on a headless machine
+black --check .
+flake8
+```
+
+Tests that need a display skip themselves when neither `DISPLAY` nor
+`WAYLAND_DISPLAY` is set. `python3 scripts/run_tests.py` is the wrapper the
+IDE's **Test → Run Full Test Suite** uses; it runs pytest quietly over
+`tests/`.
 
 ## Troubleshooting
 
-### Python Not Found
-
-**Error:** `python3: command not found` or `'python' is not recognized`
-
-**Solution:** 
-- Ensure Python 3.9+ is installed and in your PATH
-- Try using `python` instead of `python3` on Windows
-- On Windows, add Python to PATH during installation
-
-### tkinter Not Available
-
-**Error:** `No module named '_tkinter'`
-
-**Solution:**
-
-**Ubuntu/Debian:**
-```bash
-sudo apt-get update
-sudo apt-get install python3-tk
-```
-
-**Fedora/RHEL:**
-```bash
-sudo dnf install python3-tkinter
-```
-
-**macOS:**
-```bash
-brew install python-tk
-```
-
-**Windows:**
-Tkinter is included with Python. If missing, reinstall Python and ensure "tcl/tk and IDLE" is selected.
-
-### Virtual Environment Issues
-
-**Error:** `venv activation failed` or permission errors
-
-**Solution:**
-```bash
-# Remove the corrupted venv
-rm -rf venv/
-
-# Or on Windows:
-rmdir /s venv
-
-# Then create a fresh one
-python3 run.py --clean
-```
-
-### Dependency Installation Fails
-
-Some dependencies may fail to install if development headers are missing:
-
-**Ubuntu/Debian:**
-```bash
-sudo apt-get install python3-dev python3-pip
-```
-
-**Fedora/RHEL:**
-```bash
-sudo dnf install python3-devel python3-pip
-```
-
-**macOS:**
-```bash
-xcode-select --install
-```
-
-After installing system dependencies, run:
-```bash
-python3 run.py --clean
-```
-
-### GUI Doesn't Start
-
-**Check the console output** - the launch scripts provide detailed error messages.
-
-Common issues:
-1. **Missing tkinter** - See "tkinter Not Available" above
-2. **Port conflicts** - Ensure no other application is using the GUI port
-3. **Display issues on headless systems** - Set display:
-   ```bash
-   export DISPLAY=:0
-   python3 run.py
-   ```
-
----
-
-## Virtual Environment Management
-
-The scripts automatically create and manage a `venv/` directory in the Time Warp Classic folder.
-
-### Deleting the Virtual Environment
-
-```bash
-# Using the script
-python3 run.py --clean
-
-# Or manually
-rm -rf venv/
-```
-
-### Using the Virtual Environment Outside the Scripts
-
-Activate the virtual environment:
-
-```bash
-# Linux/macOS
-source venv/bin/activate
-
-# Windows
-venv\Scripts\activate
-```
-
-Once activated, run Python code with installed dependencies:
-
-```bash
-python3 Time_Warp.py
-```
-
-Deactivate when done:
-
-```bash
-deactivate
-```
-
----
-
-## Dependencies
-
-Time Warp Classic requires:
-
-**Required:**
-- `tkinter` - GUI framework (usually bundled with Python)
-
-**Recommended:**
-- `pygame-ce>=2.0.0` - Multimedia and graphics (community edition; or `pygame`)
-- `pygments>=2.10.0` - Syntax highlighting
-- `Pillow>=8.0.0` - Image processing
-
-**Development (optional):**
-- `pytest>=7.0` - Unit testing
-- `black>=22.0` - Code formatting
-- `flake8>=4.0` - Code linting
-
----
-
-## Supported Languages
-
-Time Warp Classic includes interpreters for:
-
-1. **PILOT** - Computer-Aided Instruction language
-2. **BASIC** - Beginner's All-Purpose Symbolic Instruction Code
-3. **Logo** - Turtle graphics and education language
-4. **Pascal** - Structured programming language
-5. **Prolog** - Logic programming language
-6. **Forth** - Stack-based language
-7. **Perl** - Text processing language
-8. **Python** - Python subset execution
-9. **JavaScript** - JavaScript ES5 execution
-
----
-
-## Features
-
-### Editor
-- **Multi-language support** - Switch languages with dropdown
-- **Syntax highlighting** - Color-coded tokens (when pygments available)
-- **Line numbers** - Easy code navigation
-- **Find & Replace** - Search and modify code
-- **Auto-indentation** - Intelligent formatting
-
-### Execution
-- **Run code** - Execute in selected language
-- **Input entry** - Provide input to running programs
-- **Output panel** - View program output
-- **Debug mode** - Step through code execution
-
-### Graphics
-- **Turtle graphics canvas** - Visualize Logo programs
-- **Graphics output** - See draw commands rendered
-
-### Themes
-- **9 color schemes** - Light, dark, and high-contrast themes
-- **Font customization** - 7 font sizes for comfortable coding
-
-### Tools
-- **Code examples** - Learn from built-in examples
-- **Performance monitor** - Check execution metrics
-- **Test runner** - Execute unit tests
-- **Settings persistence** - Save preferences
-
----
-
-## File Structure
-
-```
-Time_Warp_Classic/
-├── Time_Warp.py              # Entry point (launches GUI)
-├── run.py                    # Python launcher (cross-platform)
-├── run.sh                    # Bash launcher (Linux/macOS)
-├── run.bat                   # Batch launcher (Windows)
-├── requirements.txt          # Python dependencies
-├── venv/                     # Virtual environment (created by scripts)
-├── gui/                      # GUI package
-│   ├── __init__.py
-│   ├── app.py                # Main TimeWarpApp class
-│   ├── menus.py              # Menu bar construction
-│   ├── dialogs.py            # Find/Replace dialogs
-│   └── themes.py             # Themes, languages, config
-├── core/                     # Core interpreter code
-│   ├── interpreter.py        # Multi-language interpreter
-│   ├── stubs.py              # Placeholder classes for optional modules
-│   └── languages/            # Language executors
-│       ├── base.py           # SubprocessExecutor base class
-│       ├── basic.py
-│       ├── forth.py
-│       ├── javascript_executor.py
-│       ├── logo.py
-│       ├── pascal.py
-│       ├── perl.py
-│       ├── pilot.py
-│       ├── prolog.py
-│       └── python_executor.py
-├── docs/                     # Documentation
-├── examples/                 # Code examples for each language
-└── scripts/                  # Helper scripts
-```
-
----
-
-## Running from IDE/Editor
-
-### VS Code
-1. Create a terminal in VS Code (Ctrl+`)
-2. Run: `python3 run.py`
-
-### PyCharm
-1. Open terminal in PyCharm
-2. Run: `python3 run.py`
-
-### Command Line
-```bash
-cd /path/to/Time_Warp_Classic
-python3 run.py
-```
-
----
-
-## Advanced Usage
-
-### Creating a Desktop Shortcut (Linux)
-
-Create `~/.local/share/applications/Time_Warp.desktop`:
+| Symptom | Fix |
+|---------|-----|
+| `python3: command not found` | Install Python 3.9+; on Windows use `python` or `py -3` |
+| `No module named '_tkinter'` | See [Tkinter](#tkinter) |
+| "No graphical display detected" | Use `--web`, or `xvfb-run -a` |
+| A language shows **(runtime missing)** | Install `perl` or Node.js and make sure it is on `PATH` |
+| A package fails to build during install | Install build headers (`python3-dev` / `python3-devel`, or `xcode-select --install` on macOS), then `python3 run.py --clean` |
+| `venv/` is broken | `python3 run.py --clean`, or delete `venv/` and start again |
+| Port 8000 already in use | `--port 0` picks a free port, or choose another |
+
+More in [docs/TROUBLESHOOTING.md](docs/TROUBLESHOOTING.md) and
+[docs/FAQ.md](docs/FAQ.md).
+
+## Linux desktop entry
+
+`~/.local/share/applications/time-warp-classic.desktop`:
 
 ```ini
 [Desktop Entry]
 Type=Application
 Name=Time Warp Classic
-Comment=Multi-language retro IDE
-Exec=/home/username/Time_Warp_Classic/run.py
-Icon=python
+Comment=Retro multi-language IDE
+Exec=python3 /home/you/Time_Warp_Classic/run.py --no-install
+Path=/home/you/Time_Warp_Classic
 Terminal=false
 Categories=Development;IDE;Education;
 ```
 
-Then:
-```bash
-chmod +x ~/.local/share/applications/Time_Warp.desktop
-```
+Run `python3 run.py` once from a terminal first so `venv/` exists.
 
-### Environment Variables
+## Releasing (maintainers)
 
-Set custom settings via environment variables:
+Releases are tag-driven GitHub Actions workflows:
 
-```bash
-# Set default theme
-export TIME_WARP_THEME=dark
-
-# Set font size (1-7)
-export TIME_WARP_FONT_SIZE=4
-
-# Enable verbose output
-export TIME_WARP_VERBOSE=1
-
-python3 run.py
-```
-
-### Development Mode
-
-For contributors working on Time Warp Classic:
+| Tag | Workflow | Publishes to |
+|-----|----------|--------------|
+| `vX.Y.Z` | `.github/workflows/publish-pypi.yml` | PyPI |
+| `vX.Y.Z-rcN`, `-betaN`, `-alphaN` | `.github/workflows/publish-testpypi.yml` | TestPyPI |
+| `v*` | `.github/workflows/publish-ghcr.yml`, `publish-ghcr-web.yml` | GHCR images |
 
 ```bash
-# Activate the venv
-source venv/bin/activate  # or on Windows: venv\Scripts\activate
-
-# Install in editable mode
-pip install -e .
-
-# Run tests
-pytest
-
-# Run tests with a coverage report (needs the "test" extra: pip install -e .[test])
-pytest --cov
-
-# Check code quality
-black . --check
-flake8 .
-
-# Run the IDE
-python3 Time_Warp.py
+git tag v1.6.1-rc1 && git push origin v1.6.1-rc1   # TestPyPI
+git tag v1.6.1 && git push origin v1.6.1           # PyPI + images
 ```
 
----
-
-## Getting Help
-
-### Built-in Help
-- Use the **Help** menu in the Time Warp Classic GUI
-- Check code **examples/** directory for sample programs
-
-### Online Resources
-- Documentation: See `docs/` directory
-- Issues: Report problems on the project page
-- Examples: Browse `examples/` for language samples
-
----
+The GHCR workflows can also be run by hand with an extra `tag` input to
+rebuild an existing release. One-time setup: Trusted Publishers on PyPI and
+TestPyPI for this repository, and GitHub environments named `pypi` and
+`testpypi`.
 
 ## License
 
-Time Warp Classic - Multi-language IDE  
-Copyright © 2025–2026 Honey Badger Universe
-
-See `License.md` for full license information.
-
----
-
-## Quick Reference
-
-| Task | Command |
-|------|---------|
-| Start normally | `python3 run.py` |
-| Recreate venv | `python3 run.py --clean` |
-| Skip install | `python3 run.py --no-install` |
-| Manual venv activate (Linux/macOS) | `source venv/bin/activate` |
-| Manual venv activate (Windows) | `venv\Scripts\activate` |
-| Manual venv deactivate | `deactivate` |
-| Run tests | `python3 -m pytest tests/` |
-| Run tests with coverage | `python3 -m pytest --cov tests/` |
-| Format code | `black .` |
-| Check code | `flake8 .` |
-
----
-
-**Enjoy coding in Time Warp Classic!** 🚀
+MIT. See [LICENSE](LICENSE).

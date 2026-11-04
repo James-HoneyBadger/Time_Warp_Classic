@@ -164,6 +164,21 @@ def test_cli_runs_a_plain_source_file(tmp_path):
     assert "FROM THE RUNNER" in result.stdout
 
 
+def test_cli_passes_stdin_to_subprocess_languages(tmp_path):
+    """A Python script run with --run reads the terminal's stdin."""
+    source = tmp_path / "ask.py"
+    source.write_text('name = input()\nprint("hi", name)\n', encoding="utf-8")
+
+    result = subprocess.run(
+        [sys.executable, str(ENTRY_POINT), "--run", str(source), "-l", "python"],
+        input="ada\n", capture_output=True, text=True, timeout=60,
+        cwd=str(REPO_ROOT),
+    )
+
+    assert result.returncode == 0
+    assert "hi ada" in result.stdout
+
+
 def test_cli_requires_a_language_for_plain_files(tmp_path):
     source = tmp_path / "hello.bas"
     source.write_text(BASIC_PROGRAM, encoding="utf-8")

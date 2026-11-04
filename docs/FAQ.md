@@ -1,472 +1,230 @@
-# Frequently Asked Questions
+# FAQ
 
-Common questions about Time Warp Classic.
+Short answers. Follow the links for the long ones.
 
-## General Questions
+## General
 
 ### What is Time Warp Classic?
 
-Time Warp Classic is a multi-language IDE that lets you write and run code in 9 different programming languages:
-- BASIC, Python, JavaScript, Pascal, Prolog, Forth, Perl, Logo, and PILOT
-
-It's designed for learning programming, teaching, and exploring different language paradigms.
+An IDE for nine languages: PILOT, BASIC, Logo, Pascal, Prolog and Forth run on
+interpreters written in Python inside Time Warp; Python, JavaScript and Perl
+run in their real runtimes as child processes. There is a Tk desktop app, a
+browser IDE (`--web`), and a headless runner (`--run`).
 
 ### Who is it for?
 
-- **Students:** Learn programming fundamentals
-- **Teachers:** Teach multiple languages in one environment
-- **Hobbyists:** Explore retro and modern languages
-- **Developers:** Understand different language approaches
+People who want to type `10 PRINT "HELLO"` or drive a Logo turtle without
+hunting down an emulator, and who'd still like pip, venv, pytest and a browser
+in the loop. Teachers and students use it too.
 
-### Is it free?
+### What does it cost?
 
-Yes! Time Warp Classic is open-source and completely free to use.
+Nothing. MIT licence.
 
-### What platforms does it support?
+### Which platforms?
 
-- **Windows** (Python 3.9+)
-- **macOS** (Python 3.9+)
-- **Linux** (Python 3.9+)
+Anything with Python 3.9+. The desktop IDE needs Tk; the browser IDE and
+`--run` don't.
 
-### Can I use it offline?
+### Does it need the internet?
 
-Yes, Time Warp Classic runs completely offline. No internet connection needed.
+Only to install dependencies. The desktop app, the web server and `--run` all
+run locally.
 
----
+## Installing
 
-## Installation & Setup
+### What's the quickest install?
 
-### How do I install Time Warp Classic?
+`pip install timewarp-classic`, then `timewarp`. From a checkout,
+`python3 run.py` builds a `venv/` and launches. See
+[QUICK_START.md](QUICK_START.md).
 
-1. Ensure Python 3.9+ is installed
-2. Install tkinter if needed
-3. Download or clone the repository
-4. Run: `python Time_Warp.py`
+### What does it depend on?
 
-See [QUICK_START.md](QUICK_START.md) for detailed instructions.
+`pygame-ce`, `Pillow` and `pygments` (from `requirements.txt`), plus Tk for
+the desktop app. JavaScript programs need Node.js (`node` or `nodejs` on
+`PATH`), Perl programs need `perl`. Python programs use the interpreter that
+runs Time Warp.
 
-### Do I need to install anything else?
+### How do I run the tests?
 
-You need:
-- Python 3.9 or higher
-- tkinter (usually included with Python)
-- Standard library (included)
+```bash
+pip install -r requirements-dev.txt
+python3 -m pytest
+xvfb-run -a python3 -m pytest    # include GUI tests on a headless machine
+```
 
-Optional for some languages:
-- Node.js for JavaScript (some features)
+GUI tests skip themselves when there is no display.
 
-### How much disk space does it need?
+## Using the IDEs
 
-About 50 MB for the application and examples.
+### Which language does the desktop IDE start in?
 
-### Can I run it from USB?
+PILOT. Change it with the selector above the editor. Opening a file or loading
+an example switches it to match the file's extension.
 
-Yes, as long as Python is installed on the target computer.
+### How do I run and stop a program?
 
----
+Desktop: **Run** or F5; **Stop** or Ctrl+.. Browser: Ctrl+Enter and Ctrl+..
+A stopped built-in program reports `BREAK IN n`.
 
-## Using the IDE
+### How do I answer `INPUT`?
 
-### How do I write code?
+Type into the console bar under the output and press Enter. That works for
+BASIC `INPUT`, PILOT `A:`, Pascal `readln`, and `input()`/stdin in Python,
+JavaScript and Perl, in both IDEs.
 
-1. Click in the editor area
-2. Type your code
-3. Select language from the dropdown
-4. Click Run (or press F5)
+### What does the console bar do when nothing is running?
 
-### How do I select a language?
+With BASIC selected it is direct mode: `PRINT 2+2` runs at once, `10 PRINT "HI"`
+adds line 10 to the editor, and `LIST`, `RUN`, `RENUMBER`, `NEW`, `TRON`,
+`TROFF` and `HELP` work. For the other built-in languages it is a REPL that
+keeps variables between lines (**Program → Reset Console REPL** clears them).
+Python, JavaScript and Perl lines each run in a fresh process.
 
-- Use the language dropdown above the editor
+### Where's the list of keyboard shortcuts?
 
-### What's the keyboard shortcut to run code?
+[QUICK_START.md](QUICK_START.md#keys) for the desktop,
+[dev/WEB.md](dev/WEB.md#using-the-page) for the browser.
 
-See [QUICK_START.md](QUICK_START.md) for all shortcuts.
+### How do I find the line an error is on?
 
-### Can I undo my changes?
+Errors look like `?ERROR IN 120: ...`, often followed by a `?HINT:` line. In
+the desktop IDE, click the error line and the editor jumps to line 120.
+Python, JavaScript and Perl errors are mapped to the script's own line number.
 
-Yes, use Ctrl+Z to undo and Ctrl+Y to redo.
+### How do I debug?
 
-### How do I clear the output?
+Type `TRON` in the BASIC console bar to trace each line as it runs, `TROFF` to
+stop. In the desktop IDE, **Debug → Enable Debug Mode** plus F9 sets
+breakpoints, and **Debug → Show Error History** lists recent errors. The
+browser IDE has no breakpoints.
 
-Click the "Clear Output" button or use the menu.
+### Is there a time limit?
 
-### Can I save my code?
+| Where | Built-in languages | Python / JavaScript / Perl |
+|-------|-------------------|----------------------------|
+| Desktop IDE | None. Press Stop. | 30 s, then `?ERROR: Python script timed out after 30s` |
+| `--run` | None. Press Ctrl+C. | 30 s |
+| Browser IDE | `--timeout` (default 10 s), not counting time waiting for input | `--timeout` or 30 s, whichever is shorter; waiting for input counts |
 
-Yes. **File > Save** (Ctrl+S) writes to the file you opened; if the program has
-never been saved, it asks where to put it. **File > Save As...**
-(Ctrl+Shift+S) always asks, and proposes the extension that matches the
-selected language (`.bas` for BASIC, `.logo` for Logo, and so on).
+### Why can't I see "pen up" messages in the browser?
 
-The title bar and status bar show a `*` while there are unsaved changes, and
-New/Open ask before throwing them away. Closing the window asks first too.
+The desktop console echoes turtle actions such as *Pen up*. The browser IDE
+and `--run` hide them and show only program output and errors.
 
-### What does the status bar show?
+## Languages
 
-The selected language, the file name (with `*` when modified), the caret
-position (`Ln 12, Col 5`) and whether a program is `Ready` or `Running`.
+### Which language first?
 
-### What file formats are supported?
-
-Canonical extensions (one per language):
-- `.pilot` - PILOT
-- `.bas` - BASIC
-- `.logo` - Logo
-- `.pas` - Pascal
-- `.pro` - Prolog
-- `.fth` - Forth
-- `.pl` - Perl
-- `.py` - Python
-- `.js` - JavaScript
-
-Or save as `.txt` (universal text)
-
----
-
-## Programming & Execution
-
-### Why won't my code run?
-
-Check:
-1. Syntax errors in output panel
-2. Correct language selected
-3. Missing keywords (END, ENDIF, etc.)
-4. Check examples for syntax
-
-### How do I debug my code?
-
-1. Add PRINT statements to trace execution
-2. Type `TRON` in the BASIC console to trace every line that runs, `TROFF`
-   to stop
-3. Click an error message such as `?ERROR IN 120: ...` (or `BREAK IN 120`) to
-   jump straight to that line in the editor
-4. Run simpler versions of your program
-5. Compare with example programs
-
-### Can I use multiple languages in one program?
-
-No, each program must be in one language.
-
-### How big can programs be?
-
-You can write very large programs, but performance depends on:
-- Program complexity
-- Data volume
-- Computer resources
-- Language efficiency
-
-### Can I try BASIC statements without writing a whole program?
-
-Yes — select **BASIC** and type into the **Console** bar. Statements run
-immediately (`PRINT 2+2`), numbered lines are stored in the editor
-(`10 PRINT "HI"`), and `LIST` / `RUN` / `RENUMBER` / `NEW` / `HELP` work as
-they did on a home computer.
-
-### Can Python, JavaScript or Perl programs ask for input?
-
-Yes. When such a program calls `input()` (or reads stdin), type the answer in the
-**Console** bar and press Enter — the line is passed to the running script.
-Output is streamed line by line as it is printed. (A prompt written without a
-newline, such as `input("Name: ")`, is shown together with your answer rather
-than on its own line.)
-
-If the script fails, the console reports `?ERROR IN <line>: <message>` using the
-line number from the script itself; click that line to jump to it in the editor.
-
-### Is there a time limit for execution?
-
-**For built-in languages** (BASIC, Logo, PILOT, Pascal, Prolog, Forth): No timeout — programs run until completion or manual stop. Press the red **Stop** button (or Ctrl+.) to end a run, including endless loops.
-
-**For subprocess languages** (Python, JavaScript, Perl): Yes — a **30-second timeout** is enforced. If your program takes longer than 30 seconds, it will be terminated automatically.
-
-### What happens if I create an infinite loop?
-
-**Built-in languages:** The program runs until you press **Stop** (or Ctrl+.) in the GUI — there is no artificial iteration limit. The console then reports `BREAK IN <line>`.
-**Subprocess languages:** Press **Stop** to kill the process, or let the 30-second timeout end it automatically.
-
----
-
-## Language-Specific Questions
-
-### Which language should I learn first?
-
-**For beginners:** BASIC or Logo (visual feedback)
-**For modern syntax:** Python
-**For understanding paradigms:** Prolog (logic)
-
-See [LANGUAGE_TUTORIALS.md](user/LANGUAGE_TUTORIALS.md) for learning guides.
+BASIC for the classic experience, Logo if you want pictures, PILOT for
+question-and-answer programs. [user/LANGUAGE_TUTORIALS.md](user/LANGUAGE_TUTORIALS.md)
+walks through all nine.
 
 ### Can I run JavaScript without Node.js?
 
-Some features work with built-in executor. Advanced features may require Node.js.
+No. Without `node`, JavaScript is listed as `JavaScript (runtime missing)` and
+a run prints `?JAVASCRIPT NOT FOUND - install it to run these scripts (install
+Node.js from nodejs.org)`. Perl works the same way.
 
-### How does Prolog differ from other languages?
+### Which languages can draw?
 
-Prolog is a **logic language** where you:
-1. Define facts
-2. Define rules
-3. Query the system
-4. Backtracking finds solutions
+Logo (turtle), and BASIC (turtle commands such as `FORWARD`/`RIGHT` plus
+`PSET`, `LINE`, `BOX`, `CIRCLE`). The browser IDE also draws PILOT `G:`
+graphics; the desktop IDE shows its canvas only for Logo and BASIC.
 
-### What's the difference between Forth and other languages?
+### Can one program mix languages?
 
-Forth is **stack-based**:
-- Operations use a stack
-- Reverse Polish notation (postfix)
-- Very compact and efficient
+No. One program, one language.
 
-### Can I use graphics in all languages?
+### Is this a faithful copy of a particular BASIC/Logo/Forth?
 
-**Logo** has full turtle graphics support with shapes, colors, and procedures.
-**BASIC** has turtle graphics (FORWARD, RIGHT, etc.) and direct graphics (PSET, LINE, BOX, CIRCLE).
-**PILOT** has turtle graphics via the `G:` command prefix (G:LINE, G:CIRCLE, G:RECT).
-Other languages focus on text output.
+No. Each interpreter covers the common core of the language plus some
+extras. The [language references](languages/) list what's actually
+implemented.
 
-### Where can I find example programs?
+## Files
 
-Each language has example programs in the `examples/` directory:
-- Two example programs per language demonstrating real-world use
-- Additional examples (hello world, specific features)
+### Which extensions does it use?
 
----
+| Language | Saves as | Also opens |
+|----------|----------|------------|
+| PILOT | `.pilot` | `.pil` |
+| BASIC | `.bas` | |
+| Logo | `.logo` | `.lgo` |
+| Pascal | `.pas` | `.pp` |
+| Prolog | `.pro` | `.prolog` |
+| Forth | `.fth` | `.4th`, `.fs` |
+| Perl | `.pl` | `.pm` |
+| Python | `.py` | |
+| JavaScript | `.js` | |
 
-## Files & Projects
+**Save As** proposes the extension for the selected language.
 
-### Where are my files saved?
+### My Prolog `.pl` file opened as Perl.
 
-In the directory you specify. Usually current directory or Documents.
+`.pl` belongs to Perl. A `.pl` file is treated as Prolog only if it has `:-` or
+`?-` and looks more like Prolog than Perl (statements ending in `.`, few `$`/`@`
+sigils). Save Prolog as `.pro`, or pick Prolog in the selector.
 
-### Can I open files from other editors?
+### How do I know a file has unsaved changes?
 
-Yes, Time Warp can open any text file with appropriate code.
+A `*` after the name in the title bar and status bar. New, Open, Load Example
+and closing the window ask before discarding changes.
 
-### Can I share my programs?
+### Where do the examples live?
 
-Yes! Save as `.txt` or language extension and share with others.
+`examples/<language>/` in a checkout, inside the package when pip-installed.
+Use **Program → Load Example** (desktop) or the examples drop-down (browser).
+See [examples/README.md](../examples/README.md).
 
-### What's the examples directory for?
+### Can I share a program with someone who doesn't have Time Warp?
 
-`examples/` contains comprehensive demo programs for each language showing:
-- All major features
-- Working examples
-- Good practices
+**File → Export Runner...** writes a `.pyz` that runs with plain Python 3.9+.
+See [dev/EXPORTING.md](dev/EXPORTING.md).
 
-**See them:** [examples/README.md](../examples/README.md)
+## Customising
 
----
+### Can I change the theme and font?
 
-## Errors & Troubleshooting
+**Preferences → Color Theme** (nine themes), **Font Family**, **Font Size**
+(8 to 22 pt) and **Auto-complete Words**. Saved to `~/.timewarp_settings.json`.
+Colours and shortcuts aren't editable beyond that.
 
-### I see "Syntax Error" but my code looks correct
+### Can I add a language?
 
-Check:
-1. Matching parentheses/brackets
-2. Correct keywords (ENDIF not ENDFI)
-3. Proper indentation
-4. Compare with examples
+Yes, if it has a command-line runtime. **Preferences → Plugins → Create
+Example Plugin** writes a JSON manifest to `~/.timewarp/plugins/`; point it at
+the executable and use **Reload Plugins**. See [dev/PLUGINS.md](dev/PLUGINS.md).
+For how the built-in interpreters are put together, see
+[dev/TECHNICAL_REFERENCE.md](dev/TECHNICAL_REFERENCE.md).
 
-For more help: [TROUBLESHOOTING.md](TROUBLESHOOTING.md)
+## The browser IDE
 
-### What does "Unknown language" mean?
+### Can other machines use my web IDE?
 
-The language detector couldn't identify the language. Try:
-1. Selecting language manually
-2. Using more distinctive keywords
-3. Disabling auto-detect
+Only if you bind it with `--host 0.0.0.0`, and think first: the server has no
+authentication, and Python, JavaScript and Perl programs run as real processes
+with your permissions. Read [dev/WEB.md](dev/WEB.md#security).
 
-### Can I modify the application?
+### Is my work saved?
 
-Yes, it's open-source! Check [TECHNICAL_REFERENCE.md](dev/TECHNICAL_REFERENCE.md) for architecture details.
+The editor text and language are kept in the browser's `localStorage` and
+restored on reload. Use **Save** (Ctrl+S) to download a real file.
 
-### Where do I report bugs?
+### What are the limits?
 
-File an issue on the GitHub repository with:
-- What you were trying to do
-- What happened
-- What you expected
-- Your Python version
+A run stops at the `--timeout`, after 20,000 lines of output, or after
+5 minutes waiting for input. At most four runs at a time; a fifth gets
+`too many programs are running, try again` (HTTP 429). Programs are capped at
+256 KB.
 
----
+## Help
 
-## Performance & Optimization
+### Something's broken.
 
-### Why is my program slow?
-
-Possible causes:
-- Large loops (reduce iterations)
-- Complex calculations
-- Graphics rendering (Logo)
-- System resources
-
-Solutions:
-- Optimize algorithm
-- Reduce output
-- Upgrade computer
-
-### How much output is too much?
-
-Generally works well up to thousands of lines. Very large output may slow display.
-
-### Can I run programs in the background?
-
-Not currently, but you can:
-1. Split into smaller programs
-2. Run multiple instances
-3. Save output to file for later review
-
----
-
-## Customization & Preferences
-
-### Can I change the font?
-
-Yes, in Preferences:
-- Font family
-- Font size
-- Font style
-
-### Can I change the color scheme?
-
-Yes, use Preferences > Theme to:
-- Select built-in themes
-- Customize colors
-- Save custom themes
-
-### Can I add keyboard shortcuts?
-
-Check Preferences for shortcuts configuration.
-
-### Can I change the default language?
-
-The default is BASIC, but auto-detect can make Python default if you prefer.
-
----
-
-## Features & Capabilities
-
-### Can I import external libraries?
-
-Python supports standard library imports. Other languages limited by sandbox.
-
-### Can I use the internet in my programs?
-
-Some languages (Python) can make HTTP requests if libraries available.
-
-### Can I create graphical user interfaces?
-
-Logo has turtle graphics. HTML/CSS rendering not available.
-
-### Can I create games?
-
-Yes! Python or JavaScript are good choices. Logo for graphics.
-
----
-
-## Getting Help & Learning
-
-### Where should I start?
-
-1. Read [QUICK_START.md](QUICK_START.md)
-2. Run example programs
-3. Try [LANGUAGE_TUTORIALS.md](user/LANGUAGE_TUTORIALS.md)
-4. Read [README.md](README.md)
-
-### Where are the complete language references?
-
-In `docs/languages/` directory:
-- [BASIC_REFERENCE.md](languages/BASIC_REFERENCE.md)
-- [PYTHON_REFERENCE.md](languages/PYTHON_REFERENCE.md)
-- And 7 more...
-
-### Can I learn multiple languages?
-
-Yes, that's one of Time Warp's strengths! The application makes it easy to switch between languages.
-
-### Are there exercises or challenges?
-
-Yes! Examples directory has programs to study and modify.
-
-### Is there a community?
-
-Check GitHub repository for discussions and community links.
-
----
-
-## Advanced Topics
-
-### How do I extend Time Warp?
-
-See [TECHNICAL_REFERENCE.md](dev/TECHNICAL_REFERENCE.md) for:
-- Architecture overview
-- Adding new languages
-- Adding new features
-- Plugin development
-
-### Can I create custom languages?
-
-Yes, see [TECHNICAL_REFERENCE.md](dev/TECHNICAL_REFERENCE.md) for how to implement a language.
-
-### How does the language detection work?
-
-The interpreter:
-1. Scans for language-specific keywords
-2. Analyzes syntax patterns
-3. Checks file extensions
-4. Returns most likely language
-
-### Can I use Time Warp in a classroom?
-
-Yes! It's designed for education. Multiple students can:
-- Use same installation
-- Create own programs
-- Learn different languages
-- Compare implementations
-
----
-
-## Statistics & Facts
-
-### How many languages are supported?
-
-**9 languages:**
-1. BASIC
-2. Python
-3. JavaScript
-4. Pascal
-5. Prolog
-6. Forth
-7. Perl
-8. Logo
-9. PILOT
-
-### How many lines of code in Time Warp?
-
-Several thousand lines of Python implementing the interpreter and IDE.
-
-### When was it created?
-
-Time Warp Classic is a modern retro-computing project honoring classic languages.
-
----
-
-## Before You Go
-
-### Quick Tips
-
-1. **Use examples:** They show best practices
-2. **Read errors carefully:** They're usually helpful
-3. **Try simple first:** Build up complexity gradually
-4. **Experiment:** Try variations on examples
-5. **Have fun:** Programming is creative!
-
-### Useful Resources
-
-- [INDEX.md](INDEX.md) - Documentation index
-- [examples/README.md](../examples/README.md) - Program examples
-- [QUICK_START.md](QUICK_START.md) - Get started in 5 minutes
-- [README.md](README.md) - Complete documentation index
-
----
-
-**Have a question not answered here? Check the other documentation files or create an issue on GitHub.**
-
-**Happy Programming! 🚀**
+[TROUBLESHOOTING.md](TROUBLESHOOTING.md) first. If that doesn't cover it, open
+an issue at
+<https://github.com/James-HoneyBadger/Time_Warp_Classic/issues> with what you
+ran, what you saw (paste the exact error), what you expected, your OS and
+`python3 --version`, and `python3 Time_Warp.py --version`.

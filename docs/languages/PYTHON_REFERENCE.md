@@ -1,729 +1,256 @@
-# Python Language Reference
+# Python in Time Warp Classic
 
-Complete reference for Python 3 syntax and features in Time Warp Classic.
+Time Warp does not reimplement Python. It saves your program to a temporary
+`.py` file and runs it with a real Python 3 interpreter in a separate
+process. Anything that works in Python will work here, within the limits
+below.
 
-> **Note:** Python runs via subprocess with a 30-second timeout. Full Python 3 standard library is available.
+This page covers what is different inside Time Warp: which interpreter
+runs, how output and input travel, time limits, and error reporting. For
+the language itself, the [official Python documentation](#further-reading)
+is the reference.
 
-## Quick Reference
+## At a glance
 
-| Feature | Syntax | Example |
-|---------|--------|---------|
-| Variables | `var = value` | `x = 10` |
-| Print | `print(expr)` | `print("Hello")` |
-| Input | `input(prompt)` | `name = input("Name: ")` |
-| If/Elif/Else | `if cond: ... elif ... else:` | `if x > 5: print("Big")` |
-| For Loop | `for var in iterable:` | `for i in range(10):` |
-| While Loop | `while cond:` | `while x < 100:` |
-| Function | `def name(args):` | `def add(a, b): return a + b` |
-| List | `[value, value, ...]` | `[1, 2, 3]` |
-| Dict | `{key: value, ...}` | `{"name": "Alice"}` |
+| Topic | Behaviour |
+|-------|-----------|
+| Runtime | The Python that runs Time Warp itself (`sys.executable`); `python3`, then `python`, as fallbacks |
+| Output | stdout and stderr merged, shown line by line as the program prints |
+| Input | The console bar feeds the program's stdin, one line per Enter |
+| Time limit | 30 s in the desktop IDE and `timewarp --run`; 10 s by default in the web IDE |
+| Stop | Ctrl+. (desktop) or the Stop button (web); the console shows `BREAK` |
+| Errors | `?ERROR IN n: ...` naming the editor line, often followed by a `?HINT:` line |
+| Turtle graphics | Not available |
+| Console REPL | Each line runs in a fresh process; nothing carries over |
 
-## Variables & Data Types
+## Which Python runs
 
-### Variable Assignment
+Time Warp runs your program with the same interpreter that started the IDE
+or the web server (Time Warp needs Python 3.9 or later). To see which one,
+run `import sys; print(sys.version)` from the console bar. Two
+consequences:
 
-```python
-x = 10                    # Integer
-name = "Alice"            # String
-height = 5.7              # Float
-is_active = True          # Boolean
-items = [1, 2, 3]         # List
+- Packages installed in that environment (for example, the virtualenv you
+  installed Time Warp into) are importable. Packages installed elsewhere are
+  not.
+- The web container image is built on Python 3.12, so programs there run
+  on 3.12.
+
+If that interpreter somehow cannot be started, Time Warp tries `python3`
+and then `python` on `PATH`. When none work, a run prints:
+
+```text
+?PYTHON NOT FOUND - install it to run these scripts
 ```
 
-### Data Types
+In practice this does not happen: if Time Warp is running, so is a
+Python.
+
+## How a run works
+
+1. The editor text is written to a temporary file such as
+   `/tmp/tmpk3x9q1ab.py`. That name appears in tracebacks; the line numbers
+   match the editor.
+2. Time Warp starts `python -u <file>`. The `-u` flag and the environment
+   variables `PYTHONUNBUFFERED=1` and `PYTHONIOENCODING=utf-8` (set only if
+   not already set) keep output unbuffered and UTF-8. On Linux and macOS
+   the command is also wrapped in `stdbuf -oL -eL` when `stdbuf` exists.
+3. The working directory is the directory Time Warp was started from, not
+   the folder your file is saved in. Relative paths in `open()` resolve
+   from there.
+4. `sys.path[0]` is the temporary directory, so modules sitting next to
+   your saved file cannot be imported by name. Use absolute paths, or add
+   the folder to `sys.path` yourself.
+5. When the program ends, the temporary file is deleted.
+
+Your program runs in its own process. It cannot reach the IDE's variables,
+canvas or editor, and a crash in your program cannot take the IDE down.
+
+## Output
+
+- Output appears line by line while the program runs, so progress
+  messages show up as they are printed.
+- A line is shown when its newline arrives. `print("Working", end="")`
+  stays invisible until a later newline or the end of the program.
+- stderr is merged into the same stream, so warnings and tracebacks
+  appear in order with normal output.
+- The web IDE stops a run after 20,000 lines of output
+  (`Stopped: output limit of 20000 lines reached`).
+
+## Input
+
+While a program is running, the console bar sends what you type to the
+program's stdin. Each Enter sends one line, which is also echoed in the
+console. `input()` reads it as usual.
 
 ```python
-type(10)                  # <class 'int'>
-type("hello")             # <class 'str'>
-type(3.14)                # <class 'float'>
-type(True)                # <class 'bool'>
-type([1, 2])              # <class 'list'>
-type({"a": 1})            # <class 'dict'>
+print("Name?")
+name = input()
+print("Age?")
+age = int(input())
+print(f"Hello, {name}. Next year you will be {age + 1}.")
 ```
 
-### Type Conversion
+Typing `Ada` and then `41` gives:
+
+```text
+Name?
+Ada
+Age?
+41
+Hello, Ada. Next year you will be 42.
+```
+
+Things to know:
+
+- **Put prompts on their own line.** `input("Name? ")` writes the prompt
+  without a newline, so it does not appear until the next newline and then
+  shows up glued to later output. `print("Name?")` followed by `input()`
+  avoids this.
+- **Typing ahead works.** Lines typed before the program asks for them
+  wait in the pipe.
+- **There is no end-of-file.** stdin stays open for the whole run, so
+  `sys.stdin.read()` or `for line in sys.stdin:` waits until the time limit
+  ends the program. Read a known number of lines with `input()`, or stop
+  at a sentinel such as an empty line.
+- **Waiting counts toward the time limit.** For Python, JavaScript and
+  Perl the clock keeps running while the program waits for you. (The
+  built-in languages pause it at `INPUT`.) In the web IDE the default
+  limit is 10 seconds, so answer promptly or raise it with
+  `timewarp --web --timeout N`.
+- **The web IDE cannot tell that the program is waiting.** The console bar
+  reads "Input for the running program" rather than a prompt. Type anyway.
+
+## Time limits and stopping
+
+| Where | Limit | What you see |
+|-------|-------|--------------|
+| Desktop IDE, `timewarp --run` | 30 s | `?ERROR: Python script timed out after 30s` and a `?HINT:` |
+| Web IDE | 10 s (set with `--timeout`) | `Stopped: time limit of 10s reached`, then `BREAK` |
+
+The 30-second limit belongs to the Python runner itself, so it also caps
+web runs: setting `--timeout 60` still ends a Python program after 30
+seconds.
+
+To stop a program early, press Ctrl+. in the desktop IDE or the Stop
+button in the browser. The process is killed and the console prints
+`BREAK`.
+
+## Errors and hints
+
+When Python exits with an error, Time Warp shows the traceback, then a
+summary line naming the editor line, and a hint when it recognises the
+error:
 
 ```python
-int("42")                 # 42
-str(42)                   # "42"
-float("3.14")             # 3.14
-bool(1)                   # True
-list("abc")               # ['a', 'b', 'c']
+print("hi")
+x = 1
+y = x / 0
 ```
 
-## Operators
+```text
+hi
+Traceback (most recent call last):
+  File "/tmp/tmpdkihht94.py", line 3, in <module>
+    y = x / 0
+        ~~^~~
+ZeroDivisionError: division by zero
+?ERROR IN 3: ZeroDivisionError: division by zero
+?HINT: a value in the expression is 0 - check the divisor before dividing. See docs/languages/PYTHON_REFERENCE.md.
+```
 
-### Arithmetic
+- The line number comes from the last traceback frame inside your file.
+  In the desktop IDE, click the `?ERROR IN` line to jump to it.
+- Hints exist for division by zero, undefined names (`NameError`),
+  indentation errors, missing modules, syntax errors, type mix-ups
+  (`can only concatenate`, `unsupported operand`) and time-outs. Other
+  errors get no hint.
+- A non-zero exit without a traceback, such as `sys.exit(3)`, is reported
+  as `?ERROR: Python script exited with code 3`.
+
+## The console REPL
+
+When no program is running, a line typed in the console bar is run as a
+complete, one-line program in a brand-new Python process:
+
+```text
+>print(2 ** 10)
+1024
+>x = 5
+>print(x)
+...
+NameError: name 'x' is not defined
+```
+
+Nothing persists between lines: no variables, no imports. Each line also
+has a 2-second limit, after which it is stopped without a message, and
+`input()` cannot be answered from the REPL. For anything longer than a
+one-liner, use the editor and Run.
+
+## Turtle graphics
+
+Not available. The Time Warp canvas is driven only by the built-in
+languages (Logo, BASIC, PILOT and friends). A Python program cannot draw
+on it.
+
+Python's own `turtle` module is a separate thing: in the desktop IDE it
+tries to open its own Tk window from the child process, and in the web
+IDE there is no display for it. Use Logo for turtle work.
+
+## Cheat sheet
+
+Enough Python to read the examples. The [tutorial](#further-reading)
+covers the rest.
+
+| Task | Python |
+|------|--------|
+| Print | `print("x =", x)`, `print(f"{x:.2f}")` |
+| Read a line | `s = input()`; number: `n = int(input())` |
+| Variables | `x = 10`, `name = "Ada"`, `ok = True` |
+| Arithmetic | `+ - * /` (true division), `//` floor, `%` mod, `**` power |
+| Compare / logic | `== != < <= > >=`, `and or not` |
+| If | `if x > 0:` / `elif x == 0:` / `else:` (indent the body) |
+| Counted loop | `for i in range(1, 11):` |
+| While | `while n > 0:` |
+| Function | `def area(w, h): return w * h` |
+| List | `xs = [1, 2, 3]`, `xs.append(4)`, `xs[0]`, `xs[-1]`, `len(xs)` |
+| Dict | `d = {"a": 1}`, `d["b"] = 2`, `d.get("c", 0)` |
+| Loop with index | `for i, x in enumerate(xs):` |
+| Comprehension | `[x * x for x in xs if x % 2]` |
+| Strings | `s.upper()`, `s.split()`, `", ".join(parts)`, `s[1:4]` |
+| Errors | `try:` / `except ValueError as e:` / `finally:` |
+| Modules | `import math`, `from random import randint` |
+| Comment | `# like this` |
+
+A complete program:
 
 ```python
-+       Addition         5 + 3 = 8
--       Subtraction      5 - 3 = 2
-*       Multiplication   5 * 3 = 15
-/       Division         6 / 2 = 3.0
-//      Floor division   7 // 2 = 3
-%       Modulo           7 % 3 = 1
-**      Power            2 ** 3 = 8
+def is_prime(n):
+    if n < 2:
+        return False
+    return all(n % d for d in range(2, int(n ** 0.5) + 1))
+
+primes = [n for n in range(50) if is_prime(n)]
+print(len(primes), "primes below 50:")
+print(primes)
 ```
 
-### Comparison
-
-```python
-==      Equal            5 == 5
-!=      Not equal        5 != 3
-<       Less than        3 < 5
->       Greater than     5 > 3
-<=      Less or equal    5 <= 5
->=      Greater or equal 5 >= 5
+```text
+15 primes below 50:
+[2, 3, 5, 7, 11, 13, 17, 19, 23, 29, 31, 37, 41, 43, 47]
 ```
 
-### Logical
-
-```python
-and     Logical AND      x > 5 and y < 10
-or      Logical OR       x == 1 or x == 2
-not     Logical NOT      not done
-```
-
-### Membership
-
-```python
-in      Membership       "a" in "abc"
-not in  Not membership   "x" not in "abc"
-```
-
-## Control Structures
-
-### If/Elif/Else
-
-```python
-if condition:
-    statements
-elif condition:
-    statements
-else:
-    statements
-
-# Example
-if age >= 18:
-    print("Adult")
-elif age >= 13:
-    print("Teen")
-else:
-    print("Child")
-```
-
-### For Loop
-
-```python
-for variable in iterable:
-    statements
-
-# Examples
-for i in range(5):
-    print(i)                # 0, 1, 2, 3, 4
-
-for name in ["Alice", "Bob"]:
-    print(name)
-
-for i in range(1, 11, 2):
-    print(i)                # 1, 3, 5, 7, 9 (step by 2)
-```
-
-### While Loop
-
-```python
-while condition:
-    statements
-
-# Example
-count = 0
-while count < 5:
-    print(count)
-    count += 1
-```
-
-### Break & Continue
-
-```python
-for i in range(10):
-    if i == 5:
-        break               # Exit loop
-    if i == 2:
-        continue            # Skip to next iteration
-    print(i)
-```
-
-## Collections
-
-### Lists
-
-```python
-numbers = [1, 2, 3, 4, 5]
-
-# Access
-numbers[0]                # 1 (first element)
-numbers[-1]               # 5 (last element)
-numbers[1:3]              # [2, 3] (slice)
-
-# Methods
-numbers.append(6)         # Add element
-numbers.pop()             # Remove and return last
-numbers.pop(0)            # Remove and return first
-numbers.insert(0, 0)      # Insert at position
-numbers.remove(3)         # Remove value
-numbers.sort()            # Sort in place
-numbers.reverse()         # Reverse in place
-numbers.clear()           # Remove all elements
-
-# Functions
-len(numbers)              # 5
-sum(numbers)              # 15
-max(numbers)              # 5
-min(numbers)              # 1
-
-# Iteration
-for num in numbers:
-    print(num)
-
-# List comprehension
-squares = [x**2 for x in range(5)]  # [0, 1, 4, 9, 16]
-```
-
-### Tuples
-
-```python
-point = (10, 20)
-colors = ("red", "green", "blue")
-
-# Access (like lists, but immutable)
-point[0]                  # 10
-colors[1:3]               # ("green", "blue")
-
-# Unpacking
-x, y = point              # x=10, y=20
-```
-
-### Dictionaries
-
-```python
-person = {
-    "name": "Alice",
-    "age": 30,
-    "city": "New York"
-}
-
-# Access
-person["name"]            # "Alice"
-person.get("age")         # 30
-person.get("email", "N/A") # "N/A" (default)
-
-# Modification
-person["email"] = "alice@example.com"
-del person["city"]
-
-# Methods
-person.keys()             # dict_keys(['name', 'age', 'email'])
-person.values()           # dict_values(['Alice', 30, ...])
-person.items()            # dict_items([('name', 'Alice'), ...])
-
-# Iteration
-for key in person:
-    print(key, person[key])
-```
-
-### Sets
-
-```python
-unique = {1, 2, 3, 3, 4}  # {1, 2, 3, 4}
-
-# Methods
-unique.add(5)
-unique.remove(3)
-unique.discard(3)         # Remove if exists
-unique.union({4, 5, 6})   # {1, 2, 4, 5, 6}
-unique.intersection({3, 4})
-```
-
-## Functions
-
-### Function Definition
-
-```python
-def greet(name):
-    return f"Hello, {name}!"
-
-def add(a, b):
-    return a + b
-
-def print_info(name, age=20):
-    print(f"{name} is {age}")
-
-# Calling
-greet("Alice")
-add(5, 3)
-print_info("Bob", 25)
-```
-
-### Return Values
-
-```python
-def get_values():
-    return 1, 2, 3        # Multiple returns (tuple)
-
-a, b, c = get_values()
-```
-
-### *args and **kwargs
-
-```python
-def sum_all(*args):
-    return sum(args)
-
-def print_config(**kwargs):
-    for key, value in kwargs.items():
-        print(f"{key}: {value}")
-
-sum_all(1, 2, 3, 4)
-print_config(host="localhost", port=8000)
-```
-
-### Lambda Functions
-
-```python
-square = lambda x: x ** 2
-square(5)                 # 25
-
-add = lambda x, y: x + y
-add(3, 4)                 # 7
-```
-
-## String Operations
-
-### String Basics
-
-```python
-msg = "Hello, World!"
-
-# Length
-len(msg)                  # 13
-
-# Case conversion
-msg.upper()               # "HELLO, WORLD!"
-msg.lower()               # "hello, world!"
-msg.capitalize()          # "Hello, world!"
-
-# Finding
-msg.find("World")         # 7
-"World" in msg            # True
-```
-
-### String Slicing
-
-```python
-text = "Python"
-text[0]                   # "P"
-text[0:2]                 # "Py"
-text[::2]                 # "Pto" (every 2nd char)
-text[::-1]                # "nohtyP" (reversed)
-```
-
-### String Methods
-
-```python
-"  hello  ".strip()       # "hello"
-"hello-world".split("-")  # ["hello", "world"]
-",".join(["a", "b", "c"]) # "a,b,c"
-"hello".replace("l", "L") # "heLLo"
-"hello".startswith("he")  # True
-"hello".endswith("lo")    # True
-```
-
-### String Formatting
-
-```python
-# f-strings
-name = "Alice"
-age = 30
-f"{name} is {age}"        # "Alice is 30"
-
-# format() method
-"Hello, {}".format("Bob")
-"{} + {} = {}".format(1, 2, 3)
-
-# % formatting
-"Hello, %s" % "Charlie"
-```
-
-## Comprehensions
-
-### List Comprehension
-
-```python
-squares = [x**2 for x in range(5)]
-# [0, 1, 4, 9, 16]
-
-even = [x for x in range(10) if x % 2 == 0]
-# [0, 2, 4, 6, 8]
-```
-
-### Dict Comprehension
-
-```python
-squares_dict = {x: x**2 for x in range(5)}
-# {0: 0, 1: 1, 2: 4, 3: 9, 4: 16}
-```
-
-### Set Comprehension
-
-```python
-unique_squares = {x**2 for x in [1, 2, 2, 3, 3, 3]}
-# {1, 4, 9}
-```
-
-## Exception Handling
-
-### Try/Except
-
-```python
-try:
-    result = 10 / 0
-except ZeroDivisionError:
-    print("Cannot divide by zero")
-except Exception as e:
-    print(f"Error: {e}")
-else:
-    print("Success!")
-finally:
-    print("Cleanup code")
-```
-
-## Standard Library
-
-### Math Module
-
-```python
-import math
-
-math.sqrt(16)             # 4.0
-math.sin(0)               # 0.0
-math.cos(0)               # 1.0
-math.pi                   # 3.14159...
-math.floor(3.7)           # 3
-math.ceil(3.2)            # 4
-```
-
-### Random Module
-
-```python
-import random
-
-random.randint(1, 100)    # Random int 1-100
-random.choice([1, 2, 3])  # Random from list
-random.shuffle(list)      # Shuffle in place
-```
-
-## Complete Examples
-
-### Even/Odd Checker
-
-```python
-numbers = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10]
-evens = [n for n in numbers if n % 2 == 0]
-odds = [n for n in numbers if n % 2 != 0]
-print("Even:", evens)
-print("Odd:", odds)
-```
-
-### Word Frequency Counter
-
-```python
-text = "hello world hello python hello"
-words = text.split()
-freq = {}
-for word in words:
-    freq[word] = freq.get(word, 0) + 1
-print(freq)
-# {'hello': 3, 'world': 1, 'python': 1}
-```
-
-### Fibonacci Generator
-
-```python
-def fibonacci(n):
-    a, b = 0, 1
-    for _ in range(n):
-        yield a
-        a, b = b, a + b
-
-for num in fibonacci(8):
-    print(num)
-```
-
-## Classes & Object-Oriented Programming
-
-### Class Definition
-
-```python
-class Animal:
-    def __init__(self, name, sound):
-        self.name = name
-        self.sound = sound
-
-    def speak(self):
-        return f"{self.name} says {self.sound}"
-
-    def __str__(self):
-        return f"Animal({self.name})"
-
-dog = Animal("Rex", "Woof")
-print(dog.speak())        # Rex says Woof
-```
-
-### Inheritance
-
-```python
-class Dog(Animal):
-    def __init__(self, name):
-        super().__init__(name, "Woof")
-        self.tricks = []
-
-    def learn(self, trick):
-        self.tricks.append(trick)
-
-    def show_tricks(self):
-        return f"{self.name} knows: {', '.join(self.tricks)}"
-
-rex = Dog("Rex")
-rex.learn("sit")
-rex.learn("shake")
-print(rex.show_tricks())  # Rex knows: sit, shake
-```
-
-### Properties
-
-```python
-class Circle:
-    def __init__(self, radius):
-        self._radius = radius
-
-    @property
-    def radius(self):
-        return self._radius
-
-    @radius.setter
-    def radius(self, value):
-        if value < 0:
-            raise ValueError("Radius must be non-negative")
-        self._radius = value
-
-    @property
-    def area(self):
-        import math
-        return math.pi * self._radius ** 2
-```
-
-### Class Methods & Static Methods
-
-```python
-class Date:
-    def __init__(self, year, month, day):
-        self.year = year
-        self.month = month
-        self.day = day
-
-    @classmethod
-    def from_string(cls, date_str):
-        y, m, d = map(int, date_str.split("-"))
-        return cls(y, m, d)
-
-    @staticmethod
-    def is_valid(year, month, day):
-        return 1 <= month <= 12 and 1 <= day <= 31
-
-d = Date.from_string("2025-06-15")
-```
-
-### Dataclasses
-
-```python
-from dataclasses import dataclass
-
-@dataclass
-class Point:
-    x: float
-    y: float
-
-    def distance_to(self, other):
-        return ((self.x - other.x)**2 + (self.y - other.y)**2) ** 0.5
-
-p1 = Point(0, 0)
-p2 = Point(3, 4)
-print(p1.distance_to(p2))  # 5.0
-```
-
-## Decorators
-
-```python
-# Function decorator
-def timer(func):
-    import time
-    def wrapper(*args, **kwargs):
-        start = time.time()
-        result = func(*args, **kwargs)
-        elapsed = time.time() - start
-        print(f"{func.__name__} took {elapsed:.4f}s")
-        return result
-    return wrapper
-
-@timer
-def slow_function():
-    import time
-    time.sleep(0.1)
-    return "done"
-
-# Decorator with parameters
-def repeat(n):
-    def decorator(func):
-        def wrapper(*args, **kwargs):
-            for _ in range(n):
-                result = func(*args, **kwargs)
-            return result
-        return wrapper
-    return decorator
-
-@repeat(3)
-def say_hello():
-    print("Hello!")
-```
-
-## Context Managers
-
-```python
-# Using with statement
-with open("file.txt", "r") as f:
-    content = f.read()
-
-# Custom context manager
-from contextlib import contextmanager
-
-@contextmanager
-def timer(label):
-    import time
-    start = time.time()
-    yield
-    elapsed = time.time() - start
-    print(f"{label}: {elapsed:.4f}s")
-
-with timer("Processing"):
-    result = sum(range(1000000))
-```
-
-## Import System
-
-```python
-import math
-from math import sqrt, pi
-from collections import Counter, defaultdict
-from itertools import chain, combinations
-import json
-import os
-```
-
-## Regular Expressions
-
-```python
-import re
-
-text = "Hello World 123"
-
-# Search
-match = re.search(r'\d+', text)
-if match:
-    print(match.group())       # 123
-
-# Find all
-numbers = re.findall(r'\d+', "a1 b22 c333")
-# ['1', '22', '333']
-
-# Replace
-result = re.sub(r'\d+', '#', text)
-# "Hello World #"
-
-# Split
-parts = re.split(r'\s+', text)
-# ['Hello', 'World', '123']
-
-# Compile for reuse
-pattern = re.compile(r'[A-Z][a-z]+')
-words = pattern.findall(text)  # ['Hello', 'World']
-```
-
-## Generators & Itertools
-
-```python
-# Generator function
-def fibonacci():
-    a, b = 0, 1
-    while True:
-        yield a
-        a, b = b, a + b
-
-# Use generator
-fib = fibonacci()
-first_10 = [next(fib) for _ in range(10)]
-
-# Generator expression
-squares = (x**2 for x in range(100))
-
-# Itertools
-from itertools import count, cycle, chain, combinations
-
-# Infinite counter
-for i in count(1):
-    if i > 5: break
-    print(i)
-
-# Combinations
-list(combinations([1, 2, 3], 2))
-# [(1, 2), (1, 3), (2, 3)]
-```
-
-## File I/O
-
-```python
-# Read file
-with open("data.txt", "r") as f:
-    content = f.read()           # Read all
-    # lines = f.readlines()      # Read as list of lines
-
-# Write file
-with open("output.txt", "w") as f:
-    f.write("Hello\n")
-    f.write("World\n")
-
-# JSON
-import json
-data = {"name": "Alice", "age": 30}
-json_str = json.dumps(data)
-parsed = json.loads(json_str)
-```
-
-## Tips & Best Practices
-
-1. **Use f-strings** for string formatting
-2. **List comprehensions** are more Pythonic than manual loops
-3. **Use `with`** for resource management (files, connections)
-4. **Use dataclasses** for simple data containers
-5. **Use type hints** for clarity: `def add(a: int, b: int) -> int:`
-6. **Handle errors** with try/except
-7. **Use meaningful names** for variables and functions
-8. **Execution timeout:** 30 seconds for all Python programs
-
-## See Also
-
-- [LANGUAGE_TUTORIALS.md](../user/LANGUAGE_TUTORIALS.md)
-- [examples/python/](../../examples/python/)
-
----
-
-**Last Updated:** 2025
+## Known limitations (1.6.0)
+
+- `timewarp --run file.py --language python` does not pass the terminal's
+  stdin to the program, so `input()` waits until the 30-second limit.
+- A REPL line that runs past 2 seconds is stopped silently.
+
+## Further reading
+
+- [Python documentation](https://docs.python.org/3/) - match the version
+  your Time Warp runs on
+- [The Python Tutorial](https://docs.python.org/3/tutorial/)
+- [Library reference](https://docs.python.org/3/library/)
+- Examples: [examples/python/](../../examples/python/)
+- [Language tutorials](../user/LANGUAGE_TUTORIALS.md#python)

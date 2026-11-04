@@ -263,11 +263,15 @@ class PluginRegistry:
         if spec is None:
             return None
         key = spec.name.lower()
-        if key not in self._executors:
+        cached = self._executors.get(key)
+        # Hosts such as the web server use a fresh interpreter per run, so an
+        # executor is only reused for the interpreter it reports to.
+        if cached is None or cached.interpreter is not interpreter:
             from core.languages.plugin_executor import PluginExecutor
 
-            self._executors[key] = PluginExecutor(interpreter, spec)
-        return self._executors[key]
+            cached = PluginExecutor(interpreter, spec)
+            self._executors[key] = cached
+        return cached
 
     # ---- authoring helpers -------------------------------------------
 

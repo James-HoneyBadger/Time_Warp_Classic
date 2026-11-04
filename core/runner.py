@@ -31,6 +31,7 @@ def run_source(program, language, stream=None):
     interpreter.max_iterations = None
     interpreter.console_banner = False
     interpreter.turtle_console = False
+    interpreter.subprocess_stdin_pipe = False
 
     if stream is not None:
         _redirect_stdout(interpreter, stream)

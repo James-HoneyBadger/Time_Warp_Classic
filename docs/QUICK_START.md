@@ -1,347 +1,190 @@
-# Quick Start Guide - 5 Minute Setup
+# Quick Start
 
-Get Time Warp Classic running and write your first program in 5 minutes!
+From nothing to a running program in a few minutes. You need Python 3.9 or
+newer. The desktop IDE also needs Tk (`tkinter`); the browser IDE does not.
 
-## ⚡ Super Quick Start (90 Seconds)
+## 1. Install and launch
 
-### Step 1: Install (30 seconds)
+Pick one.
+
+**From PyPI**
+
 ```bash
-cd /path/to/Time_Warp_Classic
-python3 run.py
-```
-That's it! The script handles everything automatically.
-
-### Step 2: Write Code (30 seconds)
-```
-1. Copy this code into the editor:
-
-PRINT "Hello, Time Warp!"
-PRINT "2 + 3 ="; 2 + 3
-END
-
-2. Select "BASIC" from the language dropdown
+python3 -m venv ~/.venvs/timewarp && . ~/.venvs/timewarp/bin/activate
+pip install timewarp-classic
+timewarp            # desktop IDE
+timewarp --web      # browser IDE at http://127.0.0.1:8000/
 ```
 
-### Step 3: Run (30 seconds)
-```
-Click the "Run" button
-→ See output appear!
-```
+**From a source checkout**
 
-## 📋 Full Quick Start
-
-### Prerequisites
-- Python 3.9 or higher
-- About 2 minutes
-- Internet connection (first run only)
-
-### Installation
-
-**Option 1: Python Launcher (Recommended)**
 ```bash
-python3 run.py
+git clone https://github.com/James-HoneyBadger/Time_Warp_Classic.git
+cd Time_Warp_Classic
+python3 run.py      # or ./run.sh on Linux/macOS, run.bat on Windows
 ```
 
-**Option 2: Bash Script (Linux/macOS)**
+`run.py` creates `venv/` in the checkout, installs `requirements.txt` into it
+(network needed the first time), checks for `tkinter`, and starts
+`Time_Warp.py`. Options: `--clean` rebuilds the venv, `--no-install` skips the
+install step. If you manage your own environment, `pip install -r
+requirements.txt` and `python3 Time_Warp.py` do the same job.
+
+**In a container (browser IDE only)**
+
 ```bash
-./run.sh
+docker run --rm -p 8000:8000 ghcr.io/james-honeybadger/time-warp-classic-web:latest
 ```
 
-**Option 3: Batch Script (Windows)**
-```cmd
-run.bat
-```
+Then open <http://127.0.0.1:8000/>. The image is built from `Dockerfile.web`
+and does not install Node.js; [dev/WEB.md](dev/WEB.md#container) explains how
+to add runtimes. The X11 desktop image is described in the
+[main README](../README.md).
 
-All scripts will:
-1. Create a virtual environment
-2. Install dependencies
-3. Verify installation
-4. Launch the IDE
+Something failed? Go to [TROUBLESHOOTING.md](TROUBLESHOOTING.md).
 
-### First Program - Hello World in BASIC
+## 2. First programs
+
+The language selector sits above the editor. The desktop IDE starts on PILOT,
+so change it before you paste.
+
+**BASIC**
 
 ```basic
-PRINT "Welcome to Time Warp Classic!"
-PRINT "Today is:"; DATE$
-PRINT "Let's do math: 5 + 3 ="; 5 + 3
-END
+10 PRINT "HELLO FROM 1982"
+20 FOR I = 1 TO 3
+30 PRINT I; " SQUARED IS "; I*I
+40 NEXT I
+50 END
 ```
 
-**Steps:**
-1. Select **BASIC** from dropdown
-2. Paste code into editor
-3. Click **Run** button
-4. See output in Output panel
+Choose **BASIC**, paste, press **Run** (F5). Output:
 
-### First Program - Hello World in Python
-
-```python
-print("Welcome to Time Warp Classic!")
-print(f"10 + 20 = {10 + 20}")
-
-for i in range(1, 4):
-    print(f"Loop iteration {i}")
-
-print("Done!")
+```
+HELLO FROM 1982
+1 SQUARED IS 1
+2 SQUARED IS 4
+3 SQUARED IS 9
 ```
 
-**Steps:**
-1. Select **Python** from dropdown
-2. Paste code into editor
-3. Click **Run** button
-4. See output
+Line numbers are optional; the bundled BASIC examples don't use them.
 
-### First Program - Graphics in Logo
+**Logo**
 
 ```logo
-FORWARD 100
-RIGHT 90
-FORWARD 100
-RIGHT 90
-FORWARD 100
-RIGHT 90
-FORWARD 100
+REPEAT 4 [FORWARD 100 RIGHT 90]
 ```
 
-**Steps:**
-1. Select **Logo** from dropdown
-2. Paste code
-3. Click **Run**
-4. See square drawn on canvas!
+Choose **Logo** and run. A square appears on the turtle canvas. The desktop
+shows the canvas for Logo and BASIC and hides it for the other languages.
 
-## 🎯 Next Steps
-
-### Learn More Languages
-- Check [LANGUAGE_TUTORIALS.md](user/LANGUAGE_TUTORIALS.md)
-- Run examples in [../examples/](../examples/) directory
-- Try each language: BASIC, Python, JavaScript, Pascal, Prolog, Forth, Perl, Logo, PILOT
-
-### Master the IDE
-- Read the [README](README.md) documentation index
-- Explore [Language References](languages/) for each language
-- Customize themes via the Preferences menu
-
-### Run Examples
-```bash
-# Open example programs from the examples/ directory
-# Each language has 2 example programs
-
-# E.g., for Python:
-# Open examples/python/crypto_toolkit.py
-# Or: examples/python/data_pipeline.py
-```
-
-### Release Publishing (Maintainers)
-
-Package publishing is automated through GitHub Actions and tag patterns:
-
-- Stable tags (`vX.Y.Z`) publish to **PyPI**
-- Prerelease tags (`vX.Y.Z-rcN`, `vX.Y.Z-betaN`, `vX.Y.Z-alphaN`) publish to **TestPyPI**
-
-```bash
-# Prerelease to TestPyPI
-git tag v1.3.2-rc1
-git push origin v1.3.2-rc1
-
-# Stable release to PyPI
-git tag v1.3.2
-git push origin v1.3.2
-```
-
-Workflows:
-- `.github/workflows/publish-pypi.yml`
-- `.github/workflows/publish-testpypi.yml`
-
-### GitHub Packages (GHCR)
-
-After a stable tag publish (`vX.Y.Z`), you can pull the container package from GitHub Packages:
-
-```bash
-docker pull ghcr.io/james-honeybadger/time-warp-classic:latest
-```
-
-Run on Linux with X11 forwarding (GUI):
-
-```bash
-xhost +local:docker
-docker run --rm \
-    -e DISPLAY=$DISPLAY \
-    -v /tmp/.X11-unix:/tmp/.X11-unix \
-    ghcr.io/james-honeybadger/time-warp-classic:latest
-```
-
-Use a specific release image tag (for example `v1.3.2`) instead of `latest` when needed.
-
-### Troubleshooting
-If something doesn't work:
-1. See [TROUBLESHOOTING.md](TROUBLESHOOTING.md)
-2. Check [FAQ.md](FAQ.md)
-3. Review full [SETUP.md](../SETUP.md)
-
-## 🚀 IDE Overview
-
-### Main Components
-
-**Editor (Left Panel)**
-- Write code here
-- Syntax highlighting (via Pygments when available)
-- Line numbers
-- Find & Replace (Ctrl+F / Ctrl+H)
-
-**Output (Top Right)**
-- See program results
-- Error messages
-- Debug information
-
-**Canvas (Bottom Right)**
-- Turtle graphics display
-- Visual output for Logo programs (also used by BASIC graphics)
-
-**Bottom Bar**
-- Input field for interactive programs
-- Buttons: Run, Open, Save, Clear Editor, Clear Output, Clear Graphics
-
-**Menu Bar**
-- File, Edit, Program, Debug, Test, Performance, Preferences, About
-
-### Your First Real Program
-
-Let's calculate factorial in Python:
+**Python**
 
 ```python
 def factorial(n):
-    if n <= 1:
-        return 1
-    return n * factorial(n - 1)
+    return 1 if n <= 1 else n * factorial(n - 1)
 
 for i in range(1, 6):
-    result = factorial(i)
-    print(f"{i}! = {result}")
+    print(f"{i}! = {factorial(i)}")
 ```
 
-**Try it:**
-1. Select Python
-2. Paste code
-3. Click Run
-4. See results!
+Python runs in a child process using the same interpreter that started Time
+Warp. JavaScript needs `node` and Perl needs `perl` on your `PATH`. Without
+them the language is shown as `(runtime missing)`.
 
-## 💡 Pro Tips
+## 3. The desktop IDE
 
-### Tip 1: Copy Examples
-Demo files are in `examples/[language]/`:
+| Area | Use |
+|------|-----|
+| Code Editor (left) | Your program. Line numbers, Pygments highlighting, word completion. |
+| Output (top right) | Program output and errors. Click a `?ERROR IN n` or `BREAK IN n` line to jump to line *n*. |
+| Turtle Graphics (bottom right) | Logo and BASIC drawings. |
+| Console bar | Answers `INPUT`/`A:`/`input()` while a program runs. When idle, it's BASIC direct mode or a one-line REPL for other languages. |
+| Buttons | Run, Stop, Open, Save, Clear Editor, Clear Output, Clear Graphics |
+| Status bar | Language, file name (`*` = unsaved), `Ready`/`Running`, `Ln 12, Col 5` |
+
+Menus: **File, Edit, Program, Debug, Test, Performance, Preferences, About**.
+**Program → Load Example** has two programs per language.
+
+### Keys
+
+| Key | Action |
+|-----|--------|
+| F5 | Run |
+| Ctrl+. | Stop (the console prints `BREAK IN n`) |
+| F9 | Toggle a breakpoint on the current line |
+| Ctrl+N / Ctrl+O | New / Open |
+| Ctrl+S / Ctrl+Shift+S | Save / Save As |
+| Ctrl+Z / Ctrl+Y | Undo / Redo |
+| Ctrl+F / Ctrl+H | Find / Replace |
+| Ctrl+Space | Word completions (arrows to move, Enter or Tab to accept, Esc to close) |
+| Ctrl+Q | Exit |
+
+### BASIC direct mode
+
+With **BASIC** selected and nothing running, the console bar behaves like a
+home computer at the `READY.` prompt:
+
 ```
-examples/basic/finance_calculator.bas     # Personal finance calculator
-examples/basic/sales_dashboard.bas        # Sales analytics dashboard
-examples/python/crypto_toolkit.py         # Cryptography toolkit
-examples/python/data_pipeline.py          # Data analysis pipeline
-examples/logo/mandala_art.logo            # Mandala art generator
-... (all 9 languages have example programs)
+PRINT 2+2          runs at once
+10 PRINT "HI"      stores line 10 in the editor
+10                 deletes line 10
+LIST               RUN   RUN 100   RENUMBER   NEW   TRON   TROFF   HELP
 ```
 
-### Tip 2: Try BASIC Direct Mode
-Select **BASIC**, then use the **Console** bar at the bottom like an old machine:
-`PRINT 2+2`, `10 PRINT "HELLO"`, `LIST`, `RUN`, `RENUMBER`, `NEW`, `HELP`.
+### Preferences
 
-### Tip 3: Add a Language You Already Have
+**Preferences** sets the colour theme (nine of them), font family, font size
+and auto-completion. Choices are saved to `~/.timewarp_settings.json`.
 
-**Preferences → Plugins → Create Example Plugin** writes a manifest to
-`~/.timewarp/plugins/`. Edit it to name any runtime on your `PATH` (Ruby, Lua,
-Go, ...), then **Preferences → Plugins → Reload Plugins** and pick it in the
-language selector. Details: [dev/PLUGINS.md](dev/PLUGINS.md).
+## 4. The browser IDE
 
-### Tip 4: Share a Program That Just Runs
+```bash
+python3 Time_Warp.py --web                  # http://127.0.0.1:8000/
+python3 Time_Warp.py --web --port 0         # any free port
+python3 Time_Warp.py --web --timeout 30     # allow 30 s per run (default 10)
+```
 
-**File → Export Runner...** writes a single `.pyz` file containing your program
-and the interpreter. Anyone with Python 3.9+ runs it with
-`python myprog.pyz` — no install, no IDE. Built-in languages are fully
-self-contained. Details: [dev/EXPORTING.md](dev/EXPORTING.md).
+**Program → Open Web IDE** in the desktop app starts one on a free port and
+opens your browser.
 
-### Tip 5: Run It in a Browser
+- **Run** is Ctrl+Enter, **Stop** is Ctrl+., **Save** is Ctrl+S (downloads
+  the file). **Open…** loads a file from your machine.
+- While a program runs, the console bar is its stdin. Type the answer to
+  `INPUT` and press Enter.
+- When idle, the console bar is BASIC direct mode (numbered lines edit the
+  program in the editor; `LIST`, `RUN`) or a one-line REPL.
+- The editor is autosaved in the browser's `localStorage`.
+- Turtle drawings appear in the Graphics pane; **Save PNG** keeps one.
+- Limits per server: the `--timeout` per run, 20,000 output lines per run, four
+  runs at once.
 
-`python Time_Warp.py --web` serves the same editor at
-<http://127.0.0.1:8000/>; **Program → Open Web IDE** does the same from the
-desktop app. Output streams as the program runs, turtle drawings appear in the
-Graphics pane, and the `>` bar under the console evaluates a line immediately.
-Details and the HTTP API: [dev/WEB.md](dev/WEB.md).
+Full details, the HTTP API and the security notes: [dev/WEB.md](dev/WEB.md).
+Don't expose it beyond localhost without reading the security section; it
+has no authentication.
 
-### Tip 6: Use Keyboard Shortcuts
-- F5: Run program
-- F9: Set or clear a breakpoint on the current line
-- Ctrl+.: Stop a running program
-- Ctrl+Space: Show word completions (Down/Up to move, Enter/Tab to accept, Esc to close)
-- Ctrl+F: Find
-- Ctrl+H: Find & Replace
-- Ctrl+S: Save file
-- Ctrl+Shift+S: Save As
-- Click an `?ERROR IN n` line in the output to jump to line n
+## 5. The command line
 
-### Tip 4: Check Output Carefully
-The output explains what each command does!
+```bash
+python3 Time_Warp.py --run hello.bas --language basic
+python3 Time_Warp.py -r examples/logo/mandala_art.logo -l logo
+python3 Time_Warp.py --version
+```
 
-### Tip 4: Modify & Experiment
-Don't just read examples - modify them!
-Change numbers, add loops, try new things.
+`--run` prints the output and exits with `0` on success, `1` if the program
+reported an error, `2` for a usage problem such as a missing file. A plain
+source file always needs `--language`; a `.twrun` bundle carries its own.
+BASIC `INPUT` and PILOT `A:` read from your terminal, so you can pipe answers
+in.
 
-## ❓ Common First Questions
+**File → Export Runner...** in the desktop IDE writes a single `.pyz` that
+runs your program anywhere Python 3.9+ is installed: `python3 myprog.pyz`.
+See [dev/EXPORTING.md](dev/EXPORTING.md).
 
-**Q: Which language should I start with?**
-A: BASIC or Python - most familiar syntax
+## Next
 
-**Q: Where are the examples?**
-A: In `examples/[language]/` — each language has 2 example programs
-
-**Q: How do I save my code?**
-A: File menu → Save, or Ctrl+S
-
-**Q: Can I load from a file?**
-A: Yes! File menu → Open File
-
-**Q: Why no output?**
-A: Check you're using PRINT/print/output commands
-
-**Q: Can I use multiple languages?**
-A: Yes! Just change language dropdown and paste new code
-
-## 📞 Need More Help?
-
-- **Full user guide:** [README.md](README.md)
-- **Language tutorials:** [LANGUAGE_TUTORIALS.md](user/LANGUAGE_TUTORIALS.md)
-- **Troubleshooting:** [TROUBLESHOOTING.md](TROUBLESHOOTING.md)
-- **FAQ:** [FAQ.md](FAQ.md)
-- **Full documentation:** [INDEX.md](INDEX.md)
-
-## 🎓 Learning Path
-
-**5 minutes (now)**
-→ You're reading this!
-
-**15 minutes (next)**
-→ Run your first program
-→ Try another language
-→ Modify an example
-
-**30 minutes**
-→ Read [README.md](README.md)
-→ Learn IDE features
-→ Customize your workspace
-
-**1 hour**
-→ Follow [LANGUAGE_TUTORIALS.md](user/LANGUAGE_TUTORIALS.md)
-→ Write a small program
-→ Combine language features
-
-**Ongoing**
-→ Explore all 9 languages
-→ Build larger projects
-→ Master advanced features
-
----
-
-**You're ready! 🚀**
-
-[Next: Try your first program →](#super-quick-start-90-seconds)
-
-Or jump to:
-- [Full Documentation Index](README.md)
-- [Language Tutorials](user/LANGUAGE_TUTORIALS.md)
-- [All Documentation](INDEX.md)
+- [examples/README.md](../examples/README.md): the bundled programs
+- [user/LANGUAGE_TUTORIALS.md](user/LANGUAGE_TUTORIALS.md): a walk through each language
+- [languages/](languages/): one reference per language
+- [dev/PLUGINS.md](dev/PLUGINS.md): add a language you already have installed (Ruby, Lua, ...) via **Preferences → Plugins**
+- [FAQ.md](FAQ.md) and [TROUBLESHOOTING.md](TROUBLESHOOTING.md)

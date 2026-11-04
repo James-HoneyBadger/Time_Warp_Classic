@@ -8,56 +8,65 @@
   :root {
     --bg: #1e1e1e; --panel: #252526; --border: #3e3e3e;
     --fg: #d4d4d4; --muted: #9d9d9d; --accent: #4caf50; --error: #f14c4c;
+    --warn: #e0a030; --mono: "Courier New", Courier, monospace;
   }
   * { box-sizing: border-box; }
   html, body { overflow: hidden; }  /* the panes do their own scrolling */
   body {
-    margin: 0; height: 100vh; display: flex; flex-direction: column;
-    background: var(--bg); color: var(--fg);
-    font-family: "Courier New", Courier, monospace;
+    margin: 0; height: 100vh; height: 100dvh; display: flex; flex-direction: column;
+    background: var(--bg); color: var(--fg); font-family: var(--mono);
   }
   header {
-    display: flex; align-items: center; gap: 10px; padding: 8px 12px;
+    display: flex; align-items: center; gap: 8px; padding: 8px 12px;
     background: var(--panel); border-bottom: 1px solid var(--border);
     flex-wrap: wrap;  /* the status line drops to its own row when narrow */
   }
-  header h1 { font-size: 15px; margin: 0 12px 0 0; font-weight: bold; white-space: nowrap; }
-  #language { flex: 0 0 auto; max-width: 140px; }
-  #examples { flex: 1 1 160px; min-width: 90px; }
+  header h1 { font-size: 15px; margin: 0 8px 0 0; font-weight: bold; white-space: nowrap; }
+  #language { flex: 0 0 auto; max-width: 190px; }
+  #examples { flex: 1 1 160px; min-width: 90px; max-width: 320px; }
   select, button {
     background: #3e3e3e; color: var(--fg); border: 1px solid var(--border);
     padding: 4px 8px; font: inherit; border-radius: 3px;
   }
+  button { cursor: pointer; }
   button.primary { background: var(--accent); color: #06220b; font-weight: bold; }
-  button:disabled { opacity: 0.5; }
+  button.danger:not(:disabled) { background: #8b2a2a; color: #fff; }
+  button:disabled { opacity: 0.45; cursor: default; }
+  select:focus-visible, button:focus-visible { outline: 2px solid #0a84ff; outline-offset: 1px; }
   #status {
     margin-left: auto; color: var(--muted); font-size: 12px;
     white-space: nowrap; flex: 0 0 auto;
   }
+  #status.busy { color: var(--warn); }
+  #status.bad { color: var(--error); }
   main { flex: 1; display: flex; min-height: 0; overflow: hidden; }
-  .pane { flex: 1; display: flex; flex-direction: column; min-width: 0; }
+  .pane { flex: 1; display: flex; flex-direction: column; min-width: 0; min-height: 0; }
   #divider {
     width: 5px; cursor: col-resize; background: var(--border); flex: 0 0 5px;
+    touch-action: none;
   }
-  #divider:hover { background: #5a5a5a; }
+  #divider:hover, #divider:focus-visible { background: #5a5a5a; outline: none; }
   .pane h2 {
     margin: 0; padding: 5px 10px; font-size: 12px; font-weight: normal;
     color: var(--muted); background: var(--panel);
     border-bottom: 1px solid var(--border);
+    display: flex; align-items: center; gap: 8px;
   }
+  .pane h2 .spacer { flex: 1; }
+  .pane h2 button { padding: 1px 6px; font-size: 11px; }
   .editor { flex: 1; display: flex; min-height: 0; }
   #code-area { position: relative; display: flex; flex: 1; min-width: 0; }
   #highlight {
-    position: absolute; inset: 0; margin: 0; padding: 10px;
+    position: absolute; inset: 0; margin: 0; padding: 10px 40px 40px 10px;
     overflow: hidden; white-space: pre; pointer-events: none;
     font: inherit; font-size: 13px; line-height: 1.5; tab-size: 4;
     color: var(--fg);
   }
   #code::selection { background: #264f78; }
   #gutter {
-    margin: 0; padding: 10px 6px 10px 10px; text-align: right;
+    margin: 0; padding: 10px 6px 40px 10px; text-align: right;
     color: #6a6a6a; background: #1a1a1a; user-select: none; overflow: hidden;
-    line-height: 1.5; font-size: 13px;
+    font: inherit; line-height: 1.5; font-size: 13px; min-width: 3.2em;
   }
   #code {
     position: relative; flex: 1; resize: none; border: 0; outline: none;
@@ -65,18 +74,24 @@
     caret-color: var(--fg); font: inherit; font-size: 13px;
     line-height: 1.5; tab-size: 4; white-space: pre; overflow: auto;
   }
+  /* Until the first coloured render arrives, show the textarea's own text. */
+  #code-area.plain #code { color: var(--fg); }
+  #code-area.plain #highlight { visibility: hidden; }
   #output {
     flex: 1 1 55%; margin: 0; padding: 10px; overflow: auto; white-space: pre-wrap;
-    font-size: 13px; line-height: 1.5;
+    font: inherit; font-size: 13px; line-height: 1.5; min-height: 4em;
+    overflow-wrap: anywhere;
   }
   #right-pane { display: flex; flex-direction: column; min-height: 0; }
   #repl {
     display: flex; align-items: center; gap: 6px; padding: 6px 10px;
     background: var(--panel); border-top: 1px solid var(--border);
   }
-  #repl .prompt { color: var(--accent); font-weight: bold; }
+  #repl .prompt { color: var(--accent); font-weight: bold; min-width: 1ch; }
+  #repl.input-mode .prompt { color: var(--warn); }
+  #repl.input-mode #repl-input { border-color: var(--warn); }
   #repl-input {
-    flex: 1; background: var(--bg); color: var(--fg);
+    flex: 1; min-width: 0; background: var(--bg); color: var(--fg);
     border: 1px solid var(--border); border-radius: 3px; padding: 4px 6px;
     font: inherit; font-size: 13px; outline: none;
   }
@@ -85,8 +100,6 @@
     flex: 0 0 45%; display: flex; flex-direction: column; min-height: 0;
     border-top: 1px solid var(--border);
   }
-  #graphics h2 { display: flex; align-items: center; gap: 8px; }
-  #save-png { padding: 1px 6px; font-size: 11px; }
   #screen-wrap {
     flex: 1; min-height: 0; display: flex; align-items: center;
     justify-content: center; background: #0d0d0d; overflow: hidden;
@@ -98,28 +111,47 @@
   }
   #output .err { color: var(--error); }
   #output .hint-line { color: var(--muted); font-style: italic; }
+  #output .echo { color: var(--accent); }
+  #output .note { color: var(--muted); }
   .hint { padding: 2px 10px; color: var(--muted); font-size: 11px;
-          background: var(--panel); border-top: 1px solid var(--border); }
+          background: var(--panel); border-top: 1px solid var(--border);
+          white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  kbd { font: inherit; border: 1px solid var(--border); border-radius: 2px; padding: 0 3px; }
+  .visually-hidden { position: absolute; width: 1px; height: 1px; overflow: hidden;
+                     clip: rect(0 0 0 0); white-space: nowrap; }
+
+  /* Phones and narrow windows: stack the editor above the console. */
+  @media (max-width: 760px) {
+    main { flex-direction: column; }
+    #divider { display: none; }
+    #left-pane { flex: 1 1 45% !important; }
+    #right-pane { flex: 1 1 55%; }
+    #status { margin-left: 0; width: 100%; }
+  }
 </style>
 </head>
 <body>
 <header>
   <h1>TIME WARP CLASSIC</h1>
   <select id="language" title="Language" aria-label="Language"></select>
-  <button id="run" class="primary" title="Ctrl+Enter">&#9654; Run</button>
+  <button id="run" class="primary" title="Run (Ctrl+Enter)">&#9654; Run</button>
+  <button id="stop" class="danger" title="Stop (Ctrl+.)" disabled>&#9632; Stop</button>
   <select id="examples" title="Load an example" aria-label="Load an example">
     <option value="">Examples&hellip;</option>
   </select>
+  <button id="open" title="Open a program from your computer">Open&hellip;</button>
+  <button id="save" title="Download the program (Ctrl+S)">Save</button>
+  <input id="open-file" type="file" class="visually-hidden" tabindex="-1" aria-hidden="true">
   <span id="status" role="status" aria-live="polite">ready</span>
 </header>
 <main>
   <section class="pane" id="left-pane">
     <h2>Program</h2>
     <div class="editor">
-      <pre id="gutter">1</pre>
-      <div id="code-area">
+      <pre id="gutter" aria-hidden="true">1</pre>
+      <div id="code-area" class="plain">
         <pre id="highlight" aria-hidden="true"></pre>
-        <textarea id="code" spellcheck="false"
+        <textarea id="code" spellcheck="false" autocapitalize="off" autocomplete="off"
           aria-label="Program source">10 PRINT "HELLO FROM THE BROWSER"
 20 FOR I = 1 TO 3
 30 PRINT "COUNT "; I
@@ -127,20 +159,26 @@
 </textarea>
       </div>
     </div>
-    <div class="hint">Ctrl+Enter runs the program. Time limit applies to every run.</div>
+    <div class="hint"><kbd>Ctrl+Enter</kbd> run &middot; <kbd>Ctrl+.</kbd> stop &middot;
+      <kbd>Ctrl+S</kbd> save &middot; your work is kept in this browser between visits</div>
   </section>
-  <div id="divider" title="Drag to resize"></div>
+  <div id="divider" role="separator" aria-orientation="vertical" tabindex="0"
+       aria-valuemin="15" aria-valuemax="85" aria-valuenow="50"
+       aria-label="Resize the editor" title="Drag (or use the arrow keys) to resize"></div>
   <section class="pane" id="right-pane">
-    <h2>Console</h2>
-    <pre id="output" aria-label="Program output"></pre>
+    <h2>Console <span class="spacer"></span>
+      <button id="clear" title="Clear the console">Clear</button></h2>
+    <pre id="output" aria-label="Program output" aria-live="polite"></pre>
     <div id="repl">
-      <span class="prompt" id="repl-prompt">&gt;</span>
-      <input id="repl-input" autocomplete="off" spellcheck="false"
-             placeholder="Type a statement and press Enter (BASIC: PRINT 2+2)">
+      <label class="prompt" id="repl-prompt" for="repl-input">&gt;</label>
+      <input id="repl-input" autocomplete="off" spellcheck="false" autocapitalize="off"
+             placeholder="Type a statement and press Enter">
     </div>
     <div id="graphics">
-      <h2>Graphics <button id="save-png" title="Save the drawing as a PNG">Save PNG</button></h2>
-      <div id="screen-wrap"><canvas id="screen" width="600" height="400"></canvas></div>
+      <h2>Graphics <span class="spacer"></span>
+        <button id="save-png" title="Save the drawing as a PNG">Save PNG</button></h2>
+      <div id="screen-wrap"><canvas id="screen" width="600" height="400"
+        role="img" aria-label="Turtle graphics output"></canvas></div>
     </div>
   </section>
 </main>
@@ -148,44 +186,121 @@
 (function () {
   "use strict";
 
+  const STORE_KEY = "timewarp.web.v1";
+
   const languageSelect = document.getElementById("language");
   const examplesSelect = document.getElementById("examples");
   const code = document.getElementById("code");
+  const codeArea = document.getElementById("code-area");
   const gutter = document.getElementById("gutter");
   const output = document.getElementById("output");
   const runButton = document.getElementById("run");
+  const stopButton = document.getElementById("stop");
+  const openButton = document.getElementById("open");
+  const openFile = document.getElementById("open-file");
+  const saveSourceButton = document.getElementById("save");
+  const clearButton = document.getElementById("clear");
   const status = document.getElementById("status");
   const highlightLayer = document.getElementById("highlight");
   const screen = document.getElementById("screen");
   const screenCtx = screen.getContext("2d");
   const saveButton = document.getElementById("save-png");
+  const replBar = document.getElementById("repl");
   const replInput = document.getElementById("repl-input");
   const replPrompt = document.getElementById("repl-prompt");
 
-  function setStatus(text) { status.textContent = text; }
+  let languages = [];          // entries from /api/languages
+  let activeRun = null;        // { id, controller } while a program runs
+  let savedSource = null;      // text last loaded/saved, to warn before replacing edits
 
-  function appendLine(text, isError) {
-    const line = document.createElement("span");
-    line.textContent = text + "\n";
-    if (isError) line.className = "err";
-    else if (String(text).indexOf("?HINT:") === 0) line.className = "hint-line";
-    output.appendChild(line);
-    output.scrollTop = output.scrollHeight;
+  function newId(prefix) {
+    return (window.crypto && crypto.randomUUID)
+      ? crypto.randomUUID()
+      : prefix + "-" + Date.now().toString(36) + Math.random().toString(36).slice(2);
+  }
+
+  function setStatus(text, tone) {
+    status.textContent = text;
+    status.className = tone || "";
+  }
+
+  // Output is batched (a timer rather than requestAnimationFrame, which
+  // stalls in background tabs) and the console keeps only the most recent
+  // lines, so a tight PRINT loop cannot freeze the tab.
+  const MAX_CONSOLE_LINES = 5000;
+  let pendingLines = [];
+  let flushScheduled = false;
+
+  function lineClass(value, kind) {
+    if (kind) return kind;
+    if (value.indexOf("?HINT:") === 0) return "hint-line";
+    if (value.charAt(0) === "?") return "err";
+    return "";
+  }
+
+  function flushOutput() {
+    flushScheduled = false;
+    if (!pendingLines.length) return;
+    const batch = pendingLines.length > MAX_CONSOLE_LINES
+      ? pendingLines.slice(-MAX_CONSOLE_LINES) : pendingLines;
+    pendingLines = [];
+    const stick = output.scrollHeight - output.scrollTop - output.clientHeight < 40;
+    const fragment = document.createDocumentFragment();
+    batch.forEach(function (entry) {
+      const line = document.createElement("span");
+      line.textContent = entry.text + "\n";
+      if (entry.kind) line.className = entry.kind;
+      fragment.appendChild(line);
+    });
+    output.appendChild(fragment);
+    let excess = output.childElementCount - MAX_CONSOLE_LINES;
+    while (excess-- > 0) output.removeChild(output.firstChild);
+    if (stick) output.scrollTop = output.scrollHeight;
+  }
+
+  function appendLine(text, kind) {
+    const value = String(text);
+    pendingLines.push({ text: value, kind: lineClass(value, kind) });
+    if (pendingLines.length > MAX_CONSOLE_LINES * 2) {
+      pendingLines = pendingLines.slice(-MAX_CONSOLE_LINES);
+    }
+    if (!flushScheduled) {
+      flushScheduled = true;
+      setTimeout(flushOutput, 30);
+    }
+  }
+
+  function clearOutput() {
+    pendingLines = [];
+    output.textContent = "";
+  }
+
+  function lastOutputLine() {
+    if (pendingLines.length) return pendingLines[pendingLines.length - 1].text;
+    const last = output.lastElementChild;
+    return last ? last.textContent.trim() : "";
   }
 
   // ---- graphics canvas -------------------------------------------------
   // The server sends run-length encoded palette indices for the rectangle
-  // that changed, plus a small vector overlay for the turtle marker and text.
+  // that changed, plus a small vector overlay for the turtle marker, tagged
+  // shapes and text.
   const colourProbe = document.createElement("canvas").getContext("2d");
   const colourCache = new Map();
   let canvasImage = null;
   let canvasSize = { width: 0, height: 0 };
 
+  function cssColour(name) {
+    // Tk accepts "light blue" and "Gray50"; CSS wants "lightblue" / "gray".
+    return String(name).trim().toLowerCase().replace(/\s+/g, "")
+      .replace(/^(gr[ae]y)\d+$/, "$1");
+  }
+
   function resolveColour(css) {
     if (!css) return null;
     if (colourCache.has(css)) return colourCache.get(css);
     colourProbe.fillStyle = "#000000";
-    colourProbe.fillStyle = css;
+    colourProbe.fillStyle = cssColour(css);
     const hex = colourProbe.fillStyle;
     let rgb = null;
     if (typeof hex === "string" && hex.slice(0, 1) === "#") {
@@ -256,10 +371,22 @@
     }
   }
 
+  function paint(item) {
+    if (item.fill) {
+      screenCtx.fillStyle = cssColour(item.fill);
+      screenCtx.fill();
+    }
+    if (item.outline) {
+      screenCtx.strokeStyle = cssColour(item.outline);
+      screenCtx.lineWidth = item.width || 1;
+      screenCtx.stroke();
+    }
+  }
+
   function drawOverlay(items) {
     (items || []).forEach(function (item) {
       if (item.kind === "text") {
-        screenCtx.fillStyle = item.fill || "#000000";
+        screenCtx.fillStyle = cssColour(item.fill || "#000000");
         screenCtx.font = (item.size || 12) + "px 'Courier New', monospace";
         screenCtx.textBaseline = "top";
         screenCtx.fillText(item.text, item.x, item.y);
@@ -268,20 +395,30 @@
       const points = item.points || [];
       if (points.length < 2) return;
       screenCtx.beginPath();
+      if (item.kind === "oval" || item.kind === "rectangle") {
+        // Two corners of a bounding box, not a path.
+        const x = Math.min(points[0][0], points[1][0]);
+        const y = Math.min(points[0][1], points[1][1]);
+        const w = Math.abs(points[1][0] - points[0][0]);
+        const h = Math.abs(points[1][1] - points[0][1]);
+        if (item.kind === "oval") {
+          screenCtx.ellipse(x + w / 2, y + h / 2, w / 2, h / 2, 0, 0, Math.PI * 2);
+        } else {
+          screenCtx.rect(x, y, w, h);
+        }
+        paint(item);
+        return;
+      }
       screenCtx.moveTo(points[0][0], points[0][1]);
       for (let index = 1; index < points.length; index += 1) {
         screenCtx.lineTo(points[index][0], points[index][1]);
       }
+      if (item.kind === "line") {
+        paint({ outline: item.outline || item.fill, width: item.width });
+        return;
+      }
       if (points.length > 2) screenCtx.closePath();
-      if (item.fill) {
-        screenCtx.fillStyle = item.fill;
-        screenCtx.fill();
-      }
-      if (item.outline) {
-        screenCtx.strokeStyle = item.outline;
-        screenCtx.lineWidth = item.width || 1;
-        screenCtx.stroke();
-      }
+      paint(item);
     });
   }
 
@@ -292,59 +429,161 @@
     drawOverlay(frame.overlay);
   }
 
-  // ---- syntax highlighting ---------------------------------------------
+  // ---- editor: gutter, highlighting, persistence -----------------------
   // The server renders Pygments tokens to HTML; the textarea on top is
-  // transparent, so it only shows the caret and the selection.
+  // transparent, so it only shows the caret and the selection.  Until a
+  // render for the current text exists the textarea shows its own text.
   let highlightTimer = null;
   let highlightState = { language: null, program: null };
+  let highlightRequest = 0;
 
-  function syncHighlightScroll() {
+  function syncScroll() {
     highlightLayer.scrollTop = code.scrollTop;
     highlightLayer.scrollLeft = code.scrollLeft;
+    gutter.scrollTop = code.scrollTop;
+  }
+
+  function showPlain() {
+    codeArea.classList.add("plain");
   }
 
   async function refreshHighlight() {
     const language = languageSelect.value;
     const program = code.value;
     if (highlightState.language === language && highlightState.program === program) {
+      codeArea.classList.remove("plain");
       return;
     }
+    const ticket = ++highlightRequest;
     try {
       const response = await fetch("/api/highlight", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ language: language, program: program })
       });
-      if (!response.ok) return;
+      if (!response.ok) throw new Error("HTTP " + response.status);
       const data = await response.json();
       // A newer keystroke may have arrived while this was in flight.
-      if (code.value !== program || languageSelect.value !== language) return;
+      if (ticket !== highlightRequest || code.value !== program ||
+          languageSelect.value !== language) return;
       highlightLayer.innerHTML = data.html + "\n";
       highlightState = { language: language, program: program };
-      syncHighlightScroll();
+      codeArea.classList.remove("plain");
+      syncScroll();
     } catch (err) {
-      // Keep the previous colours if highlighting is unavailable.
+      // Never leave the text invisible: fall back to the textarea's own text.
+      if (ticket === highlightRequest) showPlain();
     }
   }
 
-  function scheduleHighlight() {
+  function scheduleHighlight(delay) {
     if (highlightTimer) clearTimeout(highlightTimer);
-    highlightTimer = setTimeout(refreshHighlight, 180);
+    highlightTimer = setTimeout(refreshHighlight, delay === undefined ? 150 : delay);
   }
 
+  let gutterCount = 0;
   function syncGutter() {
     const count = code.value.split("\n").length;
+    if (gutterCount === count) return;
+    gutterCount = count;
     const numbers = [];
     for (let i = 1; i <= count; i += 1) numbers.push(i);
     gutter.textContent = numbers.join("\n");
-    gutter.scrollTop = code.scrollTop;
+    syncScroll();
   }
 
-  async function loadLanguages() {
+  let persistTimer = null;
+  function persist() {
+    if (persistTimer) clearTimeout(persistTimer);
+    persistTimer = setTimeout(function () {
+      try {
+        localStorage.setItem(STORE_KEY, JSON.stringify({
+          language: languageSelect.value, program: code.value
+        }));
+      } catch (err) { /* private mode or storage full: nothing to do */ }
+    }, 300);
+  }
+
+  function restore() {
+    try {
+      return JSON.parse(localStorage.getItem(STORE_KEY) || "null");
+    } catch (err) {
+      return null;
+    }
+  }
+
+  // Replace the buffer as one undoable edit where the browser allows it.
+  function setProgram(text) {
+    const focused = document.activeElement;
+    code.focus({ preventScroll: true });
+    code.select();
+    let replaced = false;
+    try { replaced = document.execCommand("insertText", false, text); } catch (err) { /* old API */ }
+    if (!replaced || code.value !== text) code.value = text;
+    code.setSelectionRange(0, 0);
+    code.scrollTop = 0;
+    onEdited();
+    if (focused && focused !== code && focused.focus) focused.focus();
+  }
+
+  function onEdited() {
+    if (highlightState.program !== code.value) showPlainSoon();
+    syncGutter();
+    scheduleHighlight();
+    persist();
+  }
+
+  // Keep the coloured layer while typing; fall back to plain text only if
+  // the new colours are slow to arrive, so text is never hidden for long.
+  let plainTimer = null;
+  function showPlainSoon() {
+    if (plainTimer) clearTimeout(plainTimer);
+    plainTimer = setTimeout(function () {
+      if (highlightState.program !== code.value) showPlain();
+    }, 600);
+  }
+
+  function isDirty() {
+    return savedSource !== null && code.value !== savedSource && code.value.trim() !== "";
+  }
+
+  function confirmReplace() {
+    return !isDirty() || window.confirm("Replace the program in the editor? Unsaved changes will be lost.");
+  }
+
+  // ---- languages and examples -----------------------------------------
+
+  function languageEntry(name) {
+    for (let i = 0; i < languages.length; i += 1) {
+      if (languages[i].name === name) return languages[i];
+    }
+    return null;
+  }
+
+  function setLanguage(name) {
+    if (!languageEntry(name) || languageSelect.value === name) return;
+    languageSelect.value = name;
+    onLanguageChanged();
+  }
+
+  function onLanguageChanged() {
+    const entry = languageEntry(languageSelect.value);
+    updatePrompt();
+    scheduleHighlight(0);
+    persist();
+    if (entry && entry.available === false) {
+      setStatus(entry.name + " needs its runtime installed on the server", "bad");
+    } else {
+      setStatus("ready");
+    }
+  }
+
+  async function loadLanguages(preferred) {
     const response = await fetch("/api/languages");
     const data = await response.json();
+    languages = data.languages || [];
     languageSelect.innerHTML = "";
-    data.languages.forEach(function (entry) {
+    languages.forEach(function (entry) {
       const option = document.createElement("option");
       option.value = entry.name;
       option.textContent = entry.name;
@@ -352,10 +591,10 @@
         option.textContent = entry.name + " (runtime missing)";
         option.title = entry.name + " needs its runtime installed on the server";
       }
-      if (entry.name === "BASIC") option.selected = true;
       languageSelect.appendChild(option);
     });
-    updatePrompt();
+    languageSelect.value = languageEntry(preferred) ? preferred : "BASIC";
+    onLanguageChanged();
   }
 
   async function loadExamples() {
@@ -372,65 +611,147 @@
 
   async function openExample(path) {
     if (!path) return;
-    const response = await fetch("/api/examples/" + encodeURI(path));
-    const data = await response.json();
-    if (data.error) { setStatus(data.error); return; }
-    code.value = data.source;
     const option = examplesSelect.selectedOptions[0];
-    if (option && option.dataset.language) {
-      languageSelect.value = option.dataset.language;
+    examplesSelect.value = "";  // so picking the same example again reloads it
+    if (!confirmReplace()) return;
+    try {
+      const response = await fetch("/api/examples/" +
+        path.split("/").map(encodeURIComponent).join("/"));
+      const data = await response.json();
+      if (!response.ok || data.error) {
+        setStatus(data.error || ("HTTP " + response.status), "bad");
+        return;
+      }
+      if (option && option.dataset.language) setLanguage(option.dataset.language);
+      setProgram(data.source);
+      savedSource = data.source;
+      setStatus("loaded " + path);
+    } catch (err) {
+      setStatus("could not load example: " + err.message, "bad");
     }
-    syncGutter();
-    setStatus("loaded " + path);
   }
 
-  function handleFrame(frame) {
+  function extensionFor(name) {
+    const entry = languageEntry(name);
+    return (entry && entry.extension) || ".txt";
+  }
+
+  function languageForFile(filename) {
+    const dot = filename.lastIndexOf(".");
+    if (dot < 0) return null;
+    const ext = filename.slice(dot).toLowerCase();
+    for (let i = 0; i < languages.length; i += 1) {
+      if (String(languages[i].extension).toLowerCase() === ext) return languages[i].name;
+    }
+    const aliases = { ".bas": "BASIC", ".pas": "Pascal", ".pl": "Perl", ".py": "Python",
+                      ".js": "JavaScript", ".fth": "Forth", ".4th": "Forth", ".logo": "Logo",
+                      ".lgo": "Logo", ".pilot": "PILOT", ".pro": "Prolog" };
+    return aliases[ext] || null;
+  }
+
+  function downloadSource() {
+    const blob = new Blob([code.value], { type: "text/plain;charset=utf-8" });
+    const link = document.createElement("a");
+    link.download = "program" + extensionFor(languageSelect.value);
+    link.href = URL.createObjectURL(blob);
+    link.click();
+    setTimeout(function () { URL.revokeObjectURL(link.href); }, 1000);
+    savedSource = code.value;
+    setStatus("saved " + link.download);
+  }
+
+  openButton.addEventListener("click", function () { openFile.click(); });
+  openFile.addEventListener("change", function () {
+    const file = openFile.files && openFile.files[0];
+    openFile.value = "";
+    if (!file || !confirmReplace()) return;
+    if (file.size > 256 * 1024) {
+      setStatus(file.name + " is larger than the 256 KB program limit", "bad");
+      return;
+    }
+    file.text().then(function (text) {
+      const language = languageForFile(file.name);
+      if (language) setLanguage(language);
+      setProgram(text);
+      savedSource = text;
+      setStatus("opened " + file.name);
+    });
+  });
+  saveSourceButton.addEventListener("click", downloadSource);
+
+  // ---- running programs ------------------------------------------------
+
+  function setRunning(running) {
+    runButton.disabled = running;
+    stopButton.disabled = !running;
+    languageSelect.disabled = running;
+    updatePrompt();
+  }
+
+  function handleFrame(frame, run) {
     let event = "message";
     let payload = "";
     frame.split("\n").forEach(function (line) {
       if (line.startsWith("event:")) event = line.slice(6).trim();
       else if (line.startsWith("data:")) payload += line.slice(5).trim();
     });
-    if (!payload) return;
+    if (!payload) return;  // ":" comments are keep-alives
     const data = JSON.parse(payload);
+    if (event === "start") return;
     if (event === "done") {
-      const issues = data.errors > 0 || data.timed_out;
-      setStatus(
-        (data.timed_out ? "stopped after " : "finished in ") +
-        data.seconds.toFixed(2) + "s" + (issues ? " (with errors)" : "")
-      );
+      run.done = true;
+      const issues = data.errors > 0;
+      let text;
+      if (data.stopped) text = "stopped after " + data.seconds.toFixed(2) + "s";
+      else if (data.timed_out) text = "time limit reached after " + data.seconds.toFixed(2) + "s";
+      else if (data.output_capped) text = "output limit reached after " + data.seconds.toFixed(2) + "s";
+      else text = "finished in " + data.seconds.toFixed(2) + "s" + (issues ? " (with errors)" : "");
+      setStatus(text, (issues || data.timed_out || data.output_capped) ? "bad" : "");
       return;
     }
     if (event === "error") {
-      appendLine(data.error, true);
-      setStatus("error");
+      run.done = true;
+      appendLine(data.error, "err");
+      setStatus("error", "bad");
       return;
     }
     if (event === "canvas") {
       applyCanvasFrame(data);
       return;
     }
-    if (typeof data.line === "string") {
-      const isHint = data.line.startsWith("?HINT:");
-      appendLine(data.line, !isHint && data.line.startsWith("?"));
+    if (event === "input") {
+      run.waiting = true;
+      // BASIC prints its prompt as a line and passes none; use that line.
+      run.prompt = data.prompt || lastOutputLine();
+      updatePrompt();
+      setStatus("waiting for input", "busy");
+      replInput.focus();
+      return;
     }
+    if (typeof data.line === "string") appendLine(data.line);
   }
 
-  async function run() {
-    runButton.disabled = true;
-    output.textContent = "";
+  async function run(source) {
+    if (activeRun) return;
+    const program = typeof source === "string" ? source : code.value;
+    const current = { id: newId("run"), controller: new AbortController(),
+                      done: false, waiting: false, prompt: "" };
+    activeRun = current;
+    setRunning(true);
+    clearOutput();
     resetCanvas();
-    setStatus("running\u2026");
+    setStatus("running\u2026", "busy");
     try {
       const response = await fetch("/api/run", {
         method: "POST",
         headers: { "Content-Type": "application/json", "Accept": "text/event-stream" },
-        body: JSON.stringify({ language: languageSelect.value, program: code.value })
+        body: JSON.stringify({ language: languageSelect.value, program: program, run: current.id }),
+        signal: current.controller.signal
       });
       if (!response.ok) {
-        const problem = await response.json();
-        appendLine(problem.error || ("HTTP " + response.status), true);
-        setStatus("error");
+        const problem = await response.json().catch(function () { return {}; });
+        appendLine(problem.error || ("HTTP " + response.status), "err");
+        setStatus("error", "bad");
         return;
       }
       const reader = response.body.getReader();
@@ -442,100 +763,142 @@
         buffer += decoder.decode(chunk.value, { stream: true });
         let split = buffer.indexOf("\n\n");
         while (split >= 0) {
-          handleFrame(buffer.slice(0, split));
+          handleFrame(buffer.slice(0, split), current);
           buffer = buffer.slice(split + 2);
           split = buffer.indexOf("\n\n");
         }
       }
-      if (buffer.trim()) handleFrame(buffer);
+      if (buffer.trim()) handleFrame(buffer, current);
+      if (!current.done) {
+        appendLine("?ERROR: the connection to the server closed before the program finished", "err");
+        setStatus("connection lost", "bad");
+      }
     } catch (err) {
-      appendLine("?ERROR: " + err.message, true);
-      setStatus("error");
+      if (err.name === "AbortError") {
+        setStatus("stopped", "bad");
+      } else {
+        appendLine("?ERROR: " + err.message + " (is the server still running?)", "err");
+        setStatus("server unreachable", "bad");
+      }
     } finally {
-      runButton.disabled = false;
+      activeRun = null;
+      setRunning(false);
     }
   }
 
-  code.addEventListener("input", syncGutter);
-  code.addEventListener("scroll", function () {
-    gutter.scrollTop = code.scrollTop;
-    syncHighlightScroll();
-  });
-  code.addEventListener("input", scheduleHighlight);
-  code.addEventListener("keydown", function (event) {
-    if (event.key === "Tab") {
-      event.preventDefault();
-      const start = code.selectionStart;
-      code.setRangeText("  ", start, code.selectionEnd, "end");
-      syncGutter();
+  function post(path, body) {
+    return fetch(path, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(body)
+    });
+  }
+
+  function stop() {
+    const current = activeRun;
+    if (!current) return;
+    setStatus("stopping\u2026", "busy");
+    post("/api/stop", { run: current.id }).catch(function () {
+      current.controller.abort();
+    });
+    // If the server does not answer promptly, drop the stream ourselves.
+    setTimeout(function () {
+      if (activeRun === current) current.controller.abort();
+    }, 2000);
+  }
+
+  async function sendInput(text) {
+    const current = activeRun;
+    current.waiting = false;
+    current.prompt = "";
+    updatePrompt();
+    setStatus("running\u2026", "busy");
+    try {
+      const response = await post("/api/input", { run: current.id, text: text });
+      if (!response.ok) {
+        const problem = await response.json().catch(function () { return {}; });
+        appendLine(problem.error || ("HTTP " + response.status), "err");
+      }
+    } catch (err) {
+      appendLine("?ERROR: " + err.message, "err");
     }
-    if (event.key === "Enter" && (event.ctrlKey || event.metaKey)) {
-      event.preventDefault();
-      run();
+  }
+
+  window.addEventListener("pagehide", function () {
+    if (activeRun && navigator.sendBeacon) {
+      navigator.sendBeacon("/api/stop", JSON.stringify({ run: activeRun.id }));
     }
-  });
-  runButton.addEventListener("click", run);
-  saveButton.addEventListener("click", function () {
-    const link = document.createElement("a");
-    link.download = "timewarp-drawing.png";
-    link.href = screen.toDataURL("image/png");
-    link.click();
   });
 
-  // ---- REPL ------------------------------------------------------------
+  // ---- console bar: REPL when idle, program input while running ---------
   // One session id per tab; the server keeps the interpreter (and its
   // variables) alive between lines.
-  const replSession = (window.crypto && crypto.randomUUID)
-    ? crypto.randomUUID()
-    : "tab-" + Math.random().toString(36).slice(2);
+  const replSession = newId("tab");
   const replHistory = [];
   let replHistoryIndex = 0;
 
-  function replEcho(text, isError) {
-    appendLine(text, isError);
+  function updatePrompt() {
+    const language = languageSelect.value || "BASIC";
+    replBar.classList.toggle("input-mode", Boolean(activeRun));
+    if (activeRun) {
+      replPrompt.textContent = "?";
+      replInput.placeholder = activeRun.waiting
+        ? (activeRun.prompt.trim() || "The program is waiting for input") + " - type and press Enter"
+        : "Input for the running program";
+      return;
+    }
+    replPrompt.textContent = ">";
+    replInput.placeholder = language === "BASIC"
+      ? "Direct mode: PRINT 2+2, 10 PRINT \"HI\", LIST, RUN, HELP"
+      : "Type a " + language + " statement and press Enter";
   }
 
-  async function submitRepl() {
-    const line = replInput.value;
-    if (!line.trim()) return;
-    replInput.value = "";
-    replHistory.push(line);
-    replHistoryIndex = replHistory.length;
-    replEcho("> " + line, false);
-    setStatus("evaluating\u2026");
-
+  async function submitRepl(line) {
+    replEcho(line);
+    setStatus("evaluating\u2026", "busy");
     try {
-      const response = await fetch("/api/repl", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          session: replSession,
-          language: languageSelect.value,
-          line: line
-        })
+      const response = await post("/api/repl", {
+        session: replSession,
+        language: languageSelect.value,
+        line: line,
+        program: code.value
       });
       const result = await response.json();
       if (!response.ok) {
-        replEcho(result.error || ("HTTP " + response.status), true);
-        setStatus("error");
+        appendLine(result.error || ("HTTP " + response.status), "err");
+        setStatus("error", "bad");
         return;
       }
-      (result.output || []).forEach(function (text) {
-        const isHint = String(text).indexOf("?HINT:") === 0;
-        replEcho(text, !isHint && String(text).startsWith("?"));
-      });
+      (result.output || []).forEach(function (text) { appendLine(text); });
       if (result.canvas) applyCanvasFrame(result.canvas);
-      setStatus(result.exit === 0 ? "ok" : "statement failed");
+      if (typeof result.program === "string") setProgram(result.program);
+      setStatus(result.exit === 0 ? "ok" : "statement failed", result.exit === 0 ? "" : "bad");
+      if (typeof result.run === "string") run(result.run);
     } catch (err) {
-      replEcho("?ERROR: " + err.message, true);
-      setStatus("error");
+      appendLine("?ERROR: " + err.message, "err");
+      setStatus("server unreachable", "bad");
     }
+  }
+
+  function replEcho(line) {
+    appendLine((activeRun ? "" : "> ") + line, "echo");
   }
 
   replInput.addEventListener("keydown", function (event) {
     if (event.key === "Enter") {
       event.preventDefault();
-      submitRepl();
+      const line = replInput.value;
+      if (activeRun) {
+        // Input lines are echoed by the server, in order with the output.
+        replInput.value = "";
+        sendInput(line);
+        return;
+      }
+      if (!line.trim()) return;
+      replInput.value = "";
+      if (replHistory[replHistory.length - 1] !== line) replHistory.push(line);
+      replHistoryIndex = replHistory.length;
+      submitRepl(line);
       return;
     }
     if (event.key === "ArrowUp" && replHistory.length) {
@@ -551,17 +914,58 @@
     }
   });
 
-  function updatePrompt() {
-    replPrompt.textContent = ">";
-    replInput.placeholder = "Type a statement and press Enter (" +
-      languageSelect.value + ")";
-  }
+  // ---- keyboard and buttons ---------------------------------------------
+
+  code.addEventListener("input", onEdited);
+  code.addEventListener("scroll", syncScroll);
+  code.addEventListener("keydown", function (event) {
+    if (event.key === "Tab" && !event.ctrlKey && !event.altKey && !event.metaKey) {
+      event.preventDefault();
+      // insertText keeps the edit undoable and fires "input".
+      if (!document.execCommand("insertText", false, "  ")) {
+        code.setRangeText("  ", code.selectionStart, code.selectionEnd, "end");
+        onEdited();
+      }
+    }
+  });
+  document.addEventListener("keydown", function (event) {
+    const mod = event.ctrlKey || event.metaKey;
+    if (mod && event.key === "Enter") {
+      event.preventDefault();
+      run();
+    } else if (mod && event.key === ".") {
+      event.preventDefault();
+      stop();
+    } else if (mod && (event.key === "s" || event.key === "S")) {
+      event.preventDefault();
+      downloadSource();
+    }
+  });
+  runButton.addEventListener("click", function () { run(); });
+  stopButton.addEventListener("click", stop);
+  clearButton.addEventListener("click", function () {
+    clearOutput();
+    replInput.focus();
+  });
+  saveButton.addEventListener("click", function () {
+    const link = document.createElement("a");
+    link.download = "timewarp-drawing.png";
+    link.href = screen.toDataURL("image/png");
+    link.click();
+  });
 
   (function enableSplitDrag() {
     const divider = document.getElementById("divider");
     const leftPane = document.getElementById("left-pane");
     const workspace = document.querySelector("main");
     let dragging = false;
+    let share = 50;
+
+    function setShare(value) {
+      share = Math.min(85, Math.max(15, value));
+      leftPane.style.flex = "0 0 " + share + "%";
+      divider.setAttribute("aria-valuenow", String(Math.round(share)));
+    }
 
     divider.addEventListener("pointerdown", function (event) {
       dragging = true;
@@ -570,29 +974,39 @@
     });
     divider.addEventListener("pointermove", function (event) {
       if (!dragging) return;
-      const share = (event.clientX / workspace.clientWidth) * 100;
-      leftPane.style.flex = "0 0 " + Math.min(85, Math.max(15, share)) + "%";
+      const box = workspace.getBoundingClientRect();
+      setShare(((event.clientX - box.left) / box.width) * 100);
     });
-    function stop(event) {
+    function stopDrag(event) {
       if (!dragging) return;
       dragging = false;
       divider.releasePointerCapture(event.pointerId);
     }
-    divider.addEventListener("pointerup", stop);
-    divider.addEventListener("pointercancel", stop);
+    divider.addEventListener("pointerup", stopDrag);
+    divider.addEventListener("pointercancel", stopDrag);
+    divider.addEventListener("keydown", function (event) {
+      if (event.key === "ArrowLeft") { setShare(share - 5); event.preventDefault(); }
+      if (event.key === "ArrowRight") { setShare(share + 5); event.preventDefault(); }
+    });
   }());
+
   examplesSelect.addEventListener("change", function () {
     openExample(examplesSelect.value);
   });
-  languageSelect.addEventListener("change", function () {
-    updatePrompt();
-    scheduleHighlight();
-  });
+  languageSelect.addEventListener("change", onLanguageChanged);
 
+  // ---- start-up ---------------------------------------------------------
+  const stored = restore();
+  if (stored && typeof stored.program === "string" && stored.program.trim()) {
+    code.value = stored.program;
+  }
+  savedSource = code.value;
   syncGutter();
   resetCanvas();
-  scheduleHighlight();
-  loadLanguages().catch(function (err) { setStatus("offline: " + err.message); });
+  updatePrompt();
+  loadLanguages(stored && stored.language).catch(function (err) {
+    setStatus("server unreachable: " + err.message, "bad");
+  });
   loadExamples().catch(function () {});
 }());
 </script>

@@ -225,7 +225,11 @@ class SubprocessExecutor:
             self._buffered_command(command),
             stdout=subprocess.PIPE,
             stderr=subprocess.STDOUT,
-            stdin=subprocess.PIPE,
+            stdin=(
+                subprocess.PIPE
+                if getattr(self.interpreter, "subprocess_stdin_pipe", True)
+                else None
+            ),
             text=True,
             bufsize=1,
             env=self._child_env(),

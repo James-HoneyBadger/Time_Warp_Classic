@@ -1,158 +1,83 @@
-# Time_Warp Classic - Documentation Index
+# Time Warp Classic documentation
 
-Welcome to the complete documentation for Time_Warp Classic IDE.
+A map of the docs, grouped by what you are trying to do. Installation lives in
+[SETUP.md](../SETUP.md); the project overview is the top-level
+[README](../README.md).
 
----
+## Start here
 
-## 📖 Documentation Suite
+| Document | Read it when |
+|----------|--------------|
+| [Quick start](QUICK_START.md) | You want a program running in a few minutes |
+| [Setup](../SETUP.md) | Installing, Tkinter, venvs, Docker, tests, releasing |
+| [Example programs](../examples/README.md) | You learn faster from working code |
+| [FAQ](FAQ.md) | You have a "can it do X?" question |
+| [Troubleshooting](TROUBLESHOOTING.md) | Something does not start or does not run |
+| [Changelog](../CHANGELOG.md) | You want to know what changed in a release |
 
-### For Users
+## Learning the languages
 
-| Document | Description |
-|----------|-------------|
-| **[Quick Start Guide](QUICK_START.md)** | Get up and running in 5 minutes |
-| **[Language Tutorials](user/LANGUAGE_TUTORIALS.md)** | Tutorials for all 9 supported languages |
-| **[Example Programs](../examples/README.md)** | Guided tour of all example programs |
-| **[FAQ](FAQ.md)** | Frequently asked questions |
-| **[Troubleshooting](TROUBLESHOOTING.md)** | Common issues and solutions |
+[Language tutorials](user/LANGUAGE_TUTORIALS.md) walk through all nine. The
+references cover each dialect as Time Warp implements it:
 
-### For Developers
+| Built-in interpreters | External runtimes |
+|-----------------------|-------------------|
+| [BASIC](languages/BASIC_REFERENCE.md) | [Python](languages/PYTHON_REFERENCE.md) |
+| [PILOT](languages/PILOT_REFERENCE.md) | [JavaScript](languages/JAVASCRIPT_REFERENCE.md) (Node.js) |
+| [Logo](languages/LOGO_REFERENCE.md) | [Perl](languages/PERL_REFERENCE.md) |
+| [Pascal](languages/PASCAL_REFERENCE.md) | |
+| [Prolog](languages/PROLOG_REFERENCE.md) | |
+| [Forth](languages/FORTH_REFERENCE.md) | |
 
-| Document | Description |
-|----------|-------------|
-| **[Technical Reference](dev/TECHNICAL_REFERENCE.md)** | Architecture and implementation details |
-| **[Contributing](../README.md#contributing)** | Contributing and extending Time_Warp |
+Example programs, two or three per language:
+[BASIC](../examples/basic/), [PILOT](../examples/pilot/),
+[Logo](../examples/logo/), [Pascal](../examples/pascal/),
+[Prolog](../examples/prolog/), [Forth](../examples/forth/),
+[Python](../examples/python/), [JavaScript](../examples/javascript/),
+[Perl](../examples/perl/).
 
-### Language References
+For turtle graphics, start with the Logo reference; BASIC has turtle
+commands too.
 
-| Document | Description |
-|----------|-------------|
-| **[PILOT](languages/PILOT_REFERENCE.md)** | PILOT language reference |
-| **[BASIC](languages/BASIC_REFERENCE.md)** | BASIC language reference |
-| **[Logo](languages/LOGO_REFERENCE.md)** | Logo language reference |
-| **[Pascal](languages/PASCAL_REFERENCE.md)** | Pascal language reference |
-| **[Prolog](languages/PROLOG_REFERENCE.md)** | Prolog language reference |
-| **[Forth](languages/FORTH_REFERENCE.md)** | Forth language reference |
-| **[Perl](languages/PERL_REFERENCE.md)** | Perl language reference |
-| **[Python](languages/PYTHON_REFERENCE.md)** | Python language reference |
-| **[JavaScript](languages/JAVASCRIPT_REFERENCE.md)** | JavaScript language reference |
+## Beyond the desktop window
 
----
+| Document | Covers |
+|----------|--------|
+| [Web IDE](dev/WEB.md) | `--web`, the browser IDE, its limits and the JSON API |
+| [Exporting](dev/EXPORTING.md) | **File → Export Runner...** and standalone `.pyz` runners |
+| [Plugins](dev/PLUGINS.md) | Adding a language you already have installed with a JSON manifest |
 
-## 🎯 Where to Start
+## Working on Time Warp itself
 
-### I'm new to Time_Warp
-👉 Start with **[Quick Start Guide](QUICK_START.md)**
+| Document | Covers |
+|----------|--------|
+| [Technical reference](dev/TECHNICAL_REFERENCE.md) | Architecture, the interpreter, executors, adding a language |
+| [Setup → Tests and linting](../SETUP.md#tests-and-linting) | pytest, coverage, GUI tests on headless machines |
+| [Setup → Releasing](../SETUP.md#releasing-maintainers) | Tag-based PyPI, TestPyPI and GHCR publishing |
 
-### I want to learn a language
-👉 Read the **[Language Tutorials](user/LANGUAGE_TUTORIALS.md)**
+Source starts at [`Time_Warp.py`](../Time_Warp.py), then
+[`core/interpreter.py`](../core/interpreter.py),
+[`core/languages/`](../core/languages/), [`gui/`](../gui/) and
+[`web/`](../web/).
 
-### I want to see examples
-👉 Check out **[Example Programs](../examples/README.md)**
+## Layout
 
-### I want to understand internals
-👉 Study the **[Technical Reference](dev/TECHNICAL_REFERENCE.md)**
+```text
+docs/
+├── README.md               # This map
+├── INDEX.md                # Pointer to this map
+├── QUICK_START.md
+├── FAQ.md
+├── TROUBLESHOOTING.md
+├── user/
+│   └── LANGUAGE_TUTORIALS.md
+├── languages/              # One *_REFERENCE.md per language (9 files)
+└── dev/
+    ├── TECHNICAL_REFERENCE.md
+    ├── WEB.md
+    ├── EXPORTING.md
+    └── PLUGINS.md
+```
 
-### I want to contribute
-👉 See **[Contributing](../README.md#contributing)**
-
----
-
-## 📚 Documentation by Topic
-
-### Getting Started
-- [Installation](QUICK_START.md#1-install-python-if-needed)
-- [First Launch](QUICK_START.md#4-launch-the-ide)
-- [First Program](QUICK_START.md#5-write-your-first-program)
-- [Loading Examples](QUICK_START.md#6-load-an-example)
-
-### Programming Languages
-- [All 9 Languages](../README.md#-supported-languages)
-- [Language Tutorials](user/LANGUAGE_TUTORIALS.md)
-- [PILOT Programs](../examples/pilot/)
-- [BASIC Programs](../examples/basic/)
-- [Logo Programs](../examples/logo/)
-- [Pascal Programs](../examples/pascal/)
-- [Prolog Programs](../examples/prolog/)
-- [Forth Programs](../examples/forth/)
-- [Perl Programs](../examples/perl/)
-- [Python Programs](../examples/python/)
-- [JavaScript Programs](../examples/javascript/)
-
-### Turtle Graphics
-- [Logo Language Reference](languages/LOGO_REFERENCE.md)
-- [Logo Examples](../examples/logo/)
-
-### Troubleshooting
-- [FAQ](FAQ.md)
-- [Troubleshooting Guide](TROUBLESHOOTING.md)
-- [Quick Start Troubleshooting](QUICK_START.md#troubleshooting)
-
-### Advanced Topics
-- [Architecture](dev/TECHNICAL_REFERENCE.md#architecture-overview)
-- [Core Components](dev/TECHNICAL_REFERENCE.md#core-components)
-- [Language Execution System](dev/TECHNICAL_REFERENCE.md#language-execution-system)
-- [Extension Guide](dev/TECHNICAL_REFERENCE.md#adding-a-new-language)
-
----
-
-## 🔍 Search by Task
-
-### I want to...
-
-**...start programming quickly**
-- [Quick Start Guide](QUICK_START.md)
-
-**...learn a specific language**
-- [Language Tutorials](user/LANGUAGE_TUTORIALS.md)
-- [Load examples](../examples/README.md) in that language
-
-**...draw graphics**
-- [Logo Language Reference](languages/LOGO_REFERENCE.md)
-- [Logo Examples](../examples/logo/)
-
-**...understand how it works**
-- [Technical Reference](dev/TECHNICAL_REFERENCE.md)
-
-**...add a new language**
-- [Extension Guide](dev/TECHNICAL_REFERENCE.md#adding-a-new-language)
-
-**...report a bug**
-- [GitHub Issues](https://github.com/James-HoneyBadger/Time_Warp_Classic/issues)
-
----
-
-## 📝 Documentation Standards
-
-All Time_Warp documentation follows these principles:
-
-1. **Clear and Concise** - Get to the point quickly
-2. **Examples Included** - Show, don't just tell
-3. **Progressive Difficulty** - Start simple, build up
-4. **Cross-Referenced** - Link to related docs
-5. **Up-to-Date** - Matches current codebase
-
----
-
-## 🤝 Contributing to Documentation
-
-Found an error? Want to improve the docs?
-
-1. Documentation source is in `docs/` directory
-2. Written in Markdown format
-3. Submit improvements via pull request
-4. Follow existing style and structure
-
----
-
-## 📞 Documentation Support
-
-- **Missing documentation?** Open an issue
-- **Found an error?** Submit a pull request
-- **Need clarification?** Ask in discussions
-
----
-
-**Complete Documentation for Complete Programming** 📚
-
-© 2025–2026 Honey Badger Universe | Documentation
+Found something wrong or out of date? Open an issue or a pull request at
+<https://github.com/James-HoneyBadger/Time_Warp_Classic>.

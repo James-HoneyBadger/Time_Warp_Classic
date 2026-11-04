@@ -182,12 +182,17 @@ def test_streaming_run_uses_server_sent_events(base):
     text = body.decode()
 
     assert headers["Content-Type"].startswith("text/event-stream")
-    frames = [line[6:] for line in text.splitlines() if line.startswith("data: ")]
-    lines = [json.loads(frame)["line"] for frame in frames[:-1]]
-    done = json.loads(frames[-1])
+    frames = [
+        json.loads(line[6:]) for line in text.splitlines() if line.startswith("data: ")
+    ]
+    lines = [frame["line"] for frame in frames if "line" in frame]
+    done = frames[-1]
 
+    assert text.startswith("event: start")
+    assert frames[0]["run"]
     assert lines == ["one", "two"]
     assert done["exit"] == 0
+    assert done["run"] == frames[0]["run"]
     assert "event: done" in text
 
 
@@ -287,6 +292,10 @@ def test_service_runs_a_plugin_language(tmp_path):
 
     assert "plugin in the browser" in result["output"]
     assert result["exit"] == 0
+
+    # Each run has its own interpreter; output must not go to the first one.
+    second = service.run("TinyPython", 'print("second run")')
+    assert "second run" in second["output"]
 
 
 # ------------------------------------------------------------------- REPL
@@ -398,7 +407,12 @@ def test_server_stops_on_sigterm(tmp_path):
         env=environment,
     )
     try:
-        banner = process.stdout.readline()
+        # Optional-dependency notices (no Pillow, ...) may come first.
+        banner = ""
+        for _ in range(5):
+            banner = process.stdout.readline()
+            if "web IDE" in banner or not banner:
+                break
         assert "web IDE" in banner, banner
         started = time.monotonic()
         process.terminate()  # SIGTERM
@@ -456,3 +470,182 @@ def test_examples_exclude_package_files(base):
     assert paths
     assert all("/" in path for path in paths)
     assert not any(path.endswith("__init__.py") for path in paths)
+
+
+# ------------------------------------------------------ input and stopping
+
+def _answer(service, run_id, values):
+    """Feed *values* to a run as soon as it is registered."""
+    def feed():
+        for value in values:
+            deadline = time.monotonic() + 10
+            while time.monotonic() < deadline:
+                try:
+                    service.send_input(run_id, value)
+                    break
+                except BadRequest:
+                    time.sleep(0.02)
+    thread = threading.Thread(target=feed, daemon=True)
+    thread.start()
+    return thread
+
+
+@pytest.mark.parametrize(
+    "language, program, answer, expected",
+    [
+        ("BASIC", '10 INPUT "NAME"; N$\n20 PRINT "HI "; N$', "ADA", "HI ADA"),
+        ("Pascal",
+         "program t;\nvar a: integer;\nbegin\nreadln(a);\nwriteln(a*2);\nend.",
+         "21", "42"),
+    ],
+)
+def test_input_reaches_a_running_program(language, program, answer, expected):
+    service = RunnerService(timeout=5)
+    prompts = []
+    feeder = _answer(service, "in-1", [answer])
+
+    result = service.run(language, program, run_id="in-1", on_input=prompts.append)
+    feeder.join(5)
+
+    assert prompts, "the program never asked for input"
+    assert answer in result["output"]
+    assert expected in result["output"]
+    assert result["exit"] == 0
+
+
+def test_input_reaches_a_subprocess_program_on_stdin():
+    import sys
+
+    if sys.platform.startswith("win"):
+        pytest.skip("stdin streaming is exercised on POSIX")
+    service = RunnerService(timeout=10)
+    feeder = _answer(service, "py-1", ["grace"])
+
+    result = service.run(
+        "Python", 'name = input()\nprint("hi", name)\n', run_id="py-1"
+    )
+    feeder.join(5)
+
+    assert "hi grace" in result["output"]
+
+
+def test_waiting_for_input_does_not_use_the_time_limit():
+    service = RunnerService(timeout=0.5)
+    timer = threading.Timer(1.0, service.send_input, args=("slow", "7"))
+    timer.start()
+
+    result = service.run("BASIC", "10 INPUT A\n20 PRINT A*6", run_id="slow")
+
+    assert result["timed_out"] is False
+    assert "42" in result["output"]
+
+
+def test_input_never_reads_the_server_stdin(monkeypatch):
+    def refuse(*_args):
+        raise AssertionError("input() was called on the server")
+
+    monkeypatch.setattr("builtins.input", refuse)
+    service = RunnerService(timeout=1, input_timeout=0.3)
+
+    result = service.run("PILOT", "A:\nT:after", run_id="pilot-1")
+
+    assert any("no input" in line for line in result["output"])
+
+
+def test_a_running_program_can_be_stopped():
+    service = RunnerService(timeout=10)
+    threading.Timer(0.3, service.stop, args=("loop-1",)).start()
+    started = time.monotonic()
+
+    result = service.run("BASIC", "10 LET X = X + 1\n20 GOTO 10", run_id="loop-1")
+
+    assert time.monotonic() - started < 5
+    assert result["stopped"] is True
+    assert result["exit"] == 1
+    assert any(line.startswith("BREAK") for line in result["output"])
+
+
+def test_stop_and_input_for_unknown_runs(base):
+    status, body, _headers = _post(base, {"run": "nope"}, path="/api/stop")
+    assert status == 200
+    assert json.loads(body) == {"stopped": False}
+
+    with pytest.raises(urllib.error.HTTPError) as error:
+        _post(base, {"run": "nope", "text": "x"}, path="/api/input")
+    assert error.value.code == 404
+
+
+def test_stop_endpoint_interrupts_a_streaming_run(base):
+    result = {}
+
+    def runner():
+        _status, body, _headers = _post(
+            base,
+            {"language": "BASIC", "program": "10 GOTO 10", "run": "http-stop"},
+            accept="text/event-stream",
+        )
+        result["text"] = body.decode()
+
+    thread = threading.Thread(target=runner)
+    thread.start()
+    time.sleep(0.4)
+    _post(base, {"run": "http-stop"}, path="/api/stop")
+    thread.join(10)
+
+    assert '"stopped": true' in result["text"]
+
+
+def test_output_flood_is_capped(monkeypatch):
+    monkeypatch.setattr("web.server.MAX_OUTPUT_LINES", 50)
+    service = RunnerService(timeout=10)
+
+    result = service.run("BASIC", '10 PRINT "X"\n20 GOTO 10')
+
+    assert len(result["output"]) == 51
+    assert result["output_capped"] is True
+    assert "output limit" in result["output"][-1]
+
+
+def test_turtle_chatter_is_quiet_for_logo_basic_and_pilot():
+    service = RunnerService()
+
+    assert service.run("Logo", "PU HOME PD SETPENCOLOR [1 2 3] HT\nFD 10")["output"] == []
+    assert service.run("BASIC", "10 PENUP\n20 PENDOWN")["output"] == []
+    assert service.run("PILOT", "G:PENUP\nG:COLOR,red")["output"] == []
+
+
+# ------------------------------------------------------- BASIC direct mode
+
+def test_repl_basic_numbered_line_edits_the_program():
+    service = RunnerService()
+
+    result = service.repl("d1", "BASIC", '10 PRINT "A"', program='20 PRINT "B"\n')
+
+    assert result["output"] == ["OK"]
+    assert result["program"] == '10 PRINT "A"\n20 PRINT "B"\n'
+
+
+def test_repl_basic_list_and_run_use_the_editor_program():
+    service = RunnerService()
+    program = "20 PRINT 2\n10 PRINT 1\n"
+
+    listed = service.repl("d2", "BASIC", "LIST", program=program)
+    ran = service.repl("d2", "BASIC", "RUN", program=program)
+
+    assert listed["output"] == ["10 PRINT 1", "20 PRINT 2"]
+    assert ran["run"] == "10 PRINT 1\n20 PRINT 2\n"
+
+
+def test_repl_input_is_refused_instead_of_reading_stdin(monkeypatch):
+    def refuse(*_args):
+        raise AssertionError("input() was called on the server")
+
+    monkeypatch.setattr("builtins.input", refuse)
+    service = RunnerService()
+
+    result = service.repl("d3", "BASIC", "INPUT A")
+    after = service.repl("d3", "BASIC", "PRINT 2+2")
+
+    assert any("needs a running program" in line for line in result["output"])
+    assert after["output"] == ["4"]
+

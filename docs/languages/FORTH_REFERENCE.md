@@ -1,486 +1,333 @@
 # Forth Language Reference
 
-Complete reference for Forth syntax in Time Warp Classic.
+Charles Moore developed Forth around 1970: a stack machine, a dictionary
+of words, and an interpreter small enough to fit in a few kilobytes.
+FORTH-79, FORTH-83 and ANS Forth (1994) standardised it; Gforth is the usual
+modern implementation.
 
-## Stack-Based Programming
+Time Warp Classic runs its own Forth in `core/languages/forth.py`, written in
+Python. The core is solid: the data stack, arithmetic, colon definitions,
+`IF`/`ELSE`/`THEN`, `DO`/`LOOP`, `BEGIN` loops, variables and constants.
+Beyond that it isn't a real Forth. There's no memory model, no `HERE`, no
+compile-time words, and output is line-based. Everything below was checked
+by running it.
 
-Forth uses a **stack** for computation:
-- Values are pushed onto stack
-- Operations consume values from stack
-- Results are pushed back on stack
+## Contents
 
-```
-Stack Operations:
+- [Program Structure](#program-structure)
+- [Output Model](#output-model)
+- [Word Reference](#word-reference)
+- [Defining Words](#defining-words)
+- [Control Structures](#control-structures)
+- [Variables, Constants and Arrays](#variables-constants-and-arrays)
+- [Floating Point](#floating-point)
+- [Examples](#examples)
+- [Differences from Classic Forth](#differences-from-classic-forth)
+- [See Also](#see-also)
 
-2 3 +      Stack: [2, 3] -> [5]
-```
-
-## Basic Syntax
-
-```forth
-: SQUARE   ( n -- n^2 )
-    DUP * ;
-
-5 SQUARE   \ Stack: [25]
-```
-
-## Stack Manipulation
-
-### Core Stack Operations
-
-```forth
-DUP         Duplicate top of stack
-DROP        Remove top of stack
-SWAP        Swap top two values
-ROT         Rotate top 3 values
-OVER        Copy second value to top
-NIP         Remove second value (keep top)
-TUCK        Copy top below second value
-PICK        Copy nth value to top
-ROLL        Rotate nth value to top
-DEPTH       Return stack depth
-```
-
-### Examples
+## Program Structure
 
 ```forth
-5 DUP +     \ Stack: [5, 5] -> [10]
-5 3 SWAP    \ Stack: [5, 3] -> [3, 5]
-1 2 3 ROT   \ Stack: [1, 2, 3] -> [2, 3, 1]
+\ Square a number
+: SQUARE ( n -- n*n ) DUP * ;
+5 SQUARE .
 ```
 
-## Arithmetic
-
-### Basic Operations
-
-```forth
-+           Addition
--           Subtraction
-*           Multiplication
-/           Division
-MOD         Modulo
+```text
+Defined word: SQUARE
+25
 ```
 
-### Examples
+- The program runs line by line, interpreting words left to right.
+- **Built-in words are upper case.** `dup` is an unknown word. Your own
+  words and variables are case-sensitive and match exactly as defined.
+- `\` comments to end of line. `( … )` comments must open and close on the
+  same line.
+- A colon definition can span several lines; it ends at `;`.
+- **Any error ends the program**: an unknown word, stack underflow or
+  division by zero prints a message and stops the run.
+
+## Output Model
+
+Output is line-oriented, unlike a real Forth terminal:
+
+| Word | Prints |
+|------|--------|
+| `.` | Pops and prints the top of stack on **its own line** |
+| `." text"` | Prints `text` on its own line. The space after `."` is printed too, so `." Hi"` shows ` Hi` and `."Hi"` shows `Hi` |
+| `CR` | An empty line |
+| `EMIT` | The character on its own line (`65 EMIT` gives `A`) |
+| `n SPACES` | A line of `n` spaces |
+| `.S` | The stack, non-destructively: `<3> 1 2 3` |
+
+So `1 . 2 .` prints two lines, `1` and `2`, not `1 2 `.
+
+There is no input: `KEY`, `ACCEPT` and `EXPECT` don't exist.
+
+## Word Reference
+
+### Stack
+
+| Word | Effect |
+|------|--------|
+| `DUP` | `( a -- a a )` |
+| `DROP` | `( a -- )` |
+| `SWAP` | `( a b -- b a )` |
+| `OVER` | `( a b -- a b a )` |
+| `ROT` | `( a b c -- b c a )` |
+| `NIP` | `( a b -- b )` |
+| `TUCK` | `( a b -- b a b )` |
+| `2DUP` | `( a b -- a b a b )` |
+| `2DROP` | `( a b -- )` |
+| `PICK` | `( … n -- … x )`, `0 PICK` = `DUP` |
+| `ROLL` | `( … n -- … )` moves the nth item to the top |
+| `DEPTH` | Pushes the number of items on the stack |
+
+### Arithmetic
+
+| Word | Example | Result |
+|------|---------|--------|
+| `+` `-` `*` | `6 7 * .` | `42` |
+| `/` | `7 2 / .` | `3` (integer, truncates toward zero: `-7 2 /` gives `-3`) |
+| `MOD` | `17 5 MOD .` | `2` (Python-style: `-7 2 MOD` gives `1`) |
+| `**` | `2 10 ** .` | `1024` (integer power, not standard Forth) |
+| `NEGATE` `ABS` | `-5 ABS .` | `5` |
+| `MIN` `MAX` | `3 7 MAX .` | `7` |
+| `1+` `1-` `2+` `2-` `2*` `2/` | `9 2/ .` | `4` |
+
+### Comparison and logic
+
+True is `-1`, false is `0`, as in standard Forth.
+
+| Word | Example | Result |
+|------|---------|--------|
+| `=` `<>` `<` `>` `<=` `>=` | `5 3 > .` | `-1` |
+| `0=` `0<` `0>` | `0 0= .` | `-1` |
+| `AND` `OR` `XOR` | `12 10 AND .` | `8` |
+| `INVERT` | `0 INVERT .` | `-1` |
+| `TRUE` `FALSE` | `TRUE .` | `-1` |
+
+### Maths
+
+| Word | Example | Result |
+|------|---------|--------|
+| `SIN` `COS` `TAN` | `30 SIN .` | `0.49999999999999994` (argument in **degrees**) |
+| `SQRT` | `2 SQRT .` | `1.4142135623730951` |
+| `LOG` | natural log | |
+| `EXP` | `1 EXP .` | `2.718281828459045` |
+| `PI` `E` | `PI .` | `3.141592653589793` |
+
+These work on the integer stack and leave Python floats there.
+
+## Defining Words
 
 ```forth
-5 3 +       \ 8
-5 3 -       \ 2
-5 3 *       \ 15
-6 2 /       \ 3
-7 3 MOD     \ 1
+: SQUARE DUP * ;
+: CUBE DUP SQUARE * ;
+3 CUBE .
 ```
 
-## Comparison
-
-```forth
-=           Equal
-<>          Not equal
-<           Less than
->           Greater than
-<=          Less or equal
->=          Greater or equal
+```text
+Defined word: SQUARE
+Defined word: CUBE
+27
 ```
 
-### Results
+- `: name … ;` defines a word and logs `Defined word: name`.
+- Redefining a word replaces it.
+- `RECURSE` calls the word being defined:
 
 ```forth
-5 3 >       \ 1 (true)
-5 3 <       \ 0 (false)
+: FACT DUP 1 > IF DUP 1- RECURSE * THEN ;
+5 FACT .
 ```
 
-## Variables
-
-### Variable Declaration
-
-```forth
-VARIABLE x
-VARIABLE count
-
-5 x !       \ Store 5 in variable x
-x @         \ Retrieve value from x (5)
-```
-
-### Constants
-
-```forth
-10 CONSTANT TEN
-20 CONSTANT TWENTY
-
-TEN TWENTY + \ 30
-```
-
-## Word Definitions
-
-### Define Custom Words
-
-```forth
-: SQUARE    ( n -- n^2 )
-    DUP * ;
-
-: CUBE      ( n -- n^3 )
-    DUP DUP * * ;
-
-5 SQUARE    \ 25
-3 CUBE      \ 27
-```
-
-### Word Stack Notation
-
-```forth
-( inputs -- outputs )
-
-: ADD       ( n1 n2 -- n3 )
-    + ;
-
-: DOUBLE    ( n -- n*2 )
-    2 * ;
+```text
+120
 ```
 
 ## Control Structures
 
-### Conditional (IF/THEN)
+Loops only loop **inside a colon definition**. At the top level, `DO … LOOP`
+and `BEGIN … UNTIL` run their body once (`UNTIL` prints a warning saying so).
+`IF … THEN` works at the top level.
+
+| Structure | Example |
+|-----------|---------|
+| `IF … THEN` | `: POS? 0 > IF ." positive" THEN ;` |
+| `IF … ELSE … THEN` | `: SIGN 0 < IF ." negative" ELSE ." non-negative" THEN ;` |
+| `limit start DO … LOOP` | `: COUNT 10 0 DO I . LOOP ;` prints 0 to 9 |
+| `limit start DO … n +LOOP` | `: EVENS 10 0 DO I . 2 +LOOP ;` prints 0 2 4 6 8 |
+| `BEGIN … flag UNTIL` | `: CD 5 BEGIN DUP . 1- DUP 0= UNTIL DROP ;` prints 5 to 1 |
+| `BEGIN … flag WHILE … REPEAT` | `: W 0 BEGIN DUP 5 < WHILE DUP . 1+ REPEAT DROP ;` prints 0 to 4 |
+
+- `I` is the innermost loop index and `J` the next one out. Nested `DO`
+  loops and nested `IF`s work.
+- A negative `+LOOP` step counts down: `0 10 DO I . -2 +LOOP` prints
+  10 down to 0.
+- **`I` and `J` fail inside an `IF` branch** within a loop, and the run stops
+  silently. Read the index before the `IF`:
 
 ```forth
-: ABS       ( n -- |n| )
-    DUP 0 < IF
-        NEGATE
-    THEN ;
-
--5 ABS      \ 5
+\ Works: I is fetched before IF
+: SHOW 3 0 DO I DUP 0= IF ." zero" DROP ELSE . THEN LOOP ;
+SHOW
 ```
 
-### If/Else
+```text
+ zero
+1
+2
+```
+
+Not available: `LEAVE`, `UNLOOP`, `?DO`, `EXIT`, `CASE … OF … ENDOF … ENDCASE`,
+`AGAIN`.
+
+## Variables, Constants and Arrays
 
 ```forth
-: MAX       ( n1 n2 -- max )
-    2DUP < IF
-        SWAP THEN
-    DROP ;
-
-5 3 MAX     \ 5
+VARIABLE X
+42 X !
+X @ .
+X @ 1+ X !
+X @ .
+100 CONSTANT HUNDRED
+HUNDRED .
 ```
 
-### Loops
+```text
+Variable declared: X
+42
+43
+Constant declared: HUNDRED
+100
+```
 
-#### DO/LOOP
+| Word | Effect |
+|------|--------|
+| `VARIABLE name` | Creates a cell holding 0 |
+| `n CONSTANT name` | Creates a word that pushes `n` |
+| `!` `@` | Store and fetch |
+| `n VALUE name` | Same as `CONSTANT`. `TO` is a stub, so values can't change |
+| `CREATE name n CELLS ALLOT` | A simple array. `CELLS` is a no-op (one cell = one slot) |
+
+Arrays use name-plus-offset references:
 
 ```forth
-: PRINT-NUMBERS   ( n -- )
-    1 ?DO
-        I .
-    LOOP ;
-
-10 PRINT-NUMBERS  \ Prints 1 2 3 4 5 6 7 8 9
+CREATE ARR 10 CELLS ALLOT
+5 ARR 2 + !
+ARR 2 + @ .
 ```
 
-#### DO/+LOOP
-
-```forth
-: COUNT-UP ( n -- )
-    1 ?DO
-        I .
-    2 +LOOP ;
-
-10 COUNT-UP   \ Prints 1 3 5 7 9
+```text
+5
 ```
 
-#### BEGIN/UNTIL
-
-```forth
-: COUNTDOWN ( n -- )
-    BEGIN
-        DUP .
-        DUP 0 =
-    UNTIL
-    DROP ;
-
-5 COUNTDOWN   \ Prints 5 4 3 2 1 0
-```
-
-#### BEGIN/WHILE/REPEAT
-
-```forth
-: COUNT-DOWN ( n -- )
-    BEGIN
-        DUP 0 >
-    WHILE
-        DUP .
-        1 -
-    REPEAT
-    DROP ;
-
-5 COUNT-DOWN   \ Prints 5 4 3 2 1
-```
-
-## Arrays (Forth Arrays)
-
-### CREATE and ALLOT
-
-```forth
-CREATE NUMBERS 10 ALLOT
-
-1 NUMBERS !
-2 NUMBERS 1 CELLS + !
-3 NUMBERS 2 CELLS + !
-
-NUMBERS @       \ 1
-NUMBERS 1 CELLS + @  \ 2
-```
-
-## Input/Output
-
-### Output
-
-```forth
-.           Emit number from stack
-."          Emit string
-EMIT        Emit character
-CR          Carriage return (newline)
-SPACE       Space
-SPACES      Multiple spaces
-```
-
-### Examples
-
-```forth
-42 .        \ 42
-." Hello"   \ Hello
-CR          \ Newline
-65 EMIT     \ A (ASCII 65)
-```
-
-### Input
-
-```forth
-ACCEPT      Get user input (string)
-```
-
-## Comments
-
-```forth
-\ This is a line comment
-
-( This is a block comment
-  spanning multiple lines )
-```
-
-## Memory Operations
-
-```forth
-@           Fetch (read from address)
-!           Store (write to address)
-+!          Add to memory location
-```
-
-## Stack Inspection
-
-```forth
-.S          Show entire stack
-.           Pop and print top
-```
-
-## Complete Examples
-
-### Factorial
-
-```forth
-: FACTORIAL ( n -- n! )
-    1 SWAP
-    1 ?DO
-        I *
-    LOOP ;
-
-5 FACTORIAL  \ 120
-```
-
-### Fibonacci
-
-```forth
-: FIB ( n -- fib(n) )
-    DUP 2 < IF
-        EXIT
-    THEN
-    DUP 1 - RECURSE
-    SWAP 2 - RECURSE + ;
-
-6 FIB       \ 8
-```
-
-### Sum 1 to N
-
-```forth
-: SUMTO ( n -- sum )
-    0 SWAP
-    1 ?DO
-        SWAP I +
-        SWAP
-    LOOP
-    DROP ;
-
-10 SUMTO    \ 55
-```
-
-## Recursion
-
-```forth
-: COUNTDOWN ( n -- )
-    DUP 0 > IF
-        DUP .
-        1 - RECURSE
-    THEN ;
-
-5 COUNTDOWN  \ Prints 5 4 3 2 1
-```
-
-## Advanced: User-Defined Words
-
-```forth
-: SQUARE-SUM ( n1 n2 -- sum )
-    DUP * SWAP DUP * + ;
-
-3 4 SQUARE-SUM  \ 25 (3^2 + 4^2)
-
-: HYPOTENUSE ( a b -- c )
-    SQUARE-SUM SQRT ;
-
-3 4 HYPOTENUSE  \ ~5.0
-```
-
-## Debugging
-
-```forth
-.S              Show entire stack
-DEPTH           Stack depth
-TRACE           Enable tracing
-NOTRACE         Disable tracing
-```
-
-## Tips & Best Practices
-
-1. **Use stack diagrams** in comments
-2. **Keep words small** and composable
-3. **Test incrementally** at console
-4. **Document thoroughly** with notation
-5. **Use meaningful names** for clarity
-6. **Avoid deep stacks** (more than 3-4 values)
-
-## Common Patterns
-
-### Temporary Storage
-```forth
-: TEMP-STORE VARIABLE temp ;
-x temp !  \ Save x
-temp @    \ Retrieve x
-```
-
-### Word Composition
-```forth
-: QUAD SQUARE SQUARE ;   \ Fourth power
-5 QUAD    \ 625
-```
-
-## Math Functions
-
-```forth
-SIN         Sine (radians)
-COS         Cosine (radians)
-TAN         Tangent (radians)
-SQRT        Square root
-LOG         Natural logarithm
-EXP         e raised to power
-ABS         Absolute value
-MIN         Minimum of two values
-MAX         Maximum of two values
-NEGATE      Negate top of stack
-```
-
-### Examples
-
-```forth
-3.14159 SIN .     \ ~0.0
-16 SQRT .         \ 4.0
-2.718 LOG .       \ ~1.0
--5 ABS .          \ 5
-3 7 MAX .         \ 7
-```
-
-## Bitwise Operations
-
-```forth
-AND         Bitwise AND
-OR          Bitwise OR
-XOR         Bitwise XOR
-INVERT      Bitwise NOT (complement)
-```
-
-### Examples
-
-```forth
-255 15 AND .      \ 15
-240 15 OR .       \ 255
-255 15 XOR .      \ 240
-0 INVERT .        \ -1 (all bits set)
-```
+Not available: `+!`, `HERE`, `,` (comma), `C@`/`C!`, `FILL`, `MOVE`.
 
 ## Floating Point
 
-```forth
-1.5 2.3 F+ .      \ 3.8  (floating add)
-5.0 2.0 F/ .       \ 2.5  (floating divide)
-3.14 FSIN .        \ ~0.0 (floating sine)
-```
-
-## Exception Handling
+A number containing one `.` goes to a separate float stack. Float words:
+`F+ F- F* F/ F. FDUP FDROP FSWAP F@ F!`.
 
 ```forth
-: SAFE-DIVIDE ( n1 n2 -- result )
-    TRY
-        /
-    CATCH
-        DROP DROP
-        ." Division error" CR
-        0
-    ENDTRY ;
-
-10 0 SAFE-DIVIDE   \ Division error, result: 0
-10 2 SAFE-DIVIDE   \ 5
+5.0 2.0 F/ F.
+1.5 2.3 F+ F.
 ```
 
-## Quick Reference
+```text
+2.5
+3.8
+```
 
-| Feature | Syntax | Example |
-|---------|--------|---------|
-| Push | `number` | `42` |
-| Add | `+` | `3 5 +` |
-| Subtract | `-` | `10 3 -` |
-| Multiply | `*` | `4 5 *` |
-| Divide | `/` | `20 4 /` |
-| Modulo | `MOD` | `7 3 MOD` |
-| Duplicate | `DUP` | `5 DUP` |
-| Swap | `SWAP` | `3 5 SWAP` |
-| Drop | `DROP` | `5 DROP` |
-| Over | `OVER` | `3 5 OVER` |
-| Rotate | `ROT` | `1 2 3 ROT` |
-| Print | `.` | `42 .` |
-| Print String | `."` | `." Hello"` |
-| Newline | `CR` | `CR` |
-| Define | `: name ... ;` | `: DOUBLE 2 * ;` |
-| Variable | `VARIABLE name` | `VARIABLE x` |
-| Store | `!` | `5 x !` |
-| Fetch | `@` | `x @` |
-| If | `IF ... THEN` | `DUP 0 > IF ...` |
-| If/Else | `IF ... ELSE ... THEN` | `IF 1 ELSE 0 THEN` |
-| Do Loop | `DO ... LOOP` | `10 0 DO I . LOOP` |
-| Begin/Until | `BEGIN ... UNTIL` | `BEGIN DUP . 1- DUP 0= UNTIL` |
-| Begin/While | `BEGIN ... WHILE ... REPEAT` | `BEGIN DUP 0> WHILE 1- REPEAT` |
-| Try/Catch | `TRY ... CATCH ... ENDTRY` | `TRY / CATCH 0 ENDTRY` |
+`1.5 .` fails with a stack underflow, because `.` reads the integer stack.
+`FSIN` and other float maths words don't exist; use `SIN` on the integer
+stack.
+
+### Partial and stub words
+
+These words exist but are simplified or do nothing useful:
+
+- Double-cell words: `D+ D- D* D/ D. D@ D!`.
+- Heap words: `ALLOCATE FREE RESIZE`. These return an id and a flag, but
+  there is no way to address the memory.
+- File words: `OPEN-FILE CLOSE-FILE READ-FILE WRITE-FILE FILE-POSITION
+  REPOSITION-FILE` are simulated and print `… simulated (educational mode)`.
+- String words: `COMPARE SEARCH SLITERAL` operate on placeholder strings.
+- Exceptions: `TRY CATCH THROW` have no real effect; `THROW` prints
+  `Exception thrown: n`.
+- Structures and objects: `STRUCT FIELD END-STRUCT OBJECT METHOD END-OBJECT
+  NEW SEND` only print a message.
+- A quoted token like `"abc"` pushes a Python string, which `.` prints.
+
+## Examples
+
+### FizzBuzz
+
+```forth
+: FIZZ 16 1 DO
+    I DUP 15 MOD 0= IF ." FizzBuzz" DROP ELSE
+    DUP 3 MOD 0= IF ." Fizz" DROP ELSE
+    DUP 5 MOD 0= IF ." Buzz" DROP ELSE
+    . THEN THEN THEN
+  LOOP ;
+FIZZ
+```
+
+Prints 1, 2, ` Fizz`, 4, ` Buzz`, … ` FizzBuzz`, one item per line.
+
+### Factorial with a loop
+
+```forth
+: FACT ( n -- n! ) 1 SWAP 1+ 1 DO I * LOOP ;
+5 FACT .
+10 FACT .
+```
+
+```text
+Defined word: FACT
+120
+3628800
+```
+
+### Sum of squares with a variable
+
+```forth
+VARIABLE TOTAL
+: SUMSQ ( n -- ) 0 TOTAL ! 1+ 1 DO I DUP * TOTAL @ + TOTAL ! LOOP ;
+10 SUMSQ
+TOTAL @ .
+```
+
+```text
+Variable declared: TOTAL
+Defined word: SUMSQ
+385
+```
+
+Longer programs: `examples/forth/engineering_calc.fth` and
+`examples/forth/number_theory.fth`.
+
+## Differences from Classic Forth
+
+- Output is one line per `.`, `."`, `EMIT` or `SPACES`. You can't build a
+  line from several words, and `."` keeps the separating space.
+- Built-in words are upper case only.
+- Loops work only inside colon definitions.
+- `I`/`J` inside an `IF` branch in a loop abort the run without a message.
+- No `LEAVE`, `EXIT`, `?DO`, `CASE`, `+!`, `SPACE`, `HERE`, `,`, `KEY`,
+  `ACCEPT`, `IMMEDIATE`, `POSTPONE`, `[']`, `EXECUTE`, `DOES>`, or number
+  bases (`HEX`, `DECIMAL`).
+- Values are Python numbers, not fixed-width cells: no overflow, and trig
+  functions leave floats on the integer stack.
+- `/` truncates toward zero but `MOD` follows Python's floored rule, so
+  `/` and `MOD` disagree for negative operands.
+- Multi-line `( … )` comments aren't supported, and `( … )` inside a `."`
+  string is removed as a comment: `." Say (hi) there"` prints ` Say  there`.
+- Any error ends the program; there is no interactive recovery. The run
+  still reports exit status 0.
 
 ## See Also
 
-- [LANGUAGE_TUTORIALS.md](../user/LANGUAGE_TUTORIALS.md)
-- [examples/forth/](../../examples/forth/)
-
----
-
-**Last Updated:** 2025
+- [Language Tutorials](../user/LANGUAGE_TUTORIALS.md)
+- [Forth examples](../../examples/forth/)

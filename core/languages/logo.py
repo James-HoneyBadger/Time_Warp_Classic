@@ -678,7 +678,7 @@ class TwLogoExecutor:
     def _handle_penup(self):
         """Handle PENUP command"""
         self.interpreter.turtle_graphics["pen_down"] = False
-        self.interpreter.log_output("Pen up - turtle will move without drawing")
+        self.interpreter.turtle_log("Pen up - turtle will move without drawing")
         if self.interpreter.turtle_trace:
             self.interpreter.log_output("TRACE: PEN=UP")
         return "continue"
@@ -698,7 +698,7 @@ class TwLogoExecutor:
                     self.interpreter._turtle_color_index
                 ]
             )
-        self.interpreter.log_output("Pen down - turtle will draw when moving")
+        self.interpreter.turtle_log("Pen down - turtle will draw when moving")
         if self.interpreter.turtle_trace:
             self.interpreter.log_output(
                 f"TRACE: PEN=DOWN COLOR={self.interpreter.turtle_graphics['pen_color']}"
@@ -708,7 +708,7 @@ class TwLogoExecutor:
     def _handle_clearscreen(self):
         """Handle CLEARSCREEN command"""
         self.interpreter.clear_turtle_screen()
-        self.interpreter.log_output("Screen cleared")
+        self.interpreter.turtle_log("Screen cleared")
         return "continue"
 
     def _handle_cleartext(self):
@@ -728,7 +728,7 @@ class TwLogoExecutor:
     def _handle_home(self):
         """Handle HOME command"""
         self.interpreter.turtle_home()
-        self.interpreter.log_output("Turtle returned to home position")
+        self.interpreter.turtle_log("Turtle returned to home position")
         # Set turtle position variables for testing
         self.interpreter.variables["TURTLE_X"] = self.interpreter.turtle_graphics["x"]
         self.interpreter.variables["TURTLE_Y"] = self.interpreter.turtle_graphics["y"]
@@ -778,7 +778,7 @@ class TwLogoExecutor:
                     r, g, b = int(match.group(1)), int(match.group(2)), int(match.group(3))
                     color = f"#{r:02x}{g:02x}{b:02x}"
                     self.interpreter.turtle_set_color(color)
-                    self.interpreter.log_output(f"Pen color set to RGB({r}, {g}, {b})")
+                    self.interpreter.turtle_log(f"Pen color set to RGB({r}, {g}, {b})")
                 else:
                     self.interpreter.log_output("Invalid RGB format. Use [R G B] or R G B")
             except Exception as e:
@@ -793,38 +793,38 @@ class TwLogoExecutor:
                 b = max(0, min(255, b))
                 color = f"#{r:02x}{g:02x}{b:02x}"
                 self.interpreter.turtle_set_color(color)
-                self.interpreter.log_output(f"Pen color set to RGB({r}, {g}, {b})")
+                self.interpreter.turtle_log(f"Pen color set to RGB({r}, {g}, {b})")
             except (ValueError, IndexError):
                 # Not numeric — fall through to named color
                 color = parts[1].lower()
                 self.interpreter.turtle_set_color(color)
-                self.interpreter.log_output(f"Pen color set to {color}")
+                self.interpreter.turtle_log(f"Pen color set to {color}")
         else:
             # Named color or hex
             color = parts[1].lower()
             self.interpreter.turtle_set_color(color)
-            self.interpreter.log_output(f"Pen color set to {color}")
+            self.interpreter.turtle_log(f"Pen color set to {color}")
         return "continue"
 
     def _handle_setpensize(self, parts):
         """Handle SETPENSIZE command"""
         size = int(parts[1]) if len(parts) > 1 else 1
         self.interpreter.turtle_set_pen_size(size)
-        self.interpreter.log_output(f"Pen size set to {size}")
+        self.interpreter.turtle_log(f"Pen size set to {size}")
         return "continue"
 
     def _handle_circle(self, parts):
         """Handle CIRCLE command"""
         radius = float(parts[1]) if len(parts) > 1 else 50
         self.interpreter.turtle_circle(radius)
-        self.interpreter.log_output(f"Drew circle with radius {radius}")
+        self.interpreter.turtle_log(f"Drew circle with radius {radius}")
         return "continue"
 
     def _handle_dot(self, parts):
         """Handle DOT command"""
         size = int(parts[1]) if len(parts) > 1 else 5
         self.interpreter.turtle_dot(size)
-        self.interpreter.log_output(f"Drew dot with size {size}")
+        self.interpreter.turtle_log(f"Drew dot with size {size}")
         return "continue"
 
     def _handle_rect(self, parts):
@@ -833,7 +833,7 @@ class TwLogoExecutor:
             width = float(parts[1])
             height = float(parts[2])
             self.interpreter.turtle_rect(width, height)
-            self.interpreter.log_output(f"Drew rectangle {width}x{height}")
+            self.interpreter.turtle_log(f"Drew rectangle {width}x{height}")
         else:
             self.interpreter.log_output("RECT requires width and height")
         return "continue"
@@ -846,7 +846,7 @@ class TwLogoExecutor:
             if text.startswith('"') and text.endswith('"'):
                 text = text[1:-1]
             self.interpreter.turtle_text(text)
-            self.interpreter.log_output(f"Drew text: {text}")
+            self.interpreter.turtle_log(f"Drew text: {text}")
         else:
             self.interpreter.log_output("TEXT requires text content")
         return "continue"
@@ -855,14 +855,14 @@ class TwLogoExecutor:
         """Handle SHOWTURTLE command"""
         self.interpreter.turtle_graphics["visible"] = True
         self.interpreter.update_turtle_display()
-        self.interpreter.log_output("Turtle is now visible")
+        self.interpreter.turtle_log("Turtle is now visible")
         return "continue"
 
     def _handle_hideturtle(self):
         """Handle HIDETURTLE command"""
         self.interpreter.turtle_graphics["visible"] = False
         self.interpreter.update_turtle_display()
-        self.interpreter.log_output("Turtle is now hidden")
+        self.interpreter.turtle_log("Turtle is now hidden")
         return "continue"
 
     def _handle_print(self, parts):

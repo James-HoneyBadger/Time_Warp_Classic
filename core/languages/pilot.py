@@ -1033,23 +1033,23 @@ class TwPilotExecutor:
             elif operation == "CLEAR":
                 # G:CLEAR - clear graphics screen
                 self.interpreter.clear_turtle_screen()
-                self.interpreter.log_output("Graphics screen cleared")
+                self.interpreter.turtle_log("Graphics screen cleared")
 
             elif operation == "PENUP":
                 # G:PENUP - lift pen
                 self.interpreter.turtle_graphics["pen_down"] = False
-                self.interpreter.log_output("Pen up")
+                self.interpreter.turtle_log("Pen up")
 
             elif operation == "PENDOWN":
                 # G:PENDOWN - lower pen
                 self.interpreter.turtle_graphics["pen_down"] = True
-                self.interpreter.log_output("Pen down")
+                self.interpreter.turtle_log("Pen down")
 
             elif operation == "COLOR" and len(parts) >= 2:
                 # G:COLOR,color_name
                 color = parts[1].strip()
                 self.interpreter.turtle_graphics["pen_color"] = color
-                self.interpreter.log_output(f"Pen color set to {color}")
+                self.interpreter.turtle_log(f"Pen color set to {color}")
 
             else:
                 self.interpreter.log_output(f"Unknown graphics command: {operation}")

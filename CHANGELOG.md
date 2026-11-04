@@ -4,6 +4,63 @@ All notable changes to Time Warp Classic are recorded here. The format follows
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and the project uses
 [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [Unreleased]
+
+### Added
+
+- **Web IDE input.** When a running program reads input (BASIC `INPUT`, PILOT
+  `A:`, Pascal `readln`, or stdin in Python/JavaScript/Perl), the console bar
+  becomes its stdin. Time spent waiting does not count toward the built-in
+  languages' time limit. New `POST /api/input` endpoint and `input` stream
+  event.
+- **Web IDE Stop** button (`Ctrl+.`), backed by `POST /api/stop`. Every
+  streamed run now opens with a `start` event that carries its run id, and
+  closing the tab stops the run.
+- **BASIC direct mode in the web console bar.** Numbered lines edit the program
+  in the editor, and `LIST`, `RUN`, `NEW` and `RENUMBER` work on it, as on the
+  desktop.
+- **Open… / Save** (`Ctrl+S`) for local files, and the editor is autosaved to
+  browser storage. Loading an example over edited text asks first.
+
+### Fixed
+
+- In the web IDE, `INPUT` read from the **server's** terminal and Python's
+  `input()` hung until the time limit; direct-mode `INPUT` is now refused with a
+  hint.
+- The web console bar ran `10 PRINT 1` immediately instead of storing the line,
+  and `LIST`/`RUN` did nothing.
+- A program that printed in a tight loop could freeze the browser tab. Output is
+  now capped at 20,000 lines per run on the server and 5,000 lines in the
+  console.
+- Ovals and rectangles drawn as canvas overlays had the wrong size, and Tk
+  colour names with spaces (`"light blue"`) were not drawn.
+- Syntax highlighting could leave the editor text invisible when the highlight
+  request failed. It now falls back to plain text.
+- Turtle chatter (*Pen up*, *Turtle returned to home position*, …) from Logo,
+  BASIC and PILOT no longer appears in the web IDE or `--run` output. The
+  desktop console still shows it.
+- `python3 Time_Warp.py --web` now loads plugin languages from
+  `~/.timewarp/plugins` and `TIMEWARP_PLUGIN_PATH`. Before this, only the
+  desktop's **Open Web IDE** had them. In the web server, a plugin language's
+  output after the first run went to that run's interpreter and was lost.
+- `--run` (and exported runners) now pass the terminal's stdin to Python,
+  JavaScript and Perl programs. Before this, `input()` waited until the time
+  limit.
+- Malformed `Content-Length` headers and non-UTF-8 bodies are answered with
+  `400` instead of an unhandled exception. The `Server` header reports the real
+  version.
+- The narrow-screen layout stacks the panes, and the pane divider can be moved
+  from the keyboard.
+
+### Documentation
+
+- `docs/dev/WEB.md` rewritten to describe input, Stop, direct mode, the full API
+  and its limits. It no longer claims that the web edition has no turtle canvas
+  or that busy requests are queued.
+- README, setup, user guides, developer references and language references were
+  checked against the code. Wrong or stale statements are corrected and the tone
+  is plainer.
+
 ## [1.6.0] - 2026-10-29
 
 ### Changed
