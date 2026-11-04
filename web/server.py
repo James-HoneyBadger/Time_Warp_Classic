@@ -893,23 +893,26 @@ class TimeWarpWebServer(ThreadingHTTPServer):
 
 def create_server(host=DEFAULT_HOST, port=DEFAULT_PORT, timeout=DEFAULT_TIMEOUT,
                   plugins=None, verbose=False, input_timeout=DEFAULT_INPUT_TIMEOUT,
-                  max_output_lines=MAX_OUTPUT_LINES, max_iterations=DEFAULT_ITERATIONS):
+                  max_output_lines=MAX_OUTPUT_LINES, max_iterations=DEFAULT_ITERATIONS,
+                  drafts_dir=None):
     """Build (but do not start) a server; port 0 picks a free port."""
     service = RunnerService(
         timeout=timeout, plugins=plugins, input_timeout=input_timeout,
         max_output_lines=max_output_lines, max_iterations=max_iterations,
+        drafts_dir=drafts_dir,
     )
     return TimeWarpWebServer((host, port), service, verbose=verbose)
 
 
 def serve(host=DEFAULT_HOST, port=DEFAULT_PORT, timeout=DEFAULT_TIMEOUT,
           plugins=None, verbose=False, input_timeout=DEFAULT_INPUT_TIMEOUT,
-          max_output_lines=MAX_OUTPUT_LINES, max_iterations=DEFAULT_ITERATIONS):
+          max_output_lines=MAX_OUTPUT_LINES, max_iterations=DEFAULT_ITERATIONS,
+          drafts_dir=None):
     """Run the web IDE until interrupted; returns the port that was used."""
     server = create_server(
         host, port, timeout, plugins, verbose,
         input_timeout=input_timeout, max_output_lines=max_output_lines,
-        max_iterations=max_iterations,
+        max_iterations=max_iterations, drafts_dir=drafts_dir,
     )
     browser_host = "127.0.0.1" if host in ("0.0.0.0", "::") else host
     print(f"Time Warp Classic web IDE: http://{browser_host}:{server.server_port}/")

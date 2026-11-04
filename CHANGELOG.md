@@ -26,6 +26,19 @@ All notable changes to Time Warp Classic are recorded here. The format follows
   brings them back.
 - **PILOT `%` system variables in text.** `T:%answer`, `T:%matched` and the
   other `%…` variables are now substituted in `T:`/`MT:`/`TH:` text.
+- **Web IDE colour themes.** Nine themes from the desktop IDE, chosen from a
+  header menu and remembered between visits.
+- **Breakpoints and single-stepping.** Click a gutter line to set a breakpoint;
+  the run stops there with `BREAK IN n`. Pause, Step and Resume buttons let a
+  running built-in-language program be frozen and advanced one line at a time.
+- **Clickable errors.** `?ERROR IN n` and `BREAK IN n` lines in the console
+  jump to that editor line when clicked.
+- **Share links.** The program and language are kept in the URL hash, so small
+  programs can be shared as a link.
+- **Server-side drafts.** Save, open and delete programs on the server via the
+  drafts menu (`GET/POST/DELETE /api/drafts`) or the new `--drafts-dir`
+  service option. Run limits are now configurable with `--max-output-lines`,
+  `--input-timeout` and `--max-iterations`.
 
 ### Fixed
 

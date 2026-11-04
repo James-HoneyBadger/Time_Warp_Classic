@@ -9,6 +9,8 @@
     --bg: #1e1e1e; --panel: #252526; --border: #3e3e3e;
     --fg: #d4d4d4; --muted: #9d9d9d; --accent: #4caf50; --error: #f14c4c;
     --warn: #e0a030; --mono: "Courier New", Courier, monospace;
+    --button: #3e3e3e; --gutter-fg: #6a6a6a; --gutter-bg: #1a1a1a;
+    --screen-bg: #0d0d0d; --selection: #264f78;
   }
   * { box-sizing: border-box; }
   html, body { overflow: hidden; }  /* the panes do their own scrolling */
@@ -24,8 +26,10 @@
   header h1 { font-size: 15px; margin: 0 8px 0 0; font-weight: bold; white-space: nowrap; }
   #language { flex: 0 0 auto; max-width: 190px; }
   #examples { flex: 1 1 160px; min-width: 90px; max-width: 320px; }
+  #drafts { flex: 0 0 auto; max-width: 180px; }
+  #theme { flex: 0 0 auto; max-width: 150px; }
   select, button {
-    background: #3e3e3e; color: var(--fg); border: 1px solid var(--border);
+    background: var(--button); color: var(--fg); border: 1px solid var(--border);
     padding: 4px 8px; font: inherit; border-radius: 3px;
   }
   button { cursor: pointer; }
@@ -62,12 +66,14 @@
     font: inherit; font-size: 13px; line-height: 1.5; tab-size: 4;
     color: var(--fg);
   }
-  #code::selection { background: #264f78; }
+  #code::selection { background: var(--selection); }
   #gutter {
     margin: 0; padding: 10px 6px 40px 10px; text-align: right;
-    color: #6a6a6a; background: #1a1a1a; user-select: none; overflow: hidden;
+    color: var(--gutter-fg); background: var(--gutter-bg); user-select: none; overflow: hidden;
     font: inherit; line-height: 1.5; font-size: 13px; min-width: 3.2em;
   }
+  #gutter .ln { cursor: pointer; }
+  #gutter .ln.bp { color: var(--error); font-weight: bold; }
   #code {
     position: relative; flex: 1; resize: none; border: 0; outline: none;
     padding: 10px; background: transparent; color: transparent;
@@ -102,7 +108,7 @@
   }
   #screen-wrap {
     flex: 1; min-height: 0; display: flex; align-items: center;
-    justify-content: center; background: #0d0d0d; overflow: hidden;
+    justify-content: center; background: var(--screen-bg); overflow: hidden;
   }
   #screen {
     width: 100%; height: 100%; object-fit: contain;
@@ -136,11 +142,21 @@
   <select id="language" title="Language" aria-label="Language"></select>
   <button id="run" class="primary" title="Run (Ctrl+Enter)">&#9654; Run</button>
   <button id="stop" class="danger" title="Stop (Ctrl+.)" disabled>&#9632; Stop</button>
+  <button id="pause" title="Pause between lines" disabled>&#10074;&#10074; Pause</button>
+  <button id="step" title="Run one more line" disabled>&#10522; Step</button>
   <select id="examples" title="Load an example" aria-label="Load an example">
     <option value="">Examples&hellip;</option>
   </select>
   <button id="open" title="Open a program from your computer">Open&hellip;</button>
   <button id="save" title="Download the program (Ctrl+S)">Save</button>
+  <select id="drafts" title="Server-side drafts" aria-label="Server-side drafts">
+    <option value="">Drafts&hellip;</option>
+  </select>
+  <input id="draft-name" placeholder="draft name" autocomplete="off" spellcheck="false"
+         aria-label="Draft name" style="width: 120px">
+  <button id="save-draft" title="Save the program as a server-side draft">Save draft</button>
+  <button id="delete-draft" title="Delete the selected draft">Delete draft</button>
+  <select id="theme" title="Colour theme" aria-label="Colour theme"></select>
   <input id="open-file" type="file" class="visually-hidden" tabindex="-1" aria-hidden="true">
   <span id="status" role="status" aria-live="polite">ready</span>
 </header>
@@ -208,10 +224,19 @@
   const replBar = document.getElementById("repl");
   const replInput = document.getElementById("repl-input");
   const replPrompt = document.getElementById("repl-prompt");
+  const pauseButton = document.getElementById("pause");
+  const stepButton = document.getElementById("step");
+  const themeSelect = document.getElementById("theme");
+  const draftsSelect = document.getElementById("drafts");
+  const saveDraftButton = document.getElementById("save-draft");
+  const deleteDraftButton = document.getElementById("delete-draft");
+  const draftName = document.getElementById("draft-name");
 
   let languages = [];          // entries from /api/languages
   let activeRun = null;        // { id, controller } while a program runs
   let savedSource = null;      // text last loaded/saved, to warn before replacing edits
+  let breakpoints = new Set(); // 1-based editor line numbers
+  let paused = false;          // whether the active run is paused
 
   function newId(prefix) {
     return (window.crypto && crypto.randomUUID)
@@ -222,6 +247,81 @@
   function setStatus(text, tone) {
     status.textContent = text;
     status.className = tone || "";
+  }
+
+  // ---- colour themes ---------------------------------------------------
+  // Mirrors the desktop themes in gui/themes.py.
+  const THEMES = {
+    dark: { name: "Dark", bg: "#1e1e1e", panel: "#252526", border: "#3e3e3e",
+            fg: "#d4d4d4", muted: "#9d9d9d", accent: "#4caf50", error: "#f14c4c",
+            warn: "#e0a030", button: "#3e3e3e", gutterFg: "#6a6a6a",
+            gutterBg: "#1a1a1a", screenBg: "#0d0d0d", selection: "#264f78" },
+    light: { name: "Light", bg: "#ffffff", panel: "#f0f0f0", border: "#cccccc",
+             fg: "#111111", muted: "#6a6a6a", accent: "#2e7d32", error: "#c62828",
+             warn: "#b07d10", button: "#e7e7e7", gutterFg: "#8a8a8a",
+             gutterBg: "#f5f5f5", screenBg: "#d9d9d9", selection: "#b3d4fc" },
+    classic: { name: "Classic", bg: "#fffef0", panel: "#e0e0e0", border: "#cccccc",
+               fg: "#111111", muted: "#6a6a6a", accent: "#2e7d32", error: "#c62828",
+               warn: "#b07d10", button: "#e0e0e0", gutterFg: "#8a8a8a",
+               gutterBg: "#eee9d8", screenBg: "#d9d4c0", selection: "#b3d4fc" },
+    solarized_dark: { name: "Solarized Dark", bg: "#002b36", panel: "#073642",
+               border: "#586e75", fg: "#839496", muted: "#657b83",
+               accent: "#859900", error: "#dc322f", warn: "#b58900",
+               button: "#073642", gutterFg: "#586e75", gutterBg: "#073642",
+               screenBg: "#073642", selection: "#2aa198" },
+    solarized_light: { name: "Solarized Light", bg: "#fdf6e3", panel: "#eee8d5",
+               border: "#93a1a1", fg: "#657b83", muted: "#839496",
+               accent: "#859900", error: "#dc322f", warn: "#b58900",
+               button: "#eee8d5", gutterFg: "#93a1a1", gutterBg: "#fdf6e3",
+               screenBg: "#eee8d5", selection: "#b3d4fc" },
+    monokai: { name: "Monokai", bg: "#272822", panel: "#3e3d32", border: "#75715e",
+               fg: "#f8f8f2", muted: "#a6a69d", accent: "#a6e22e", error: "#f92672",
+               warn: "#e6db74", button: "#3e3d32", gutterFg: "#75715e",
+               gutterBg: "#272822", screenBg: "#3e3d32", selection: "#49483e" },
+    dracula: { name: "Dracula", bg: "#282a36", panel: "#44475a", border: "#6272a4",
+               fg: "#f8f8f2", muted: "#a1a1b5", accent: "#50fa7b", error: "#ff5555",
+               warn: "#f1fa8c", button: "#44475a", gutterFg: "#6272a4",
+               gutterBg: "#282a36", screenBg: "#44475a", selection: "#6272a4" },
+    nord: { name: "Nord", bg: "#2e3440", panel: "#3b4252", border: "#4c566a",
+            fg: "#d8dee9", muted: "#9aa7bd", accent: "#a3be8c", error: "#bf616a",
+            warn: "#ebcb8b", button: "#3b4252", gutterFg: "#4c566a",
+            gutterBg: "#2e3440", screenBg: "#3b4252", selection: "#5e81ac" },
+    high_contrast: { name: "High Contrast", bg: "#000000", panel: "#000000",
+            border: "#ffffff", fg: "#ffffff", muted: "#c0c0c0", accent: "#00ff00",
+            error: "#ff5555", warn: "#ffff55", button: "#000000", gutterFg: "#ffffff",
+            gutterBg: "#000000", screenBg: "#0a0a0a", selection: "#ffff00" }
+  };
+
+  function applyTheme(key) {
+    const theme = THEMES[key] || THEMES.dark;
+    const root = document.documentElement.style;
+    root.setProperty("--bg", theme.bg);
+    root.setProperty("--panel", theme.panel);
+    root.setProperty("--border", theme.border);
+    root.setProperty("--fg", theme.fg);
+    root.setProperty("--muted", theme.muted);
+    root.setProperty("--accent", theme.accent);
+    root.setProperty("--error", theme.error);
+    root.setProperty("--warn", theme.warn);
+    root.setProperty("--button", theme.button);
+    root.setProperty("--gutter-fg", theme.gutterFg);
+    root.setProperty("--gutter-bg", theme.gutterBg);
+    root.setProperty("--screen-bg", theme.screenBg);
+    root.setProperty("--selection", theme.selection);
+    themeSelect.value = key;
+    try { localStorage.setItem("timewarp.web.theme", key); } catch (err) { /* ignore */ }
+  }
+
+  function initThemes() {
+    Object.keys(THEMES).forEach(function (key) {
+      const option = document.createElement("option");
+      option.value = key;
+      option.textContent = THEMES[key].name;
+      themeSelect.appendChild(option);
+    });
+    let saved = null;
+    try { saved = localStorage.getItem("timewarp.web.theme"); } catch (err) { /* ignore */ }
+    applyTheme(THEMES[saved] ? saved : "dark");
   }
 
   // Output is batched (a timer rather than requestAnimationFrame, which
@@ -486,11 +586,40 @@
     const count = code.value.split("\n").length;
     if (gutterCount === count) return;
     gutterCount = count;
-    const numbers = [];
-    for (let i = 1; i <= count; i += 1) numbers.push(i);
-    gutter.textContent = numbers.join("\n");
+    gutter.textContent = "";
+    const fragment = document.createDocumentFragment();
+    for (let i = 1; i <= count; i += 1) {
+      const line = document.createElement("span");
+      line.className = "ln" + (breakpoints.has(i) ? " bp" : "");
+      line.textContent = i + "\n";
+      line.dataset.line = String(i);
+      fragment.appendChild(line);
+    }
+    gutter.appendChild(fragment);
     syncScroll();
   }
+
+  function jumpToLine(lineNumber) {
+    const lines = code.value.split("\n");
+    const target = Math.min(Math.max(1, lineNumber), lines.length);
+    let offset = 0;
+    for (let i = 0; i < target - 1; i += 1) offset += lines[i].length + 1;
+    code.focus({ preventScroll: true });
+    code.setSelectionRange(offset, offset);
+    const lineHeight = 1.5 * 13;
+    code.scrollTop = Math.max(0, (target - 1) * lineHeight - code.clientHeight / 3);
+    syncScroll();
+  }
+
+  gutter.addEventListener("click", function (event) {
+    const line = event.target && event.target.dataset && event.target.dataset.line;
+    if (!line) return;
+    const number = parseInt(line, 10);
+    if (breakpoints.has(number)) breakpoints.delete(number);
+    else breakpoints.add(number);
+    gutterCount = 0;  // force a re-render with the new marker
+    syncGutter();
+  });
 
   let persistTimer = null;
   function persist() {
@@ -501,7 +630,31 @@
           language: languageSelect.value, program: code.value
         }));
       } catch (err) { /* private mode or storage full: nothing to do */ }
+      updateShareHash();
     }, 300);
+  }
+
+  // ---- share / permalink ----------------------------------------------
+  // The program and language are encoded into the URL hash so a program can
+  // be shared as a link. history.replaceState keeps it out of the back stack.
+  function updateShareHash() {
+    // Only small programs make a sane URL; big ones still autosave locally.
+    if (code.value.length > 8192) return;
+    try {
+      const payload = encodeURIComponent(JSON.stringify({
+        language: languageSelect.value, program: code.value
+      }));
+      history.replaceState(null, "", "#" + payload);
+    } catch (err) { /* a huge program still saves locally */ }
+  }
+
+  function shareFromHash() {
+    if (location.hash.length <= 1) return null;
+    try {
+      return JSON.parse(decodeURIComponent(location.hash.slice(1)));
+    } catch (err) {
+      return null;
+    }
   }
 
   function restore() {
@@ -684,8 +837,15 @@
   function setRunning(running) {
     runButton.disabled = running;
     stopButton.disabled = !running;
+    pauseButton.disabled = !running;
+    stepButton.disabled = !running;
     languageSelect.disabled = running;
+    if (!running) { paused = false; updatePauseLabel(); }
     updatePrompt();
+  }
+
+  function updatePauseLabel() {
+    pauseButton.textContent = paused ? "\u25B6 Resume" : "\u275A\u275A Pause";
   }
 
   function handleFrame(frame, run) {
@@ -703,10 +863,11 @@
       const issues = data.errors > 0;
       let text;
       if (data.stopped) text = "stopped after " + data.seconds.toFixed(2) + "s";
+      else if (data.interrupted && !data.timed_out) text = "breakpoint after " + data.seconds.toFixed(2) + "s";
       else if (data.timed_out) text = "time limit reached after " + data.seconds.toFixed(2) + "s";
       else if (data.output_capped) text = "output limit reached after " + data.seconds.toFixed(2) + "s";
       else text = "finished in " + data.seconds.toFixed(2) + "s" + (issues ? " (with errors)" : "");
-      setStatus(text, (issues || data.timed_out || data.output_capped) ? "bad" : "");
+      setStatus(text, (issues || data.timed_out || data.output_capped || data.interrupted) ? "bad" : "");
       return;
     }
     if (event === "error") {
@@ -745,7 +906,12 @@
       const response = await fetch("/api/run", {
         method: "POST",
         headers: { "Content-Type": "application/json", "Accept": "text/event-stream" },
-        body: JSON.stringify({ language: languageSelect.value, program: program, run: current.id }),
+        body: JSON.stringify({
+          language: languageSelect.value,
+          program: program,
+          run: current.id,
+          breakpoints: Array.from(breakpoints)
+        }),
         signal: current.controller.signal
       });
       if (!response.ok) {
@@ -954,6 +1120,138 @@
     link.click();
   });
 
+  // ---- error history: click an error or BREAK line to jump to it ------
+  output.addEventListener("click", function (event) {
+    const target = event.target;
+    if (!target || !target.textContent) return;
+    const match = target.textContent.match(/(?:\?ERROR IN |BREAK IN )(\d+)/);
+    if (match) jumpToLine(parseInt(match[1], 10));
+  });
+
+  // ---- pause / step / resume ------------------------------------------
+  function postRunAction(path) {
+    const current = activeRun;
+    if (!current) return;
+    post(path, { run: current.id }).catch(function () {});
+  }
+  pauseButton.addEventListener("click", function () {
+    if (!activeRun) return;
+    if (paused) {
+      paused = false;
+      postRunAction("/api/resume");
+      setStatus("running\u2026", "busy");
+    } else {
+      paused = true;
+      postRunAction("/api/pause");
+      setStatus("paused", "busy");
+    }
+    updatePauseLabel();
+  });
+  stepButton.addEventListener("click", function () {
+    if (!activeRun) return;
+    postRunAction("/api/step");
+    setStatus("stepping\u2026", "busy");
+  });
+
+  // ---- server-side drafts ---------------------------------------------
+  async function loadDrafts() {
+    try {
+      const response = await fetch("/api/drafts");
+      const data = await response.json();
+      draftsSelect.innerHTML = '<option value="">Drafts&hellip;</option>';
+      (data.drafts || []).forEach(function (entry) {
+        const option = document.createElement("option");
+        option.value = entry.name;
+        option.textContent = entry.name;
+        draftsSelect.appendChild(option);
+      });
+    } catch (err) { /* the drafts feature is optional */ }
+  }
+
+  async function saveDraft() {
+    const name = draftName.value.trim();
+    if (!name) {
+      setStatus("type a draft name first", "bad");
+      draftName.focus();
+      return;
+    }
+    try {
+      const response = await post("/api/drafts", {
+        name: name, language: languageSelect.value, program: code.value
+      });
+      if (!response.ok) {
+        const problem = await response.json().catch(function () { return {}; });
+        setStatus(problem.error || ("HTTP " + response.status), "bad");
+        return;
+      }
+      savedSource = code.value;
+      setStatus("saved draft " + name);
+      draftName.value = "";
+      loadDrafts();
+    } catch (err) {
+      setStatus("could not save draft: " + err.message, "bad");
+    }
+  }
+
+  async function openDraft(name) {
+    if (!name) return;
+    draftsSelect.value = "";
+    if (!confirmReplace()) return;
+    try {
+      const response = await fetch("/api/drafts/" + encodeURIComponent(name));
+      const data = await response.json();
+      if (!response.ok || data.error) {
+        setStatus(data.error || ("HTTP " + response.status), "bad");
+        return;
+      }
+      if (data.language) setLanguage(data.language);
+      setProgram(data.program);
+      savedSource = data.program;
+      setStatus("opened draft " + name);
+    } catch (err) {
+      setStatus("could not open draft: " + err.message, "bad");
+    }
+  }
+
+  let deleteArmed = false;
+  async function deleteDraft() {
+    const name = draftsSelect.value;
+    if (!name) return;
+    if (!deleteArmed) {
+      deleteArmed = true;
+      deleteDraftButton.textContent = "Really delete?";
+      setStatus("click Delete draft again to confirm", "busy");
+      setTimeout(function () {
+        deleteArmed = false;
+        deleteDraftButton.textContent = "Delete draft";
+      }, 3000);
+      return;
+    }
+    deleteArmed = false;
+    deleteDraftButton.textContent = "Delete draft";
+    try {
+      const response = await fetch("/api/drafts/" + encodeURIComponent(name), { method: "DELETE" });
+      if (!response.ok) {
+        const problem = await response.json().catch(function () { return {}; });
+        setStatus(problem.error || ("HTTP " + response.status), "bad");
+        return;
+      }
+      setStatus("deleted draft " + name);
+      loadDrafts();
+    } catch (err) {
+      setStatus("could not delete draft: " + err.message, "bad");
+    }
+  }
+
+  saveDraftButton.addEventListener("click", saveDraft);
+  deleteDraftButton.addEventListener("click", deleteDraft);
+  draftsSelect.addEventListener("change", function () {
+    openDraft(draftsSelect.value);
+  });
+  themeSelect.addEventListener("change", function () {
+    applyTheme(themeSelect.value);
+  });
+
   (function enableSplitDrag() {
     const divider = document.getElementById("divider");
     const leftPane = document.getElementById("left-pane");
@@ -996,7 +1294,9 @@
   languageSelect.addEventListener("change", onLanguageChanged);
 
   // ---- start-up ---------------------------------------------------------
-  const stored = restore();
+  initThemes();
+  const shared = shareFromHash();
+  const stored = shared || restore();
   if (stored && typeof stored.program === "string" && stored.program.trim()) {
     code.value = stored.program;
   }
@@ -1008,6 +1308,7 @@
     setStatus("server unreachable: " + err.message, "bad");
   });
   loadExamples().catch(function () {});
+  loadDrafts();
 }());
 </script>
 </body>

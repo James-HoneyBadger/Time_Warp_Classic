@@ -81,6 +81,10 @@ def _parse_args(argv=None):
         "--max-iterations", type=int, default=50_000_000,
         help="interpreter steps per web run before it is stopped (default 50000000)",
     )
+    parser.add_argument(
+        "--drafts-dir", metavar="DIR",
+        help="folder for server-side drafts (default ~/.timewarp/drafts)",
+    )
     return parser.parse_args(argv)
 
 
@@ -130,7 +134,7 @@ def main(argv=None):
             print(f"plugin skipped: {problem}")
         serve(host=args.host, port=args.port, timeout=args.timeout, plugins=plugins,
               input_timeout=args.input_timeout, max_output_lines=args.max_output_lines,
-              max_iterations=args.max_iterations)
+              max_iterations=args.max_iterations, drafts_dir=args.drafts_dir)
         return EXIT_OK
 
     print("\U0001f680 Launching Time Warp Classic...")
