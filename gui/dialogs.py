@@ -7,6 +7,8 @@ Find, Replace, Error History, and About dialogs.
 import tkinter as tk
 from tkinter import scrolledtext, messagebox
 
+from core import __version__
+
 
 class FindDialog:
     """Find dialog for searching text in the editor."""
@@ -265,7 +267,7 @@ def show_about(parent):
     about_text = (
         f"{sep}\n"
         "Time Warp Classic\n"
-        "Version 1.6.0\n\n"
+        f"Version {__version__}\n\n"
         "Back-to-basics Tkinter IDE for 9 vintage\n"
         "+ modern languages with turtle graphics.\n\n"
         "FEATURES:\n"

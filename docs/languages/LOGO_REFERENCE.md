@@ -195,7 +195,7 @@ POLY 6 50
 
 | Form | Example | Notes |
 |------|---------|-------|
-| `REPEAT n [cmds]` | `REPEAT 4 [FD 100 RT 90]` | `n` must be a literal integer. Blocks may span lines and nest. Each `REPEAT` stops after 5000 commands (`REPEAT aborted: expansion too large`) |
+| `REPEAT n [cmds]` | `REPEAT 4 [FD 100 RT 90]` | `n` must be a literal integer. Blocks may span lines and nest. Each `REPEAT` stops after 5000 commands with an error (`REPEAT aborted: expansion too large`) |
 | `IF cond [cmd]` | `IF :x > 3 [STOP]` | One line only. Only the first command in the block runs |
 | `WHILE [cond] [cmds]` | `WHILE [:n < 3] [MAKE "n :n + 1 FD 10]` | Limit 10000 iterations |
 | `UNTIL [cond] [cmds]` | `UNTIL [:n >= 3] [MAKE "n :n + 1 FD 1]` | |

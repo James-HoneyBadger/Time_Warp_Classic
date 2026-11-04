@@ -662,11 +662,8 @@ END.
 ```
 
 ```text
-🚀 Starting program: Hello
 Hello from Pascal
 ```
-
-The first line is the interpreter announcing the program.
 
 ### Variables and arithmetic
 
@@ -684,7 +681,6 @@ END.
 ```
 
 ```text
-🚀 Starting program: Basics
 📝 Declared variables: x, y as INTEGER
 ✅ X := 17
 ✅ Y := 5
@@ -716,7 +712,6 @@ END.
 ```
 
 ```text
-🚀 Starting program: Loops
 📝 Declared variables: i as INTEGER
 Up 1
 Up 2
@@ -750,7 +745,6 @@ END.
 ```
 
 ```text
-🚀 Starting program: Grade
 📝 Declared variables: score as INTEGER
 ✅ SCORE := 85
 Not an A
@@ -774,7 +768,6 @@ END.
 Typing `Ada`:
 
 ```text
-🚀 Starting program: Greet
 📝 Declared variables: name as STRING
 What is your name?
 Ada

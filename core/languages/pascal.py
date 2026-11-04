@@ -142,7 +142,7 @@ class TwPascalExecutor:
         match = re.match(r"PROGRAM\s+(\w+)", command, re.IGNORECASE)
         if match:
             self.program_name = match.group(1)
-            self.interpreter.log_output(f"🚀 Starting program: {self.program_name}")
+            self.interpreter.debug_output(f"Starting program: {self.program_name}")
         return "continue"
 
     def _handle_unit(self, command):

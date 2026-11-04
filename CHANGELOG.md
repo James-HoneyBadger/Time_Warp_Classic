@@ -39,6 +39,12 @@ All notable changes to Time Warp Classic are recorded here. The format follows
 - Turtle chatter (*Pen up*, *Turtle returned to home position*, …) from Logo,
   BASIC and PILOT no longer appears in the web IDE or `--run` output. The
   desktop console still shows it.
+- Pascal's `🚀 Starting program` line is gone from normal output (it is now
+  debug-only, without the emoji).
+- A Logo `REPEAT` that hits its 5000-command safety cap now reports an error
+  instead of a plain note, so it counts in the exit status and error history.
+- The desktop About dialog now reads the real version instead of a hardcoded
+  one.
 - `python3 Time_Warp.py --web` now loads plugin languages from
   `~/.timewarp/plugins` and `TIMEWARP_PLUGIN_PATH`. Before this, only the
   desktop's **Open Web IDE** had them. In the web server, a plugin language's

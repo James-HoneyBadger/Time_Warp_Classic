@@ -426,7 +426,7 @@ class TwLogoExecutor:
             for sub in subcommands:
                 guard += 1
                 if guard > 5000:
-                    self.interpreter.log_output("REPEAT aborted: expansion too large")
+                    self.interpreter.log_error("REPEAT aborted: expansion too large")
                     return "continue"
                 if self.interpreter.pump():
                     # Stop pressed: end the run rather than only this REPEAT.
