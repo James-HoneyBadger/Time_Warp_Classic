@@ -6,7 +6,7 @@ built into the project; Python, JavaScript and Perl run on the runtimes you
 already have. Use it as a Tkinter desktop app, in a browser, or from the
 command line.
 
-[![Version](https://img.shields.io/badge/version-1.6.0-blue.svg)](https://github.com/James-HoneyBadger/Time_Warp_Classic)
+[![Version](https://img.shields.io/badge/version-1.7.0-blue.svg)](https://github.com/James-HoneyBadger/Time_Warp_Classic)
 [![Python](https://img.shields.io/badge/python-3.9+-green.svg)](https://www.python.org/)
 [![License](https://img.shields.io/badge/license-MIT-orange.svg)](LICENSE)
 [![education](https://img.shields.io/badge/topic-education-lightgrey)](https://github.com/topics/education)

@@ -1,6 +1,6 @@
 # Technical Reference
 
-How Time Warp Classic 1.6.0 is put together, and what you can call from your
+How Time Warp Classic 1.7.0 is put together, and what you can call from your
 own code. Every name below exists in the source; when in doubt, the source
 wins. Paths are relative to the repository root.
 
@@ -61,7 +61,7 @@ Time_Warp_Classic/
 ├── Time_Warp.py              # CLI entry point: main(); `timewarp` console script
 ├── run.py                    # Setup helper: venv, dependencies, then the IDE
 ├── core/
-│   ├── __init__.py           # __version__ = "1.6.0"; exports Time_WarpInterpreter
+│   ├── __init__.py           # __version__ = "1.7.0"; exports Time_WarpInterpreter
 │   ├── interpreter.py        # Time_WarpInterpreter
 │   ├── runner.py             # run_source(), EXIT_OK, EXIT_PROGRAM_ERROR
 │   ├── export.py             # RunBundle, .twrun bundles, .pyz runners
@@ -571,7 +571,7 @@ not set `plugins`, `input_provider` or `ide_turtle_canvas`.
 | *(none)* | Open the desktop IDE |
 | `--run FILE`, `-r FILE` | Run a `.twrun` bundle or a source file headlessly |
 | `--language LANG`, `-l LANG` | Language for a plain source file (required with one) |
-| `--version`, `-V` | Print `Time Warp Classic 1.6.0` |
+| `--version`, `-V` | Print `Time Warp Classic 1.7.0` |
 | `--web` | Serve the browser IDE |
 | `--host HOST` | Address for `--web` (default `127.0.0.1`) |
 | `--port PORT` | Port for `--web` (default `8000`, `0` picks a free one) |

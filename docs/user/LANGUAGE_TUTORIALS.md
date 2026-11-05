@@ -1,6 +1,6 @@
 # Language Tutorials
 
-A short, hands-on tour of all nine languages in Time Warp Classic 1.6.0.
+A short, hands-on tour of all nine languages in Time Warp Classic 1.7.0.
 Each section starts with a first program, works through the core ideas
 with small examples, and ends with an exercise and pointers to the full
 reference.

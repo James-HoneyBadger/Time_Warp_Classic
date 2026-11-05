@@ -6,6 +6,8 @@ All notable changes to Time Warp Classic are recorded here. The format follows
 
 ## [Unreleased]
 
+## [1.7.0] - 2026-11-04
+
 ### Added
 
 - **Web IDE input.** When a running program reads input (BASIC `INPUT`, PILOT

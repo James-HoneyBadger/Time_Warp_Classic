@@ -17,7 +17,7 @@ checkout, use `python3 Time_Warp.py` instead.
 ```bash
 python3 Time_Warp.py --run hello.bas --language basic
 python3 Time_Warp.py -r hello.twrun            # the bundle names its language
-python3 Time_Warp.py --version                 # Time Warp Classic 1.6.0
+python3 Time_Warp.py --version                 # Time Warp Classic 1.7.0
 ```
 
 | Flag | Meaning |
